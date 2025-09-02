@@ -6,9 +6,10 @@
 
 **Miaogu Notepad** is an ultra-lightweight code-highlighted notepad built with Tauri + React + Monaco Editor. It combines the performance advantages of desktop applications with the flexibility of modern web technologies, providing a clean and smooth text editing experience.
 
->  ⚡**Tauri Lightweight Advantage**: Based on Rust + System WebView architecture, packaged as a **single exe file**, size **< 16MB**
+> ⚡**Tauri Lightweight Advantage**: Based on Rust + System WebView architecture, packaged as a **single exe file**, size **< 16MB**
 >
->  **Why can Tauri generate a single exe file?**
+> **Why can Tauri generate a single exe file?**
+>
 > 1. **Static Compilation**: Rust compiles all dependencies into a single binary file
 > 2. **System WebView**: Reuses the operating system's built-in browser engine, no need to package
 > 3. **Resource Embedding**: Frontend resources are directly embedded into the Rust binary
@@ -27,20 +28,20 @@
 
 ## 📸 Screenshots
 
-| Light Mode                      | Dark Mode                     |
-| ------------------------------- | ----------------------------- |
-| ![Light](images/theme_light.png) | ![Dark](images/theme_dark.png) |
+| Light Mode                        | Dark Mode                       |
+| --------------------------------- | ------------------------------- |
+| ![Light](images/theme_light_en.png) | ![Dark](images/theme_dark_en.png) |
 
 ## 🛠 Technical Architecture
 
-| Layer              | Technology Components           |
-| ------------------ | ------------------------------- |
-| **Desktop Layer**  | Tauri (Rust)                    |
-| **Frontend Layer** | React + Ant Design + Monaco Editor |
-| **State Management** | Redux Toolkit + Redux Persist |
-| **File System**    | Tauri File System API          |
-| **Build Tools**    | Vite + Tauri CLI                |
-| **Style Processing** | Sass + CSS Modules            |
+| Layer                      | Technology Components              |
+| -------------------------- | ---------------------------------- |
+| **Desktop Layer**    | Tauri (Rust)                       |
+| **Frontend Layer**   | React + Ant Design + Monaco Editor |
+| **State Management** | Redux Toolkit + Redux Persist      |
+| **File System**      | Tauri File System API              |
+| **Build Tools**      | Vite + Tauri CLI                   |
+| **Style Processing** | Sass + CSS Modules                 |
 
 ## 📂 Project Structure
 
