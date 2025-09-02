@@ -1,0 +1,208 @@
+{
+  "app": {
+    "title": "喵咕记事本",
+    "theme": {
+      "light": "切换到亮色模式",
+      "dark": "切换到暗色模式"
+    }
+  },
+  "header": {
+    "file": "文件",
+    "fileMenu": {
+      "new": "新建文件",
+      "open": "打开文件",
+      "save": "保存文件",
+      "saveAs": "另存为",
+      "rename": "重命名",
+      "close": "关闭"
+    },
+    "edit": {
+      "undo": "撤销",
+      "redo": "重做",
+      "cut": "剪切",
+      "copy": "复制",
+      "paste": "粘贴"
+    },
+    "view": {
+      "zoomIn": "放大",
+      "zoomOut": "缩小",
+      "resetZoom": "重置缩放"
+    },
+    "window": {
+      "minimize": "最小化",
+      "maximize": "最大化",
+      "restore": "还原",
+      "close": "关闭"
+    },
+    "settings": "设置"
+  },
+  "common": {
+    "untitled": "未命名",
+    "modified": "已修改",
+    "temporary": "临时文件",
+    "loading": "加载中..."
+  },
+  "editor": {
+    "placeholder": "开始编写您的代码...",
+    "lineEnding": {
+      "title": "行结束符",
+      "LF": "LF (Unix)",
+      "CRLF": "CRLF (Windows)",
+      "CR": "CR (Mac)"
+    },
+    "encoding": "编码",
+    "language": "语言",
+    "position": "位置",
+    "selection": "选择",
+    "fontSize": "字体大小",
+    "fontFamily": "字体家族",
+    "lineHeight": "行高",
+    "wordWrap": "自动换行",
+    "minimap": "小地图",
+    "lineNumbers": "行号",
+    "unsavedFile": "未保存的文件",
+    "decreaseFontSize": "减小字体",
+    "increaseFontSize": "增大字体",
+    "lineColumn": "行 {{line}}, 列 {{column}}"
+  },
+  "statusBar": {
+    "line": "行",
+    "column": "列",
+    "selected": "已选择",
+    "characters": "个字符",
+    "zoom": "缩放"
+  },
+  "settings": {
+    "title": "设置",
+    "general": {
+      "title": "通用",
+      "theme": {
+        "title": "主题设置",
+        "mode": "主题模式",
+        "light": "浅色模式",
+        "dark": "深色模式"
+      }
+    },
+    "editor": {
+      "title": "编辑器",
+      "font": {
+        "title": "字体设置",
+        "size": "字体大小",
+        "family": "字体系列",
+        "lineHeight": "行高"
+      }
+    },
+    "appearance": {
+      "title": "外观",
+      "background": {
+        "title": "背景设置",
+        "enable": "启用背景",
+        "upload": "背景图片",
+        "select": "选择图片",
+        "remove": "清除",
+        "transparency": {
+          "dark": "深色透明度",
+          "light": "浅色透明度"
+        }
+      }
+    },
+    "language": {
+      "title": "语言",
+      "settings": "语言设置",
+      "select": "选择语言"
+    },
+    "reset": "重置",
+    "cancel": "取消",
+    "save": "保存",
+    "saveSuccess": "设置保存成功",
+    "saveError": "设置保存失败",
+    "resetSuccess": "设置已重置",
+    "backgroundSuccess": "背景图片设置成功",
+    "backgroundError": "选择背景图片失败"
+  },
+  "dialog": {
+    "confirm": {
+      "title": "确认",
+      "unsavedChanges": "有未保存的更改",
+      "saveBeforeClose": "是否保存更改后关闭？",
+      "saveSelected": "保存选中的文件",
+      "discardChanges": "放弃更改",
+      "cancel": "取消"
+    },
+    "newFile": {
+      "title": "新建文件",
+      "placeholder": "请输入文件名",
+      "create": "创建",
+      "cancel": "取消"
+    },
+    "rename": {
+      "title": "重命名文件",
+      "placeholder": "请输入新文件名",
+      "confirm": "确认",
+      "cancel": "取消"
+    },
+    "fileFilter": {
+      "allFiles": "所有文件",
+      "fileType": "{{type}} 文件"
+    },
+    "fileDialog": {
+      "openFile": "打开文件",
+      "saveFile": "保存文件",
+      "saveAs": "另存为",
+      "selectImage": "选择图片"
+    },
+    "unsavedFiles": "未保存的文件",
+    "dontSave": "不保存",
+    "saveSelectedFiles": "保存选中的文件 ({{count}})",
+    "unsavedFilesMessage": "以下文件有未保存的更改，请选择要保存的文件："
+  },
+  "message": {
+    "success": {
+      "fileSaved": "文件保存成功",
+      "fileOpened": "文件打开成功",
+      "fileCreated": "文件创建成功",
+      "fileRenamed": "文件重命名成功",
+      "settingsSaved": "设置保存成功",
+      "backgroundUploaded": "背景图片上传成功",
+      "backgroundSet": "背景图片设置成功",
+      "backgroundRemoved": "背景图片移除成功"
+    },
+    "error": {
+      "fileOpenFailed": "文件打开失败",
+      "fileSaveFailed": "文件保存失败",
+      "fileCreateFailed": "文件创建失败",
+      "fileRenameFailed": "文件重命名失败",
+      "settingsSaveFailed": "设置保存失败",
+      "backgroundUploadFailed": "背景图片上传失败",
+      "backgroundSelectFailed": "选择背景图片失败",
+      "unsupportedFileType": "不支持的文件类型",
+      "fileTypeNotSupported": "文件 {{fileName}} 的类型不受支持",
+      "createTempFileFailed": "创建临时文件失败",
+      "refreshFileContentFailed": "刷新文件内容失败",
+      "updateFileLineEndingFailed": "更新文件行尾序号失败",
+      "switchFileFailed": "切换文件失败",
+      "invalidFilePath": "未提供有效的文件路径",
+      "unknownError": "未知错误"
+    },
+    "warning": {
+      "unsavedChanges": "有未保存的更改",
+      "fileNotFound": "文件未找到"
+    }
+  },
+  "shortcuts": {
+    "newFile": "Ctrl+N",
+    "openFile": "Ctrl+O",
+    "saveFile": "Ctrl+S",
+    "saveAs": "Ctrl+Shift+S",
+    "undo": "Ctrl+Z",
+    "redo": "Ctrl+Y",
+    "cut": "Ctrl+X",
+    "copy": "Ctrl+C",
+    "paste": "Ctrl+V",
+    "find": "Ctrl+F",
+    "replace": "Ctrl+H",
+    "zoomIn": "Ctrl+Plus",
+    "zoomOut": "Ctrl+Minus",
+    "resetZoom": "Ctrl+0"
+  }
+}

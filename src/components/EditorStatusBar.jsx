@@ -3,6 +3,7 @@ import {Breadcrumb, Button, Divider, Dropdown, Tooltip} from 'antd'
 import {FileOutlined, FolderOutlined, ZoomInOutlined, ZoomOutOutlined} from '@ant-design/icons'
 import {useCurrentFile, useFileActions} from '../hooks/useFileManager'
 import {useTheme} from '../hooks/redux'
+import {useI18n} from '../hooks/useI18n'
 import {fileApi, settingsApi} from '../utils/tauriApi'
 import {splitPath, buildFullPath} from '../utils/pathUtils'
 import './EditorStatusBar.scss'
@@ -23,6 +24,7 @@ const EditorStatusBar = ({ fileManager }) => {
     const currentFile = useCurrentFile(fileManager)
     const { updateFileLineEnding } = useFileActions(fileManager)
     const { fontSize, setFontSize, backgroundEnabled, backgroundImage } = useTheme()
+    const { t } = useI18n()
     const hasBackground = backgroundEnabled && backgroundImage
     const [pathSegments, setPathSegments] = useState([])
     const [directoryContents, setDirectoryContents] = useState({})
@@ -40,10 +42,10 @@ const EditorStatusBar = ({ fileManager }) => {
 
     // Line ending options
     const lineEndingOptions = useMemo(() => [
-        { value: 'LF', label: 'LF' },
-        { value: 'CRLF', label: 'CRLF' },
-        { value: 'CR', label: 'CR' }
-    ], [])
+        { value: 'LF', label: t('editor.lineEnding.LF') },
+        { value: 'CRLF', label: t('editor.lineEnding.CRLF') },
+        { value: 'CR', label: t('editor.lineEnding.CR') }
+    ], [t])
 
     // Get current line ending label
     const getCurrentLineEndingLabel = useCallback(() => {
@@ -219,7 +221,7 @@ const EditorStatusBar = ({ fileManager }) => {
             try {
                 await settingsApi.set('fontSize', validSize)
             } catch (error) {
-                console.error('保存字体大小失败:', error)
+                console.error('Failed to save font size:', error)
             }
         }
     }
@@ -341,7 +343,7 @@ const EditorStatusBar = ({ fileManager }) => {
                 const fontSize = await settingsApi.get('fontSize', 14)
                 setFontSize(fontSize)
             } catch (error) {
-                console.error('加载字体大小设置失败:', error)
+                console.error('Failed to load font size settings:', error)
             }
         }
         loadFontSize().catch()
@@ -391,12 +393,12 @@ const EditorStatusBar = ({ fileManager }) => {
                         />
                     </div>
                 ) : (
-                    '未保存的文件'
+                    t('editor.unsavedFile')
                 )}
             </div>
             <div className="status-right">
                 {/* 字体大小控制 */}
-                <Tooltip title="减小字体">
+                <Tooltip title={t('editor.decreaseFontSize')}>
                     <Button
                         type="text"
                         size="small"
@@ -406,13 +408,13 @@ const EditorStatusBar = ({ fileManager }) => {
                     />
                 </Tooltip>
 
-                <Tooltip title="字体大小">
+                <Tooltip title={t('editor.fontSize')}>
                     <Button type="text" size="small" className="status-item font-size-control">
                         {fontSize}px
                     </Button>
                 </Tooltip>
 
-                <Tooltip title="增大字体">
+                <Tooltip title={t('editor.increaseFontSize')}>
                     <Button
                         type="text"
                         size="small"
@@ -424,38 +426,42 @@ const EditorStatusBar = ({ fileManager }) => {
 
                 <Divider type="vertical" />
 
-                <div className="status-item">
-                    <Button
-                        className="encoding-button"
-                        size="small"
-                        disabled={!currentFile.path || currentFile.isTemporary}
-                    >
-                        {getCurrentEncodingLabel()}
-                    </Button>
-                </div>
-                <Divider type="vertical" />
-                <div className="status-item">
-                    <Dropdown
-                        disabled={!currentFile.path || currentFile.isTemporary}
-                        menu={{
-                            items: lineEndingOptions.map((option) => ({
-                                key: option.value,
-                                label: option.label,
-                                onClick: () => handleLineEndingChange(option.value)
-                            }))
-                        }}
-                        trigger={['click']}
-                        placement="topLeft"
-                    >
+                <Tooltip title={t('editor.encoding')}>
+                    <div className="status-item">
                         <Button
-                            className="line-ending-button"
+                            className="encoding-button"
                             size="small"
                             disabled={!currentFile.path || currentFile.isTemporary}
                         >
-                            {getCurrentLineEndingLabel()}
+                            {getCurrentEncodingLabel()}
                         </Button>
-                    </Dropdown>
-                </div>
+                    </div>
+                </Tooltip>
+                <Divider type="vertical" />
+                <Tooltip title={t('editor.lineEnding.title')}>
+                    <div className="status-item">
+                        <Dropdown
+                            disabled={!currentFile.path || currentFile.isTemporary}
+                            menu={{
+                                items: lineEndingOptions.map((option) => ({
+                                    key: option.value,
+                                    label: option.label,
+                                    onClick: () => handleLineEndingChange(option.value)
+                                }))
+                            }}
+                            trigger={['click']}
+                            placement="topLeft"
+                        >
+                            <Button
+                                className="line-ending-button"
+                                size="small"
+                                disabled={!currentFile.path || currentFile.isTemporary}
+                            >
+                                {getCurrentLineEndingLabel()}
+                            </Button>
+                        </Dropdown>
+                    </div>
+                </Tooltip>
             </div>
         </div>
     )

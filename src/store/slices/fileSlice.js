@@ -18,7 +18,7 @@ const initialState = {
   // 编辑器内容（用于未保存的新文件）
   editorContent: '',
   // 默认文件名
-  defaultFileName: '未命名',
+  defaultFileName: 'Untitled',
   // 文件操作状态
   isLoading: false,
   error: null

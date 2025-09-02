@@ -4,6 +4,7 @@ import { MoonFilled, SunOutlined } from '@ant-design/icons';
 import { Provider, useSelector } from 'react-redux';
 import { store } from './store';
 import { useTheme } from './hooks/redux';
+import { useI18n } from './hooks/useI18n';
 import { settingsApi } from './utils/tauriApi';
 import { useSessionRestore } from './hooks/useSessionRestore';
 import AppHeader from './components/AppHeader';
@@ -18,6 +19,8 @@ const { Content } = Layout;
 
 // 内部组件，用于访问文件上下文
 const AppContent = ({ isDarkMode, toggleTheme, fileManager }) => {
+  const { t } = useI18n();
+  
   return (
     <>
       <div className="theme-toggle">
@@ -25,7 +28,7 @@ const AppContent = ({ isDarkMode, toggleTheme, fileManager }) => {
           type="text"
           icon={isDarkMode ? <MoonFilled /> : <SunOutlined />}
           onClick={toggleTheme}
-          title={isDarkMode ? '切换到亮色模式' : '切换到暗色模式'}
+          title={isDarkMode ? t('app.theme.light') : t('app.theme.dark')}
           className="theme-toggle-btn"
         />
       </div>
@@ -65,7 +68,7 @@ const MainApp = () => {
     // 保存到Tauri设置
     if (window.__TAURI__) {
       settingsApi.set('theme', newTheme).catch(error => {
-        console.error('保存主题设置失败:', error);
+        console.error('Failed to save theme settings:', error);
       });
     } else {
       localStorage.setItem('theme', newTheme);

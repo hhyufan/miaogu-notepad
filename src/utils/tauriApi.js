@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { open, save } from '@tauri-apps/plugin-dialog';
-import { readTextFile, writeTextFile, exists } from '@tauri-apps/plugin-fs';
+import { readTextFile, writeTextFile, exists, readFile } from '@tauri-apps/plugin-fs';
 import { Store } from '@tauri-apps/plugin-store';
 
 // 创建持久化存储实例
@@ -100,12 +100,13 @@ const localStorageStore = {
 // 文件操作 API
 export const fileApi = {
   // 打开文件对话框
-  async openFileDialog() {
+  async openFileDialog(t) {
     try {
       return await open({
         multiple: false,
+        title: t ? t('dialog.fileDialog.openFile') : 'Open File',
         filters: [{
-          name: 'All Files',
+          name: t ? t('dialog.fileFilter.allFiles') : 'All Files',
           extensions: ['*']
         }]
       });
@@ -116,7 +117,7 @@ export const fileApi = {
   },
 
   // 保存文件对话框
-  async saveFileDialog(defaultName = 'untitled.txt') {
+  async saveFileDialog(defaultName = 'untitled.txt', t, isNewFile = false) {
     try {
       // 检查文件名是否有扩展名，如果没有则添加 .txt
       let finalDefaultName = defaultName;
@@ -124,15 +125,55 @@ export const fileApi = {
         finalDefaultName = `${defaultName}.txt`;
       }
       
+      // 根据是否是新文件来决定标题
+      const title = isNewFile 
+        ? (t ? t('dialog.fileDialog.saveAs') : 'Save As')
+        : (t ? t('dialog.fileDialog.saveFile') : 'Save File');
+      
       return await save({
         defaultPath: finalDefaultName,
+        title: title,
         filters: [{
-          name: 'All Files',
+          name: t ? t('dialog.fileFilter.allFiles') : 'All Files',
           extensions: ['*']
         }]
       });
     } catch (error) {
       console.error('Failed to open save dialog:', error);
+      throw error;
+    }
+  },
+
+  // 选择图片对话框
+  async selectImageDialog(t) {
+    try {
+      const selected = await open({
+        title: t ? t('dialog.fileDialog.selectImage') : 'Select Image',
+        multiple: false,
+        filters: [{
+          name: 'Images',
+          extensions: ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg']
+        }]
+      });
+      
+      if (selected && !Array.isArray(selected)) {
+        // 读取二进制文件内容并获取base64
+        const base64 = await this.readBinaryFile(selected);
+        // 根据文件扩展名确定MIME类型
+        const ext = selected.split('.').pop().toLowerCase();
+        let mimeType = 'image/jpeg';
+        if (ext === 'png') mimeType = 'image/png';
+        else if (ext === 'gif') mimeType = 'image/gif';
+        else if (ext === 'bmp') mimeType = 'image/bmp';
+        else if (ext === 'webp') mimeType = 'image/webp';
+        else if (ext === 'svg') mimeType = 'image/svg+xml';
+        
+        return `data:${mimeType};base64,${base64}`;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Failed to open image selection dialog:', error);
       throw error;
     }
   },
@@ -148,6 +189,25 @@ export const fileApi = {
         throw new Error('Operation interrupted');
       }
       console.error('Failed to read file:', error);
+      throw error;
+    }
+  },
+
+  // 读取二进制文件内容（用于图片等）
+  async readBinaryFile(filePath) {
+    try {
+      const data = await readFile(filePath);
+      // 将Uint8Array转换为base64，使用更安全的方法
+      let binary = '';
+      const bytes = new Uint8Array(data);
+      const len = bytes.byteLength;
+      for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      const base64 = btoa(binary);
+      return base64;
+    } catch (error) {
+      console.error('Failed to read binary file:', error);
       throw error;
     }
   },

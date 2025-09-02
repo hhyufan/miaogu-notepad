@@ -10,6 +10,7 @@
     "dialog:allow-save",
     "fs:allow-read-text-file",
     "fs:allow-write-text-file",
+    "fs:allow-read-file",
     "fs:allow-exists",
     "core:window:allow-close",
     "core:window:allow-minimize",

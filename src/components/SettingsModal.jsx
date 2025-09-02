@@ -1,8 +1,9 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Modal, Menu, Button, InputNumber, Select, Switch, Slider,  message, Card, Typography, Space } from 'antd';
+import { Modal, Menu, Button, InputNumber, Select, Switch, Slider, Card, Typography, Space, App } from 'antd';
 import { UploadOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useTheme } from '../hooks/redux';
-import { settingsApi } from '../utils/tauriApi';
+import { useI18n } from '../hooks/useI18n';
+import { settingsApi, fileApi } from '../utils/tauriApi';
 import './SettingsModal.scss';
 
 const { Title, Text } = Typography;
@@ -18,23 +19,10 @@ const fontFamilyOptions = [
 
 
 
-// 菜单项
-const menuItems = [
-  {
-    key: 'general',
-    label: '通用设置',
-  },
-  {
-    key: 'editor',
-    label: '编辑器',
-  },
-  {
-    key: 'appearance',
-    label: '外观',
-  },
-];
+// 菜单项将在组件内部动态生成，使用i18n翻译
 
 const SettingsModal = ({ visible, onClose }) => {
+  const { message } = App.useApp();
   const {
     theme,
     fontSize,
@@ -52,6 +40,7 @@ const SettingsModal = ({ visible, onClose }) => {
     setBackgroundTransparency,
     resetTheme,
   } = useTheme();
+  const { t, changeLanguage, currentLanguage, supportedLanguages } = useI18n();
 
   const [activeKey, setActiveKey] = useState('general');
   const [localSettings, setLocalSettings] = useState({
@@ -157,10 +146,10 @@ const SettingsModal = ({ visible, onClose }) => {
         await settingsApi.set('backgroundTransparency', localSettings.backgroundTransparency);
       }
 
-      message.success('设置保存成功');
+      message.success(t('settings.saveSuccess'));
     } catch (error) {
-      console.error('保存设置失败:', error);
-      message.error('设置保存失败');
+      console.error('Failed to save settings:', error);
+      message.error(t('settings.saveError'));
     }
   }, [localSettings, setFontSize, setFontFamily, setLineHeight, setBackgroundImage, setBackgroundEnabled, setBackgroundTransparency]);
 
@@ -178,37 +167,24 @@ const SettingsModal = ({ visible, onClose }) => {
         light: 80
       },
     });
-    message.success('设置已重置').then();
+    message.success(t('settings.resetSuccess'));
   }, [resetTheme]);
 
   // 选择背景图片
   const handleSelectBackground = useCallback(async () => {
     try {
-      // 创建文件输入元素
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'image/*';
-
-      input.onchange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = (event) => {
-            const imageUrl = event.target.result;
-            updateLocalSetting('backgroundImage', imageUrl);
-            updateLocalSetting('backgroundEnabled', true);
-            message.success('背景图片设置成功');
-          };
-          reader.readAsDataURL(file);
-        }
-      };
-
-      input.click();
+      const result = await fileApi.selectImageDialog(t);
+      if (result) {
+        // result 已经是完整的 data URL 格式
+        updateLocalSetting('backgroundImage', result);
+        updateLocalSetting('backgroundEnabled', true);
+        message.success(t('settings.backgroundSuccess'));
+      }
     } catch (error) {
       console.error('选择背景图片失败:', error);
-      message.error('选择背景图片失败');
+      message.error(t('settings.backgroundError'));
     }
-  }, [updateLocalSetting]);
+  }, [updateLocalSetting, t]);
 
   // 上传背景图片（保留原有逻辑）
   useCallback(async (file) => {
@@ -231,19 +207,37 @@ const SettingsModal = ({ visible, onClose }) => {
   // 渲染通用设置
   const renderGeneralSettings = () => (
     <div className="settings-section">
-      <Title level={4}>通用设置</Title>
+      <Title level={4}>{t('settings.general.title')}</Title>
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
-        <Card size="small" title="主题设置">
+        <Card size="small" title={t('settings.general.theme.title')}>
           <Space direction="vertical" style={{ width: '100%' }}>
             <div className="setting-item">
-              <Text>主题模式</Text>
+              <Text>{t('settings.general.theme.mode')}</Text>
               <Select
                 value={theme}
                 onChange={(value) => setTheme(value)}
                 style={{ width: 120 }}
               >
-                <Option value="light">亮色模式</Option>
-                <Option value="dark">暗色模式</Option>
+                <Option value="light">{t('settings.general.theme.light')}</Option>
+                <Option value="dark">{t('settings.general.theme.dark')}</Option>
+              </Select>
+            </div>
+          </Space>
+        </Card>
+        <Card size="small" title={t('settings.language.settings')}>
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <div className="setting-item">
+              <Text>{t('settings.language.select')}</Text>
+              <Select
+                value={currentLanguage}
+                onChange={changeLanguage}
+                style={{ width: 150 }}
+              >
+                {supportedLanguages.map(lang => (
+                  <Option key={lang.code} value={lang.code}>
+                    {lang.name}
+                  </Option>
+                ))}
               </Select>
             </div>
           </Space>
@@ -255,12 +249,12 @@ const SettingsModal = ({ visible, onClose }) => {
   // 渲染编辑器设置
   const renderEditorSettings = () => (
     <div className="settings-section">
-      <Title level={4}>编辑器设置</Title>
+      <Title level={4}>{t('settings.editor.title')}</Title>
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
-        <Card size="small" title="字体设置">
+        <Card size="small" title={t('settings.editor.font.title')}>
           <Space direction="vertical" style={{ width: '100%' }}>
             <div className="setting-item">
-              <Text>字体大小</Text>
+              <Text>{t('settings.editor.font.size')}</Text>
               <InputNumber
                 min={10}
                 max={30}
@@ -270,7 +264,7 @@ const SettingsModal = ({ visible, onClose }) => {
               />
             </div>
             <div className="setting-item">
-              <Text>字体家族</Text>
+              <Text>{t('settings.editor.font.family')}</Text>
               <Select
                 value={localSettings.fontFamily}
                 onChange={(value) => updateLocalSetting('fontFamily', value)}
@@ -284,7 +278,7 @@ const SettingsModal = ({ visible, onClose }) => {
               </Select>
             </div>
             <div className="setting-item">
-              <Text>行高</Text>
+              <Text>{t('settings.editor.font.lineHeight')}</Text>
               <Slider
                 min={1.0}
                 max={2.0}
@@ -306,12 +300,12 @@ const SettingsModal = ({ visible, onClose }) => {
   // 渲染外观设置
   const renderAppearanceSettings = () => (
     <div className="settings-section">
-      <Title level={4}>外观设置</Title>
+      <Title level={4}>{t('settings.appearance.title')}</Title>
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
-        <Card size="small" title="背景设置">
+        <Card size="small" title={t('settings.appearance.background.title')}>
           <Space direction="vertical" style={{ width: '100%' }}>
             <div className="setting-item">
-              <Text>启用背景图片</Text>
+              <Text>{t('settings.appearance.background.enable')}</Text>
               <Switch
                 checked={localSettings.backgroundEnabled}
                 onChange={(checked) => updateLocalSetting('backgroundEnabled', checked)}
@@ -320,12 +314,12 @@ const SettingsModal = ({ visible, onClose }) => {
             {localSettings.backgroundEnabled && (
               <>
                 <div className="setting-item">
-                  <Text>背景图片</Text>
+                  <Text>{t('settings.appearance.background.upload')}</Text>
                   <Button
                     icon={<UploadOutlined />}
                     onClick={handleSelectBackground}
                   >
-                    选择图片
+                    {t('settings.appearance.background.select')}
                   </Button>
                   {localSettings.backgroundImage && (
                     <Button
@@ -334,12 +328,12 @@ const SettingsModal = ({ visible, onClose }) => {
                       onClick={() => updateLocalSetting('backgroundImage', '')}
                       danger
                     >
-                      清除
+                      {t('settings.appearance.background.remove')}
                     </Button>
                   )}
                 </div>
                 <div className="setting-item">
-                  <Text>深色主题透明度</Text>
+                  <Text>{t('settings.appearance.background.transparency.dark')}</Text>
                   <Slider
                     min={0}
                     max={100}
@@ -354,7 +348,7 @@ const SettingsModal = ({ visible, onClose }) => {
                   />
                 </div>
                 <div className="setting-item">
-                  <Text>浅色主题透明度</Text>
+                  <Text>{t('settings.appearance.background.transparency.light')}</Text>
                   <Slider
                     min={0}
                     max={100}
@@ -376,6 +370,8 @@ const SettingsModal = ({ visible, onClose }) => {
     </div>
   );
 
+
+
   // 渲染内容
   const renderContent = () => {
     switch (activeKey) {
@@ -392,19 +388,19 @@ const SettingsModal = ({ visible, onClose }) => {
 
   return (
     <Modal
-      title="设置"
+      title={t('settings.title')}
       open={visible}
       onCancel={onClose}
       width={800}
       footer={[
-        <Button key="reset" icon={<ReloadOutlined />} onClick={handleReset}>
-          重置
+        <Button key="reset" onClick={handleReset}>
+          <ReloadOutlined /> {t('settings.reset')}
         </Button>,
         <Button key="cancel" onClick={onClose}>
-          取消
+          {t('settings.cancel')}
         </Button>,
         <Button key="save" type="primary" onClick={saveSettings}>
-          保存
+          {t('settings.save')}
         </Button>,
       ]}
       className="settings-modal"
@@ -414,7 +410,11 @@ const SettingsModal = ({ visible, onClose }) => {
           <Menu
             mode="inline"
             selectedKeys={[activeKey]}
-            items={menuItems}
+            items={[
+              { key: 'general', label: t('settings.general.title') },
+              { key: 'editor', label: t('settings.editor.title') },
+              { key: 'appearance', label: t('settings.appearance.title') }
+            ]}
             onClick={({ key }) => setActiveKey(key)}
             className="settings-menu-list"
           />

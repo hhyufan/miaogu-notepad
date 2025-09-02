@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Modal } from 'antd'
 import { fileApi } from '../utils/tauriApi'
+import { useI18n } from './useI18n'
 
 // 高性能工具函数
 const debounce = (func, wait) => {
@@ -29,8 +30,8 @@ const throttle = (func, limit) => {
 }
 
 // 获取文件名的工具函数
-const getFileName = (path) => {
-    return path.split(/[\\/]/).pop() || 'Untitled'
+const getFileName = (path, t) => {
+    return path.split(/[\/]/).pop() || t('untitled')
 }
 
 // 获取文件扩展名的工具函数
@@ -47,19 +48,19 @@ const isFileBlacklisted = (fileName) => {
 }
 
 // 生成保存文件过滤器
-const getSaveFilters = (currentFileName = '') => {
+const getSaveFilters = (currentFileName = '', t) => {
     const ext = getFileExtensionOptimized(currentFileName)
 
     // 如果文件有扩展名，生成推荐过滤器；否则只返回通用过滤器
     if (ext) {
         const recommendedFilter = {
-            name: `${ext.toUpperCase()} 文件`,
+            name: t('dialog.fileFilter.fileType', { type: ext.toUpperCase() }),
             extensions: [ext]
         }
-        return [recommendedFilter, { name: 'All Files', extensions: ['*'] }]
+        return [recommendedFilter, { name: t('dialog.fileFilter.allFiles'), extensions: ['*'] }]
     } else {
         // 没有扩展名时，只返回通用过滤器，避免自动添加后缀
-        return [{ name: 'All Files', extensions: ['*'] }]
+        return [{ name: t('dialog.fileFilter.allFiles'), extensions: ['*'] }]
     }
 }
 
@@ -107,10 +108,12 @@ class FileCache {
 const fileCache = new FileCache(50)
 
 // 通用错误处理函数
-const handleError = (title, error) => {
-    const errorMessage = error?.message || error || '未知错误'
-    console.error(title, errorMessage)
-    Modal.error({ title, content: errorMessage })
+const createHandleError = (t) => (titleKey, error, params = {}) => {
+    const title = t(`messages.error.${titleKey}`)
+    const errorMessage = error?.message || error || t('messages.error.unknownError')
+    const content = params.fileName ? t(`messages.error.${titleKey}`, params) : errorMessage
+    console.error(title, content)
+    Modal.error({ title, content })
 }
 
 /**
@@ -118,10 +121,12 @@ const handleError = (title, error) => {
  * 提供完整的文件操作功能，包括打开、保存、创建、关闭等
  */
 export const useFileManager = () => {
+    const { t } = useI18n()
+    const handleError = createHandleError(t)
     const [currentFilePath, setCurrentFilePath] = useState('')
     const [openedFiles, setOpenedFiles] = useState([]) // 结构：{ path: string, name: string, isTemporary: boolean, isModified: boolean, content: string, originalContent: string }[]
     const [editorCode, setEditorCode] = useState('')
-    const [defaultFileName, setDefaultFileName] = useState('未命名')
+    const [defaultFileName, setDefaultFileName] = useState(() => t('untitled'))
     const defaultFileNameRef = useRef(defaultFileName)
     const [fileWatchers, setFileWatchers] = useState(new Map())
 
@@ -150,7 +155,7 @@ export const useFileManager = () => {
                 try {
                     await fileApi.writeFileContent(filePath, content)
                 } catch (error) {
-                    console.error('自动保存失败:', error)
+                    console.error('Auto save failed:', error)
                 }
             }
         }, 500),
@@ -202,9 +207,9 @@ export const useFileManager = () => {
     const setOpenFile = useCallback(async (filePath, content = null, options = {}) => {
         try {
             // 检查文件黑名单
-            const fileName = getFileName(filePath)
+            const fileName = getFileName(filePath, t)
             if (isFileBlacklisted(fileName)) {
-                handleError('不支持的文件类型', `文件 ${fileName} 的类型不受支持`)
+                handleError('fileTypeNotSupported', '', { fileName })
                 return
             }
 
@@ -252,19 +257,19 @@ export const useFileManager = () => {
             // 检查并处理可能的路径冲突
             handlePathConflict(filePath)
         } catch (error) {
-            handleError('打开文件失败', error)
+            handleError('fileOpenFailed', error)
         }
     }, [openedFilesMap, handlePathConflict, throttledEditorUpdate])
 
     // 打开文件
     const openFile = useCallback(async () => {
         try {
-            const result = await fileApi.openFileDialog()
+            const result = await fileApi.openFileDialog(t)
             if (!result) return
 
             await setOpenFile(result)
         } catch (error) {
-            handleError('打开文件失败', error)
+            handleError('fileOpenFailed', error)
         }
     }, [setOpenFile])
 
@@ -300,7 +305,7 @@ export const useFileManager = () => {
                 }
             }
         } catch (error) {
-            handleError('创建临时文件失败', error)
+            handleError('createTempFileFailed', error)
         }
     }, [throttledEditorUpdate])
 
@@ -377,9 +382,9 @@ export const useFileManager = () => {
                 const newCurrentPath = newFiles[0]?.path || ''
                 setCurrentFilePath(newCurrentPath)
 
-                // 如果关闭后没有剩余文件，重置默认文件名为"未命名"
+                // 如果关闭后没有剩余文件，重置默认文件名
                 if (newFiles.length === 0) {
-                    updateDefaultFileName('未命名')
+                    updateDefaultFileName(t('untitled'))
                     setEditorCode('')
                     throttledEditorUpdate('')
                 } else {
@@ -404,7 +409,7 @@ export const useFileManager = () => {
 
             if (saveAs || hasNoOpenFile) {
                 // 另存为或保存新文件
-                const result = await fileApi.saveFileDialog(currentFile.name)
+                const result = await fileApi.saveFileDialog(currentFile.name, t, saveAs || hasNoOpenFile)
 
                 if (!result) return { success: false, canceled: true }
                 targetPath = result
@@ -427,7 +432,7 @@ export const useFileManager = () => {
             const fileEncoding = currentFile.encoding || 'UTF-8'
             const saveResult = await fileApi.saveFile(targetPath, contentToSave, fileEncoding)
             if (!saveResult.success) {
-                console.error('保存文件失败', saveResult.message)
+                console.error('Save file failed:', saveResult.message)
                 return { success: false, conflict: true, targetPath }
             }
 
@@ -472,7 +477,7 @@ export const useFileManager = () => {
             // 如果成功保存了临时文件，重置默认文件名但不清除编辑器内容
             if (hasNoOpenFile) {
                 // 立即更新状态，避免UI延迟
-                setDefaultFileName('未命名')
+                setDefaultFileName(t('untitled'))
                 // 注意：不清除编辑器内容，保持用户的编辑状态
             }
 
@@ -481,7 +486,7 @@ export const useFileManager = () => {
 
             return { success: true, path: targetPath }
         } catch (error) {
-            handleError('保存失败', error)
+            handleError('fileSaveFailed', error)
             return { success: false, error: error.message || '未知错误' }
         }
     }, [currentFilePath, openedFiles, editorCode, currentFile, closeFile, handlePathConflict, throttledEditorUpdate])
@@ -540,7 +545,7 @@ export const useFileManager = () => {
 
                 if (isTemp) {
                     // 如果是临时文件，调用另存为对话框
-                    const result = await fileApi.saveFileDialog(file.name)
+                    const result = await fileApi.saveFileDialog(file.name, t, true)
 
                     if (!result) {
                         // 用户取消了保存操作
@@ -634,7 +639,7 @@ export const useFileManager = () => {
 
             // 对于实际文件，使用文件系统API
             if (!oldPath || oldPath.trim() === '') {
-                handleError('重命名失败', '未提供有效的文件路径')
+                handleError('invalidFilePath', '')
                 return { success: false, message: '未提供有效的文件路径' }
             }
 
@@ -644,7 +649,7 @@ export const useFileManager = () => {
 
             const result = await fileApi.renameFile(oldPath, newPath)
             if (!result.success) {
-                handleError('重命名失败', result.message)
+                handleError('fileRenameFailed', result.message)
                 return { success: false, message: result.message }
             }
 
@@ -670,7 +675,7 @@ export const useFileManager = () => {
 
             return { success: true, newPath: actualNewPath }
         } catch (error) {
-            handleError('重命名失败', error)
+            handleError('fileRenameFailed', error)
             return { success: false, error: error.message }
         }
     }, [currentFilePath])
@@ -711,7 +716,7 @@ export const useFileManager = () => {
             // 更新缓存
             fileCache.set(filePath, fileContent)
         } catch (error) {
-            handleError('刷新文件内容失败', error)
+            handleError('refreshFileContentFailed', error)
         }
     }, [currentFilePath, throttledEditorUpdate])
 
@@ -762,7 +767,7 @@ export const useFileManager = () => {
                 await fileApi.updateFileLineEnding(filePath, lineEnding)
             }
         } catch (error) {
-            handleError('更新文件行尾序号失败', error)
+            handleError('updateFileLineEndingFailed', error)
         }
     }, [])
 
@@ -778,15 +783,15 @@ export const useFileManager = () => {
                 await setOpenFile(filePath)
             }
         } catch (error) {
-            handleError('切换文件失败', error)
+            handleError('switchFileFailed', error)
         }
     }, [openedFilesMap, switchFile, setOpenFile])
 
-    // 在编辑器启动时重置默认文件名为"未命名"
+    // 在编辑器启动时重置默认文件名
     useEffect(() => {
         // 当编辑器初始化时，如果没有打开的文件，重置默认文件名
         if (openedFiles.length === 0) {
-            updateDefaultFileName('未命名')
+            updateDefaultFileName(t('untitled'))
             throttledEditorUpdate('')
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps

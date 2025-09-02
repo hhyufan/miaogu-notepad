@@ -1,0 +1,219 @@
+{
+  "app": {
+    "title": "Miaogu Notepad",
+    "theme": {
+      "light": "Switch to light mode",
+      "dark": "Switch to dark mode"
+    }
+  },
+  "header": {
+    "file": "File",
+    "fileMenu": {
+      "new": "New File",
+      "open": "Open File",
+      "save": "Save File",
+      "saveAs": "Save As",
+      "rename": "Rename",
+      "close": "Close"
+    },
+    "edit": {
+      "undo": "Undo",
+      "redo": "Redo",
+      "cut": "Cut",
+      "copy": "Copy",
+      "paste": "Paste"
+    },
+    "view": {
+      "zoomIn": "Zoom In",
+      "zoomOut": "Zoom Out",
+      "resetZoom": "Reset Zoom"
+    },
+    "window": {
+      "minimize": "Minimize",
+      "maximize": "Maximize",
+      "restore": "Restore",
+      "close": "Close"
+    },
+    "settings": "Settings"
+  },
+  "common": {
+    "untitled": "Untitled",
+    "modified": "Modified",
+    "temporary": "Temporary File",
+    "loading": "Loading..."
+  },
+  "editor": {
+    "placeholder": "Start writing your code...",
+    "lineEnding": {
+      "title": "Line Ending",
+      "LF": "LF (Unix)",
+      "CRLF": "CRLF (Windows)",
+      "CR": "CR (Mac)"
+    },
+    "encoding": "Encoding",
+    "language": "Language",
+    "position": "Position",
+    "selection": "Selection",
+    "fontSize": "Font Size",
+    "fontFamily": "Font Family",
+    "lineHeight": "Line Height",
+    "wordWrap": "Word Wrap",
+    "minimap": "Minimap",
+    "lineNumbers": "Line Numbers",
+    "unsavedFile": "Unsaved File",
+    "decreaseFontSize": "Decrease Font Size",
+    "increaseFontSize": "Increase Font Size",
+    "lineColumn": "Line {{line}}, Column {{column}}"
+  },
+  "statusBar": {
+    "line": "Line",
+    "column": "Column",
+    "selected": "Selected",
+    "characters": "characters",
+    "zoom": "Zoom"
+  },
+  "settings": {
+    "title": "Settings",
+    "menu": {
+      "general": "General",
+      "editor": "Editor",
+      "appearance": "Appearance"
+    },
+    "general": {
+      "title": "General",
+      "theme": {
+        "title": "Theme Settings",
+        "mode": "Theme Mode",
+        "light": "Light Mode",
+        "dark": "Dark Mode"
+      },
+      "language": {
+        "title": "Language Settings",
+        "label": "Interface Language",
+        "zhCN": "简体中文",
+        "enUS": "English"
+      }
+    },
+    "editor": {
+      "title": "Editor",
+      "font": {
+        "title": "Font Settings",
+        "size": "Font Size",
+        "family": "Font Family",
+        "lineHeight": "Line Height"
+      }
+    },
+    "appearance": {
+      "title": "Appearance",
+      "background": {
+        "title": "Background Settings",
+        "enable": "Enable Background",
+        "upload": "Background Image",
+        "select": "Select Image",
+        "remove": "Clear",
+        "transparency": {
+          "dark": "Dark Opacity",
+          "light": "Light Opacity"
+        }
+      }
+    },
+    "language": {
+      "title": "Language",
+      "settings": "Language Settings",
+      "select": "Select Language"
+    },
+    "reset": "Reset",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saveSuccess": "Settings saved successfully",
+    "saveError": "Failed to save settings",
+    "resetSuccess": "Settings reset successfully",
+    "backgroundSuccess": "Background image set successfully",
+    "backgroundError": "Failed to select background image"
+  },
+  "dialog": {
+    "confirm": {
+      "title": "Confirm",
+      "unsavedChanges": "Unsaved Changes",
+      "saveBeforeClose": "Save changes before closing?",
+      "saveSelected": "Save Selected Files",
+      "discardChanges": "Discard Changes",
+      "cancel": "Cancel"
+    },
+    "newFile": {
+      "title": "New File",
+      "placeholder": "Enter file name",
+      "create": "Create",
+      "cancel": "Cancel"
+    },
+    "rename": {
+      "title": "Rename File",
+      "placeholder": "Enter new file name",
+      "confirm": "Confirm",
+      "cancel": "Cancel"
+    },
+    "fileFilter": {
+      "allFiles": "All Files",
+      "fileType": "{{type}} Files"
+    },
+    "fileDialog": {
+      "openFile": "Open File",
+      "saveFile": "Save File",
+      "saveAs": "Save As",
+      "selectImage": "Select Image"
+    },
+    "unsavedFiles": "Unsaved Files",
+    "dontSave": "Don't Save",
+    "saveSelectedFiles": "Save Selected Files ({{count}})",
+    "unsavedFilesMessage": "The following files have unsaved changes. Please select the files you want to save:"
+  },
+  "message": {
+    "success": {
+      "fileSaved": "File saved successfully",
+      "fileOpened": "File opened successfully",
+      "fileCreated": "File created successfully",
+      "fileRenamed": "File renamed successfully",
+      "settingsSaved": "Settings saved successfully",
+      "backgroundUploaded": "Background image uploaded successfully",
+      "backgroundSet": "Background image set successfully",
+      "backgroundRemoved": "Background image removed successfully"
+    },
+    "error": {
+      "fileOpenFailed": "Failed to open file",
+      "fileSaveFailed": "Failed to save file",
+      "fileCreateFailed": "Failed to create file",
+      "fileRenameFailed": "Failed to rename file",
+      "settingsSaveFailed": "Failed to save settings",
+      "backgroundUploadFailed": "Failed to upload background image",
+      "backgroundSelectFailed": "Failed to select background image",
+      "unsupportedFileType": "Unsupported file type",
+      "fileTypeNotSupported": "File {{fileName}} type is not supported",
+      "createTempFileFailed": "Failed to create temporary file",
+      "refreshFileContentFailed": "Failed to refresh file content",
+      "updateFileLineEndingFailed": "Failed to update file line ending",
+      "switchFileFailed": "Failed to switch file",
+      "invalidFilePath": "No valid file path provided",
+      "unknownError": "Unknown error"
+    },
+    "warning": {
+      "unsavedChanges": "Unsaved changes",
+      "fileNotFound": "File not found"
+    }
+  },
+  "shortcuts": {
+    "newFile": "Ctrl+N",
+    "openFile": "Ctrl+O",
+    "saveFile": "Ctrl+S",
+    "saveAs": "Ctrl+Shift+S",
+    "undo": "Ctrl+Z",
+    "redo": "Ctrl+Y",
+    "cut": "Ctrl+X",
+    "copy": "Ctrl+C",
+    "paste": "Ctrl+V",
+    "find": "Ctrl+F",
+    "replace": "Ctrl+H",
+    "zoomIn": "Ctrl+Plus",
+    "zoomOut": "Ctrl+Minus",
+    "resetZoom": "Ctrl+0"
+  }
+}

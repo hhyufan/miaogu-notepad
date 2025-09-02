@@ -23,7 +23,7 @@ class PersistenceManager {
       this.isInitialized = true;
 
     } catch (error) {
-      console.error('持久化管理器初始化失败:', error);
+      console.error('Persistence manager initialization failed:', error);
     }
   }
 
@@ -57,7 +57,7 @@ class PersistenceManager {
         window: windowState
       };
     } catch (error) {
-      console.error('恢复应用状态失败:', error);
+      console.error('Failed to restore app state:', error);
       return null;
     }
   }
@@ -73,7 +73,7 @@ class PersistenceManager {
       // 防抖保存，避免频繁写入
       this.debouncedSave(state);
     } catch (error) {
-      console.error('保存应用状态失败:', error);
+      console.error('Failed to save app state:', error);
     }
   }
 
@@ -158,7 +158,7 @@ class PersistenceManager {
 
 
     } catch (error) {
-      console.error('保存应用状态时出错:', error);
+      console.error('Error occurred while saving app state:', error);
     }
   }
 
@@ -171,7 +171,7 @@ class PersistenceManager {
     try {
       await settingsApi.set(key, value);
     } catch (error) {
-      console.error(`保存设置 ${key} 失败:`, error);
+      console.error(`Failed to save setting ${key}:`, error);
     }
   }
 
@@ -185,7 +185,7 @@ class PersistenceManager {
     try {
       return await settingsApi.get(key, defaultValue);
     } catch (error) {
-      console.error(`获取设置 ${key} 失败:`, error);
+      console.error(`Failed to get setting ${key}:`, error);
       return defaultValue;
     }
   }
@@ -198,7 +198,7 @@ class PersistenceManager {
       await settingsApi.clear();
 
     } catch (error) {
-      console.error('清除持久化数据失败:', error);
+      console.error('Failed to clear persistence data:', error);
     }
   }
 

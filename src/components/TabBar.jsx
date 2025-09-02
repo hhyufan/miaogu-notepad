@@ -1,10 +1,12 @@
 import './TabBar.scss'
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { EditOutlined, FileAddOutlined } from '@ant-design/icons'
-import { Tabs } from 'antd'
+import { Tabs, Dropdown } from 'antd'
+import { useI18n } from '../hooks/useI18n'
 
 const TabBar = ({ fileManager }) => {
+    const { t } = useI18n();
     const { 
         currentFile, 
         openedFiles, 
@@ -14,6 +16,7 @@ const TabBar = ({ fileManager }) => {
     
     const { theme, backgroundEnabled, backgroundImage } = useSelector(state => state.theme)
     const hasBackground = backgroundEnabled && backgroundImage
+    const [contextMenu, setContextMenu] = useState({ visible: false, tabKey: null })
 
     const onChange = useCallback((activeKey) => {
         switchToFile(activeKey)
@@ -24,6 +27,48 @@ const TabBar = ({ fileManager }) => {
             closeFileByPath(targetKey)
         }
     }, [closeFileByPath])
+
+    // 右键菜单处理函数
+    const handleCloseTab = useCallback((tabKey) => {
+        closeFileByPath(tabKey)
+        setContextMenu({ visible: false, tabKey: null })
+    }, [closeFileByPath])
+
+    const handleCloseOthers = useCallback((tabKey) => {
+        openedFiles.forEach(file => {
+            const fileKey = getFileKey(file)
+            if (fileKey !== tabKey) {
+                closeFileByPath(fileKey)
+            }
+        })
+        setContextMenu({ visible: false, tabKey: null })
+    }, [openedFiles, closeFileByPath])
+
+    const handleCloseAll = useCallback(() => {
+        openedFiles.forEach(file => {
+            closeFileByPath(getFileKey(file))
+        })
+        setContextMenu({ visible: false, tabKey: null })
+    }, [openedFiles, closeFileByPath])
+
+    // 右键菜单项
+    const contextMenuItems = [
+        {
+            key: 'close',
+            label: t('tabs.close'),
+            onClick: () => handleCloseTab(contextMenu.tabKey),
+        },
+        {
+            key: 'closeOthers',
+            label: t('tabs.closeOthers'),
+            onClick: () => handleCloseOthers(contextMenu.tabKey),
+        },
+        {
+            key: 'closeAll',
+            label: t('tabs.closeAll'),
+            onClick: () => handleCloseAll(),
+        },
+    ]
 
     // 生成唯一的文件标识符
     const getFileKey = useCallback((file) => {
@@ -38,21 +83,33 @@ const TabBar = ({ fileManager }) => {
     const items = useMemo(() => openedFiles.map((file) => ({
         key: getFileKey(file),
         label: (
-            <span>
-                {file.name}
-                {file.isTemporary ? (
-                    <FileAddOutlined
-                        style={{ marginLeft: '5px', fontSize: '12px', color: '#1890ff' }}
-                    />
-                ) : file.isModified ? (
-                    <EditOutlined
-                        style={{ marginLeft: '5px', fontSize: '12px', color: '#faad14' }}
-                    />
-                ) : null}
-            </span>
+            <Dropdown
+                menu={{ items: contextMenuItems }}
+                trigger={['contextMenu']}
+                onOpenChange={(visible) => {
+                    if (visible) {
+                        setContextMenu({ visible: true, tabKey: getFileKey(file) })
+                    } else {
+                        setContextMenu({ visible: false, tabKey: null })
+                    }
+                }}
+            >
+                <span>
+                    {file.name}
+                    {file.isTemporary ? (
+                        <FileAddOutlined
+                            style={{ marginLeft: '5px', fontSize: '12px', color: '#1890ff' }}
+                        />
+                    ) : file.isModified ? (
+                        <EditOutlined
+                            style={{ marginLeft: '5px', fontSize: '12px', color: '#faad14' }}
+                        />
+                    ) : null}
+                </span>
+            </Dropdown>
         ),
         closable: true
-    })), [openedFiles, getFileKey])
+    })), [openedFiles, getFileKey, contextMenuItems])
 
     // 设置标签栏高度CSS变量
     useEffect(() => {

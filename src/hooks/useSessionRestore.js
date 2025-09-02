@@ -65,7 +65,7 @@ export const useSessionRestore = () => {
 
 
       } catch (error) {
-        console.error('会话恢复失败:', error);
+        console.error('Session restore failed:', error);
         setRestoreError(error.message);
       } finally {
         setIsRestoring(false);
@@ -107,7 +107,7 @@ export const useSessionRestore = () => {
       }
 
     } catch (error) {
-      console.error('恢复主题设置失败:', error);
+      console.error('Failed to restore theme settings:', error);
     }
   };
 
@@ -170,7 +170,7 @@ export const useSessionRestore = () => {
         dispatch(setFormatOnType(editorSettings.formatOnType));
       }
     } catch (error) {
-      console.error('恢复编辑器设置失败:', error);
+      console.error('Failed to restore editor settings:', error);
     }
   };
 
@@ -218,10 +218,10 @@ export const useSessionRestore = () => {
                     originalContent: content
                   }));
                 } else {
-                  console.warn(`文件不存在，跳过恢复: ${fileInfo.path}`);
+                  console.warn(`File does not exist, skipping restore: ${fileInfo.path}`);
                 }
               } catch (timeoutError) {
-                console.warn(`文件操作超时，跳过恢复: ${fileInfo.path}`);
+                console.warn(`File operation timeout, skipping restore: ${fileInfo.path}`);
               }
             } else if (fileInfo.isTemporary) {
               // 恢复临时文件
@@ -232,7 +232,7 @@ export const useSessionRestore = () => {
               }));
             }
           } catch (error) {
-            console.error(`恢复文件失败: ${fileInfo.path}`, error);
+            console.error(`Failed to restore file: ${fileInfo.path}`, error);
           }
         }
 
@@ -242,7 +242,7 @@ export const useSessionRestore = () => {
         }
       }
     } catch (error) {
-      console.error('恢复文件状态失败:', error);
+      console.error('Failed to restore file state:', error);
     }
   };
 
@@ -255,7 +255,7 @@ export const useSessionRestore = () => {
       // 通常由Redux中间件自动处理
 
     } catch (error) {
-      console.error('手动保存会话失败:', error);
+      console.error('Failed to manually save session:', error);
     }
   };
 
@@ -267,7 +267,7 @@ export const useSessionRestore = () => {
       await persistenceManager.clearAll();
 
     } catch (error) {
-      console.error('清除会话数据失败:', error);
+      console.error('Failed to clear session data:', error);
     }
   };
 

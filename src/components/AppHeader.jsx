@@ -14,17 +14,19 @@ import {
 } from '@ant-design/icons';
 import './AppHeader.scss';
 import { useState, useEffect, useRef } from 'react';
+import { useI18n } from '../hooks/useI18n';
 import SettingsModal from './SettingsModal';
 
 const { Header } = Layout;
 const { Title, Text } = Typography;
 
 // 辅助函数
-const getFileNameFromPath = (path) => {
-    return path.split(/[\\/]/).pop() || 'Untitled';
+const getFileNameFromPath = (path, t) => {
+    return path.split(/[\/]/).pop() || t('untitled');
 };
 
 const AppHeader = ({ fileManager }) => {
+    const { t } = useI18n();
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [newFileName, setNewFileName] = useState('');
     const [isEditingFileName, setIsEditingFileName] = useState(false);
@@ -148,10 +150,10 @@ const AppHeader = ({ fileManager }) => {
 
             } else {
                 // 有文件保存失败
-                console.error('部分文件保存失败');
+                console.error('Some files failed to save');
             }
         } catch (error) {
-            console.error('保存文件时出错:', error);
+            console.error('Error occurred while saving files:', error);
         }
     };
 
@@ -188,9 +190,9 @@ const AppHeader = ({ fileManager }) => {
             return currentFile.name;
         }
         if (currentFile?.path) {
-            return getFileNameFromPath(currentFile.path);
+            return getFileNameFromPath(currentFile.path, t);
         }
-        return '未命名文件';
+        return t('untitled');
     };
 
     // 提取重复的文件重命名逻辑
@@ -277,28 +279,28 @@ const AppHeader = ({ fileManager }) => {
         {
             key: 'open',
             icon: <FolderOpenOutlined />,
-            label: '打开',
+            label: t('header.fileMenu.open'),
             onClick: handleOpenFile,
             extra: 'Ctrl + O'
         },
         {
             key: 'save',
             icon: <SaveOutlined />,
-            label: '保存',
+            label: t('header.fileMenu.save'),
             onClick: handleSaveFile,
             extra: 'Ctrl + S'
         },
         {
             key: 'saveAs',
             icon: <SaveFilled />,
-            label: '另存为',
+            label: t('header.fileMenu.saveAs'),
             onClick: handleSaveAsFile,
             extra: 'Ctrl + Shift + S'
         },
         {
             key: 'settings',
             icon: <SettingOutlined />,
-            label: '设置',
+            label: t('header.settings'),
             onClick: () => setIsSettingsVisible(true),
         },
     ];
@@ -309,7 +311,7 @@ const AppHeader = ({ fileManager }) => {
                 <div className="left-container">
                     <Dropdown menu={{ items: fileMenuItems }} trigger={['click']}>
                         <Button type="text" className="file-menu-btn">
-                            <FileOutlined /> 文件
+                            <FileOutlined /> {t('header.file')}
                         </Button>
                     </Dropdown>
                     <Button
@@ -386,19 +388,19 @@ const AppHeader = ({ fileManager }) => {
             {/* 新建文件模态框 */}
             <Modal
                 className="header-modal"
-                title="新建文件"
+                title={t('dialog.newFile.title')}
                 open={isModalVisible}
                 onOk={handleCreateFile}
                 onCancel={() => {
                     setIsModalVisible(false);
                     setNewFileName('');
                 }}
-                okText="创建"
-                cancelText="取消"
+                okText={t('dialog.newFile.create')}
+                cancelText={t('dialog.newFile.cancel')}
                 width={350}
             >
                 <Input
-                    placeholder="请输入文件名"
+                    placeholder={t('dialog.newFile.placeholder')}
                     value={newFileName}
                     onChange={(e) => setNewFileName(e.target.value)}
                     onPressEnter={handleCreateFile}
@@ -407,7 +409,7 @@ const AppHeader = ({ fileManager }) => {
             </Modal>
             <Modal
                 className="header-modal"
-                title="未保存的文件"
+                title={t('dialog.unsavedFiles')}
                 open={unsavedModalVisible}
                 onCancel={() => setUnsavedModalVisible(false)}
                 maskClosable={false}
@@ -427,7 +429,7 @@ const AppHeader = ({ fileManager }) => {
                             }).catch(console.error);
                         }}
                     >
-                        不保存
+                        {t('dialog.dontSave')}
                     </Button>,
                     <Button
                         key="save"
@@ -435,12 +437,12 @@ const AppHeader = ({ fileManager }) => {
                         disabled={selectedFiles.length === 0}
                         onClick={() => saveSelectedFiles(selectedFilesRef.current)}
                     >
-                        保存选中文件({selectedFiles.length})
+                        {t('dialog.saveSelectedFiles', { count: selectedFiles.length })}
                     </Button>
                 ]}
             >
                 <div className="unsaved-files-modal">
-                    <p>以下文件有未保存的更改，请选择要保存的文件：</p>
+                    <p>{t('dialog.unsavedFilesMessage')}</p>
                     <div className="file-checkbox-list">
                         {getUnsavedFiles().map((file) => (
                             <div key={file.path} className="file-checkbox-item">
