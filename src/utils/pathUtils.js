@@ -1,0 +1,110 @@
+// 路径处理工具函数
+
+/**
+ * 分割文件路径为路径段
+ * @param {string} filePath - 文件路径
+ * @returns {string[]} 路径段数组
+ */
+export const splitPath = (filePath) => {
+  if (!filePath || typeof filePath !== 'string') {
+    return []
+  }
+
+  // 处理Windows路径
+  if (/^[A-Z]:\\/i.test(filePath)) {
+    const parts = filePath.split('\\')
+    const drive = parts[0] + '\\' // 保留盘符格式如 "C:\\"
+    const restParts = parts.slice(1).filter(Boolean)
+    return [drive, ...restParts]
+  }
+  
+  // 处理Unix/Linux路径
+  if (filePath.startsWith('/')) {
+    const parts = filePath.split('/').filter(Boolean)
+    return parts
+  }
+  
+  // 处理相对路径
+  return filePath.split(/[\\/]/).filter(Boolean)
+}
+
+/**
+ * 构建完整路径
+ * @param {string[]} pathSegments - 路径段数组
+ * @param {number} index - 截止到的索引
+ * @returns {string} 完整路径
+ */
+export const buildFullPath = (pathSegments, index) => {
+  if (!pathSegments || index < 0 || index >= pathSegments.length) {
+    return ''
+  }
+
+  // Windows路径处理
+  if (pathSegments[0] && pathSegments[0].endsWith('\\')) {
+    const segments = pathSegments.slice(0, index + 1)
+    if (index === 0) {
+      return segments[0] // 返回 "C:\"
+    }
+    return segments[0] + segments.slice(1).join('\\')
+  }
+  
+  // Unix/Linux路径处理
+  const segments = pathSegments.slice(0, index + 1)
+  return '/' + segments.join('/')
+}
+
+/**
+ * 获取文件名（不含路径）
+ * @param {string} filePath - 文件路径
+ * @returns {string} 文件名
+ */
+export const getFileName = (filePath) => {
+  if (!filePath || typeof filePath !== 'string') {
+    return ''
+  }
+  return filePath.split(/[\\/]/).pop() || ''
+}
+
+/**
+ * 获取文件扩展名
+ * @param {string} fileName - 文件名
+ * @returns {string} 扩展名（包含点号）
+ */
+export const getFileExtension = (fileName) => {
+  if (!fileName || typeof fileName !== 'string') {
+    return ''
+  }
+  const lastDotIndex = fileName.lastIndexOf('.')
+  return lastDotIndex > 0 ? fileName.substring(lastDotIndex) : ''
+}
+
+/**
+ * 检查是否为目录路径（以分隔符结尾）
+ * @param {string} path - 路径
+ * @returns {boolean} 是否为目录
+ */
+export const isDirectoryPath = (path) => {
+  if (!path || typeof path !== 'string') {
+    return false
+  }
+  return path.endsWith('/') || path.endsWith('\\')
+}
+
+/**
+ * 规范化路径分隔符
+ * @param {string} path - 路径
+ * @param {string} separator - 目标分隔符（默认为系统分隔符）
+ * @returns {string} 规范化后的路径
+ */
+export const normalizePath = (path, separator = null) => {
+  if (!path || typeof path !== 'string') {
+    return ''
+  }
+  
+  // 如果没有指定分隔符，根据系统判断
+  if (!separator) {
+    separator = navigator.platform.toLowerCase().includes('win') ? '\\' : '/'
+  }
+  
+  return path.replace(/[\\/]/g, separator)
+}

@@ -1,0 +1,296 @@
+.settings-modal {
+  .ant-modal-body {
+    padding: 0;
+  }
+
+  .settings-container {
+    display: flex;
+    height: 500px;
+
+    .settings-menu {
+      width: 200px;
+      border-right: 1px solid var(--border-color);
+      background: var(--background-secondary);
+
+      .settings-menu-list {
+        border: none;
+        background: transparent;
+        height: 100%;
+
+        .ant-menu-item {
+          margin: 0;
+          border-radius: 0;
+
+          &:hover {
+            background: rgba(173, 216, 255, 0.15);
+            border-radius: 6px;
+            transition: all 0.2s ease;
+          }
+
+          &.ant-menu-item-selected {
+            background: rgba(173, 216, 255, 0.25);
+            color: #1677ff;
+            border-radius: 6px;
+
+            &::after {
+              display: none;
+            }
+          }
+        }
+      }
+    }
+
+    .settings-content {
+      flex: 1;
+      padding: 24px;
+      overflow-y: auto;
+      background: var(--background-primary);
+
+      .settings-section {
+        .ant-typography-title {
+          margin-bottom: 16px;
+          color: var(--text-primary);
+        }
+
+        .ant-card {
+          margin-bottom: 16px;
+          background: var(--background-secondary);
+          border-color: var(--border-color);
+
+          .ant-card-head {
+            border-bottom-color: var(--border-color);
+
+            .ant-card-head-title {
+              color: var(--text-primary);
+              font-size: 14px;
+              font-weight: 500;
+            }
+          }
+
+          .ant-card-body {
+            .setting-item {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 16px;
+
+              &:last-child {
+                margin-bottom: 0;
+              }
+
+              .ant-typography {
+                color: var(--text-primary);
+                margin: 0;
+                font-weight: 500;
+              }
+
+              .ant-input-number {
+                background: var(--background-primary);
+                border-color: var(--border-color);
+                color: var(--text-primary);
+
+                &:hover {
+                  border-color: var(--primary-color);
+                }
+
+                &:focus {
+                  border-color: var(--primary-color);
+                  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+                }
+
+                .ant-input-number-input {
+                  color: var(--text-primary);
+                }
+
+                .ant-input-number-handler-wrap {
+                  background: var(--background-secondary);
+                  border-left-color: var(--border-color);
+
+                  .ant-input-number-handler {
+                    border-color: var(--border-color);
+                    color: var(--text-secondary);
+
+                    &:hover {
+                      color: var(--primary-color);
+                    }
+                  }
+                }
+              }
+
+              .ant-select {
+                .ant-select-selector {
+                  background: var(--background-primary);
+                  border-color: var(--border-color);
+                  color: var(--text-primary);
+
+                  &:hover {
+                    border-color: var(--primary-color);
+                  }
+                }
+
+                &.ant-select-focused .ant-select-selector {
+                  border-color: var(--primary-color);
+                  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+                }
+
+                .ant-select-selection-item {
+                  color: var(--text-primary);
+                }
+
+                .ant-select-arrow {
+                  color: var(--text-secondary);
+                }
+              }
+
+              .ant-slider {
+                .ant-slider-rail {
+                  background: var(--background-tertiary);
+                }
+
+                .ant-slider-track {
+                  background: var(--primary-color);
+                }
+
+                .ant-slider-handle {
+                  border-color: var(--primary-color);
+
+                  &:hover {
+                    border-color: var(--primary-color);
+                  }
+
+                  &:focus {
+                    border-color: var(--primary-color);
+                    box-shadow: 0 0 0 5px rgba(24, 144, 255, 0.12);
+                  }
+                }
+              }
+
+              .ant-switch {
+                &.ant-switch-checked {
+                  background: var(--primary-color);
+                }
+
+                &:hover:not(.ant-switch-disabled) {
+                  background: var(--primary-color-hover);
+                }
+              }
+
+              .ant-upload {
+                .ant-btn {
+                  background: var(--background-primary);
+                  border-color: var(--border-color);
+                  color: var(--text-primary);
+
+                  &:hover {
+                    border-color: var(--primary-color);
+                    color: var(--primary-color);
+                  }
+                }
+              }
+
+              .ant-btn-text {
+                color: var(--text-secondary);
+
+                &:hover {
+                  color: #1677ff;
+                  background: rgba(173, 216, 255, 0.15);
+                  border-radius: 4px;
+                }
+
+                &.ant-btn-dangerous {
+                  color: var(--error-color);
+
+                  &:hover {
+                    color: var(--error-color-hover);
+                    background: rgba(255, 77, 79, 0.1);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// 暗色主题下的样式
+[data-theme="dark"] {
+  .settings-modal {
+    .settings-menu {
+      .settings-menu-list {
+        .ant-menu-item {
+          &:hover {
+            background: rgba(100, 150, 200, 0.2);
+            border-radius: 6px;
+            transition: all 0.2s ease;
+          }
+
+          &.ant-menu-item-selected {
+            background: rgba(100, 150, 200, 0.3);
+            color: #4da6ff;
+            border-radius: 6px;
+          }
+        }
+      }
+    }
+  }
+
+  .ant-select-dropdown {
+    background: var(--background-secondary);
+    border-color: var(--border-color);
+
+    .ant-select-item {
+      color: var(--text-primary);
+
+      &:hover {
+        background: rgba(100, 150, 200, 0.2);
+        border-radius: 4px;
+      }
+
+      &.ant-select-item-option-selected {
+        background: var(--primary-color);
+        color: white;
+      }
+    }
+  }
+
+  .ant-tooltip {
+    .ant-tooltip-inner {
+      background: var(--background-secondary);
+      color: var(--text-primary);
+    }
+
+    .ant-tooltip-arrow::before {
+      background: var(--background-secondary);
+    }
+  }
+}
+
+// 响应式设计
+@media (max-width: 768px) {
+  .settings-modal {
+    .settings-container {
+      flex-direction: column;
+      height: auto;
+
+      .settings-menu {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+
+        .settings-menu-list {
+          height: auto;
+
+          .ant-menu-item {
+            text-align: center;
+          }
+        }
+      }
+
+      .settings-content {
+        padding: 16px;
+      }
+    }
+  }
+}

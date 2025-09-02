@@ -1,0 +1,44 @@
+{
+  "name": "miaogu-notepad",
+  "private": true,
+  "version": "1.0.0",
+  "description": "A simple and beautiful notepad based on Tauri.",
+  "author": "hhyufan",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^5.2.6",
+    "@reduxjs/toolkit": "^2.0.1",
+    "@shikijs/monaco": "^3.12.0",
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-dialog": "^2",
+    "@tauri-apps/plugin-fs": "^2",
+    "@tauri-apps/plugin-opener": "^2",
+    "@tauri-apps/plugin-store": "^2",
+    "antd": "^5.10.0",
+    "mermaid": "^11.10.1",
+    "monaco-editor": "^0.52.2",
+    "prism-themes": "^1.9.0",
+    "prismjs": "^1.30.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-markdown": "^10.1.0",
+    "react-redux": "^9.0.4",
+    "redux-persist": "^6.0.0",
+    "remark-gfm": "^4.0.1",
+    "shiki": "^3.12.0"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2",
+    "@vitejs/plugin-react": "^4.6.0",
+    "sass-embedded": "^1.86.1",
+    "vite": "^6.2.4"
+  }
+}
