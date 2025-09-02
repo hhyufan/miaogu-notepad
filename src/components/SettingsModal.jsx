@@ -392,17 +392,19 @@ const SettingsModal = ({ visible, onClose }) => {
       open={visible}
       onCancel={onClose}
       width={800}
-      footer={[
-        <Button key="reset" onClick={handleReset}>
-          <ReloadOutlined /> {t('settings.reset')}
-        </Button>,
-        <Button key="cancel" onClick={onClose}>
-          {t('settings.cancel')}
-        </Button>,
-        <Button key="save" type="primary" onClick={saveSettings}>
-          {t('settings.save')}
-        </Button>,
-      ]}
+      footer={
+        <Space>
+          <Button key="reset" onClick={handleReset}>
+            <ReloadOutlined /> {t('settings.reset')}
+          </Button>
+          <Button key="cancel" onClick={onClose}>
+            {t('settings.cancel')}
+          </Button>
+          <Button key="save" type="primary" onClick={saveSettings}>
+            {t('settings.save')}
+          </Button>
+        </Space>
+      }
       className="settings-modal"
     >
       <div className="settings-container">
