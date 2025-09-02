@@ -22,7 +22,7 @@ const { Title, Text } = Typography;
 
 // 辅助函数
 const getFileNameFromPath = (path, t) => {
-    return path.split(/[\/]/).pop() || t('untitled');
+    return path.split(/[\/\\]/).pop() || t('untitled');
 };
 
 const AppHeader = ({ fileManager }) => {

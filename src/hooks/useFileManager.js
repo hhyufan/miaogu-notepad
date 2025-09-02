@@ -31,7 +31,7 @@ const throttle = (func, limit) => {
 
 // 获取文件名的工具函数
 const getFileName = (path, t) => {
-    return path.split(/[\/]/).pop() || t('untitled')
+    return path.split(/[\/\\]/).pop() || t('untitled')
 }
 
 // 获取文件扩展名的工具函数
