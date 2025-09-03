@@ -32,7 +32,9 @@
       "minimize": "最小化",
       "maximize": "最大化",
       "restore": "还原",
-      "close": "关闭"
+      "close": "关闭",
+      "pin": "置顶窗口",
+      "unpin": "取消置顶"
     },
     "settings": "设置"
   },
@@ -200,6 +202,10 @@
       "unsavedChanges": "有未保存的更改",
       "fileNotFound": "文件未找到"
     }
+  },
+  "window": {
+    "pin": "置顶窗口",
+    "unpin": "取消置顶"
   },
   "shortcuts": {
     "newFile": "Ctrl+N",

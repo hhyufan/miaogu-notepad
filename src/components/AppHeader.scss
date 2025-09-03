@@ -151,6 +151,40 @@
   color: white;
 }
 
+.window-control-btn.pin-btn {
+  color: var(--text-color);
+  margin-top: 2px;
+}
+
+.window-control-btn.pin-btn:hover {
+  background-color: var(--hover-background);
+}
+
+[data-theme='dark'] .window-control-btn.pin-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.window-control-btn.pin-btn.pinned {
+  color: var(--primary-color);
+}
+
+.window-control-btn.pin-btn.pinned:hover {
+  background-color: rgba(24, 144, 255, 0.1);
+}
+
+.pin-icon {
+  transition: transform 0.3s ease-in-out;
+  transform-origin: center;
+  width: 16px;
+  height: 16px;
+  color: inherit;
+  fill: currentColor;
+}
+
+.pin-icon.pinned {
+  transform: rotate(45deg);
+}
+
 .custom-button-warning {
   color: var(--warning-color);
   border-color: var(--warning-color);

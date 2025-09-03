@@ -212,6 +212,10 @@
       "fileNotFound": "File not found"
     }
   },
+  "window": {
+    "pin": "Pin Window",
+    "unpin": "Unpin Window"
+  },
   "shortcuts": {
     "newFile": "Ctrl+N",
     "openFile": "Ctrl+O",
