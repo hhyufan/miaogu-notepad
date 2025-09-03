@@ -392,7 +392,8 @@ const SettingsModal = ({ visible, onClose }) => {
       title={t('settings.title')}
       open={visible}
       onCancel={onClose}
-      width={800}
+      width="80%"
+      centered
       footer={
         <Space>
           <Button key="reset" onClick={handleReset}>
@@ -407,6 +408,9 @@ const SettingsModal = ({ visible, onClose }) => {
         </Space>
       }
       className="settings-modal"
+      styles={{
+        body: { maxHeight: '70vh', overflow: 'hidden' }
+      }}
     >
       <div className="settings-container">
         <div className="settings-menu">
