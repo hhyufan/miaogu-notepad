@@ -128,7 +128,7 @@ export const useFileManager = () => {
     const [currentFilePath, setCurrentFilePath] = useState('')
     const [openedFiles, setOpenedFiles] = useState([]) // 结构：{ path: string, name: string, isTemporary: boolean, isModified: boolean, content: string, originalContent: string }[]
     const [editorCode, setEditorCode] = useState('')
-    const [defaultFileName, setDefaultFileName] = useState(() => t('untitled'))
+    const [defaultFileName, setDefaultFileName] = useState(() => t('common.untitled'))
     const defaultFileNameRef = useRef(defaultFileName)
     const [fileWatchers, setFileWatchers] = useState(new Map())
 
@@ -510,7 +510,7 @@ export const useFileManager = () => {
 
                 // 如果关闭后没有剩余文件，自动创建新的临时文件
                 if (newFiles.length === 0) {
-                    updateDefaultFileName(t('untitled'))
+                    updateDefaultFileName(t('common.untitled'))
                     setEditorCode('')
                     throttledEditorUpdate('')
                     // 自动创建新的临时文件
@@ -1002,13 +1002,21 @@ export const useFileManager = () => {
 
     // 防止重复处理外部文件变更的标记
     const processingExternalChanges = useRef(new Set())
+    // 防止重复显示冲突modal的标记
+    const activeConflictModals = useRef(new Set())
 
     // 显示文件冲突解决对话框
     const showFileConflictDialog = useCallback(async (filePath) => {
+        // 如果该文件已经有冲突modal在显示，直接返回
+        if (activeConflictModals.current.has(filePath)) {
+            return 'current' // 默认保留当前版本
+        }
+
+        // 标记该文件的冲突modal正在显示
+        activeConflictModals.current.add(filePath)
+
         return new Promise((resolve) => {
             const fileName = filePath.split(/[\/]/).pop()
-
-
 
             try {
                 Modal.confirm({
@@ -1024,11 +1032,13 @@ export const useFileManager = () => {
                     okText: t('fileConflict.useExternal'),
                     cancelText: t('fileConflict.keepCurrent'),
                     onOk: () => {
-
+                        // 移除标记
+                        activeConflictModals.current.delete(filePath)
                         resolve('external')
                     },
                     onCancel: () => {
-
+                        // 移除标记
+                        activeConflictModals.current.delete(filePath)
                         resolve('current')
                     },
                     width: 480,
@@ -1037,6 +1047,8 @@ export const useFileManager = () => {
 
             } catch (error) {
                 console.error('Error calling Modal.confirm:', error)
+                // 移除标记
+                activeConflictModals.current.delete(filePath)
                 resolve('current') // 默认保留当前版本
             }
         })
