@@ -131,7 +131,7 @@ export const useFileManager = () => {
     const [defaultFileName, setDefaultFileName] = useState(() => t('untitled'))
     const defaultFileNameRef = useRef(defaultFileName)
     const [fileWatchers, setFileWatchers] = useState(new Map())
-    
+
     // 跟踪用户主动保存操作的ref
     const userSavingFiles = useRef(new Set())
 
@@ -189,15 +189,15 @@ export const useFileManager = () => {
             if (filePath) {
                 const now = Date.now()
                 const lastOpened = lastOpenedFileRef.current
-                
+
                 // 防止短时间内重复打开同一个文件（2秒内）
                 if (lastOpened.path === filePath && (now - lastOpened.timestamp) < 2000) {
                     return
                 }
-                
+
                 // 更新最后打开的文件信息
                 lastOpenedFileRef.current = { path: filePath, timestamp: now }
-                
+
                 try {
                     await setOpenFile(filePath)
                     // 文件关联打开成功
@@ -214,7 +214,7 @@ export const useFileManager = () => {
             const unlisten = listen('open-file', (event) => {
                 handleFileOpen(event.payload)
             })
-            
+
             // 清理监听器
             return () => {
                 unlisten.then(fn => fn())
@@ -264,17 +264,17 @@ export const useFileManager = () => {
     const cleanupEmptyTempFiles = useCallback(() => {
         setOpenedFiles((prev) => {
             // 查找空的临时文件（内容为空且未修改）
-            const emptyTempFiles = prev.filter(file => 
-                file.isTemporary && 
-                !file.isModified && 
+            const emptyTempFiles = prev.filter(file =>
+                file.isTemporary &&
+                !file.isModified &&
                 (file.content === '' || file.content === file.originalContent)
             )
-            
+
             if (emptyTempFiles.length === 0) return prev
-            
+
             // 移除空的临时文件
             const newFiles = prev.filter(file => !emptyTempFiles.includes(file))
-            
+
             // 如果当前文件是被清理的空临时文件之一，需要切换到其他文件
             const currentFileWasRemoved = emptyTempFiles.some(file => file.path === currentFilePath)
             if (currentFileWasRemoved && newFiles.length > 0) {
@@ -289,14 +289,14 @@ export const useFileManager = () => {
                 setEditorCode('')
                 throttledEditorUpdate('')
             }
-            
+
             return newFiles
         })
     }, [currentFilePath, throttledEditorUpdate])
 
     // 检查并关闭空的当前临时文件
     const closeEmptyCurrentTempFile = useCallback(() => {
-        if (currentFile && currentFile.isTemporary && !currentFile.isModified && 
+        if (currentFile && currentFile.isTemporary && !currentFile.isModified &&
             (currentFile.content === '' || currentFile.content === currentFile.originalContent)) {
             // 关闭当前空的临时文件
             setOpenedFiles((prev) => prev.filter(f => f.path !== currentFile.path))
@@ -392,7 +392,7 @@ export const useFileManager = () => {
         try {
             // 在创建新文件前，检查并关闭空的当前临时文件
             closeEmptyCurrentTempFile()
-            
+
             const finalFileName = fileName || defaultFileName
             // 生成临时文件路径
             const tempPath = `temp://${finalFileName}-${Date.now()}`
@@ -480,7 +480,7 @@ export const useFileManager = () => {
     const closeFile = useCallback((key) => {
         // 清除相关缓存
         fileCache.delete(`file_${key}`)
-        
+
         // 停止文件监听（仅对非临时文件）
         if (!key.startsWith('temp://')) {
             try {
@@ -532,7 +532,7 @@ export const useFileManager = () => {
     // 保存文件
     const saveFile = useCallback(async (saveAs = false) => {
         let targetPath = null // 初始化targetPath
-        
+
         try {
             const contentToSave = editorCode
             const hasNoOpenFile = !currentFilePath || currentFilePath.startsWith('temp://')
@@ -547,7 +547,7 @@ export const useFileManager = () => {
                 // 保存现有文件
                 targetPath = currentFilePath
             }
-            
+
             // 标记文件正在被用户主动保存
             userSavingFiles.current.add(targetPath)
 
@@ -573,7 +573,7 @@ export const useFileManager = () => {
 
             // 先更新当前文件路径，然后更新文件列表
             setCurrentFilePath(targetPath)
-            
+
             if (currentFilePath && openedFiles.some((file) => file.path === currentFilePath)) {
                 // 如果当前有打开的文件，更新它
                 setOpenedFiles((prev) =>
@@ -660,16 +660,16 @@ export const useFileManager = () => {
     // 检查未保存的临时文件和已修改文件
     const getUnsavedFiles = useCallback(() => {
         const unsavedFiles = openedFiles.filter((file) => file.isTemporary || file.isModified)
-        
+
         // 如果只有一个临时文件且内容为空，不触发未保存判断
         if (unsavedFiles.length === 1 && openedFiles.length === 1) {
             const singleFile = unsavedFiles[0]
-            if (singleFile.isTemporary && 
+            if (singleFile.isTemporary &&
                 (singleFile.content === '' || singleFile.content === singleFile.originalContent)) {
                 return []
             }
         }
-        
+
         return unsavedFiles
     }, [openedFiles])
 
@@ -903,20 +903,29 @@ export const useFileManager = () => {
                 throw new Error('文件路径和行尾序号不能为空')
             }
 
-            console.log(`正在更新文件行结束符: ${filePath} -> ${lineEnding}`)
+            // 标记文件正在被用户主动修改，避免外部文件变更冲突
+            userSavingFiles.current.add(filePath)
+
+            // 暂时停止文件监听，避免监听到自己的修改
+            if (fileApi && fileApi.stopFileWatching) {
+                try {
+                    await fileApi.stopFileWatching(filePath)
+                } catch (error) {
+                    console.warn('停止文件监听失败:', error)
+                }
+            }
 
             // 如果有Tauri API，先调用后端更新文件
             if (fileApi && fileApi.updateFileLineEnding) {
                 const result = await fileApi.updateFileLineEnding(filePath, lineEnding)
-                console.log('后端更新结果:', result)
-                
+
                 // 后端更新成功后，同步更新前端的编辑器内容
                 if (result && result.success) {
                     // 转换当前编辑器内容的行结束符
                     const convertLineEnding = (content, targetLineEnding) => {
                         // 先统一转换为LF
                         const normalizedContent = content.replace(/\r\n|\r/g, '\n')
-                        
+
                         // 然后转换为目标格式
                         switch (targetLineEnding) {
                             case 'CRLF':
@@ -928,22 +937,22 @@ export const useFileManager = () => {
                                 return normalizedContent
                         }
                     }
-                    
+
                     // 如果是当前文件，更新编辑器内容
                     if (filePath === currentFilePath) {
                         const convertedContent = convertLineEnding(editorCode, lineEnding)
                         setEditorCode(convertedContent)
                         throttledEditorUpdate(convertedContent)
                     }
-                    
+
                     // 更新文件状态中的行尾序号和内容
                     setOpenedFiles((prev) =>
                         prev.map((file) => {
                             if (file.path === filePath) {
                                 const convertedContent = convertLineEnding(file.content, lineEnding)
-                                return { 
-                                    ...file, 
-                                    lineEnding, 
+                                return {
+                                    ...file,
+                                    lineEnding,
                                     isModified: true,
                                     content: convertedContent
                                 }
@@ -956,6 +965,22 @@ export const useFileManager = () => {
         } catch (error) {
             console.error('更新文件行结束符失败:', error)
             handleError('updateFileLineEndingFailed', error)
+        } finally {
+            // 重新启动文件监听
+            if (fileApi && fileApi.startFileWatching) {
+                try {
+                    await fileApi.startFileWatching(filePath)
+
+                } catch (error) {
+                    console.warn('恢复文件监听失败:', error)
+                }
+            }
+
+            // 延迟移除标记，给文件系统更多时间来处理变更
+            setTimeout(() => {
+
+                userSavingFiles.current.delete(filePath)
+            }, 1000) // 减少到1秒，因为已经停止了监听
         }
     }, [currentFilePath, editorCode, throttledEditorUpdate])
 
@@ -982,9 +1007,9 @@ export const useFileManager = () => {
     const showFileConflictDialog = useCallback(async (filePath) => {
         return new Promise((resolve) => {
             const fileName = filePath.split(/[\/]/).pop()
-            console.log('showFileConflictDialog called for file:', fileName)
-            console.log('t function available:', typeof t)
-            
+
+
+
             try {
                 Modal.confirm({
                     title: t('dialog.confirm.title'),
@@ -999,17 +1024,17 @@ export const useFileManager = () => {
                     okText: t('fileConflict.useExternal'),
                     cancelText: t('fileConflict.keepCurrent'),
                     onOk: () => {
-                        console.log('User chose external version')
+
                         resolve('external')
                     },
                     onCancel: () => {
-                        console.log('User chose to keep current version')
+
                         resolve('current')
                     },
                     width: 480,
                     centered: true
                 })
-                console.log('Modal.confirm called successfully')
+
             } catch (error) {
                 console.error('Error calling Modal.confirm:', error)
                 resolve('current') // 默认保留当前版本
@@ -1022,74 +1047,66 @@ export const useFileManager = () => {
         try {
             // 防止重复处理同一个文件的变更
             if (processingExternalChanges.current.has(filePath)) {
-                console.log('Already processing external change for:', filePath)
+
                 return
             }
-            
+
             processingExternalChanges.current.add(filePath)
-            
-            console.log('handleExternalFileChange called for:', filePath)
+
+
             const currentFile = openedFilesMap.get(filePath)
-            console.log('Current file found:', currentFile ? 'yes' : 'no')
+
             if (!currentFile) {
-                console.log('File not in opened files, ignoring change')
+
                 processingExternalChanges.current.delete(filePath)
                 return
             }
-            
+
             // 检查文件是否有未保存的修改
-            console.log('File is modified:', currentFile.isModified)
-            console.log('File modification details:', {
-                isModified: currentFile.isModified,
-                isTemporary: currentFile.isTemporary,
-                contentLength: currentFile.content?.length || 0,
-                originalContentLength: currentFile.originalContent?.length || 0,
-                contentEquals: currentFile.content === currentFile.originalContent
-            })
-            
+
             if (currentFile.isModified) {
-                console.log('File is modified, checking if user is actively saving...')
-                console.log('User saving files set:', Array.from(userSavingFiles.current))
-                
+
+
+
                 // 如果用户正在主动保存该文件，跳过冲突检查
                 if (userSavingFiles.current.has(filePath)) {
-                    console.log('User is actively saving this file, ignoring conflict check')
+
                     processingExternalChanges.current.delete(filePath)
                     return
                 }
-                
+
                 // 显示冲突解决对话框
-                console.log('File is modified and user is not saving, showing conflict dialog')
-                console.log('About to call showFileConflictDialog with filePath:', filePath)
-                
+
+
+
                 try {
                     const userChoice = await showFileConflictDialog(filePath)
-                    console.log('Conflict dialog resolved with user choice:', userChoice)
-                    
+
+
                     if (userChoice === 'external') {
                         // 用户选择使用外部版本
-                        console.log('User chose external version, refreshing file content')
+
                         await refreshFileContent(filePath)
                     } else if (userChoice === 'current') {
                         // 用户选择保留当前版本，直接保存当前修改
-                        console.log('User chose to keep current version, saving modifications')
+
                         try {
                             // 如果是当前文件，保存当前编辑器内容
                             if (filePath === currentFilePath) {
-                                console.log('Saving current file via saveFile function')
+
                                 const saveResult = await saveFile(false)
                                 if (saveResult.success) {
-                                    console.log('Successfully saved current modifications')
+
                                 } else {
                                     console.error('Failed to save current modifications:', saveResult)
                                 }
                             } else {
                                 // 如果不是当前文件，保存该文件的内容
-                                console.log('Saving non-current file via fileApi.saveFile')
+
                                 const fileEncoding = currentFile.encoding || 'UTF-8'
                                 const saveResult = await fileApi.saveFile(filePath, currentFile.content, fileEncoding)
                                 if (saveResult.success) {
-                                    console.log('Successfully saved file modifications')
+
                                     // 更新文件状态
                                     setOpenedFiles((prev) =>
                                         prev.map((f) =>
@@ -1112,14 +1129,14 @@ export const useFileManager = () => {
                             console.error('Error saving file modifications:', error)
                         }
                     } else {
-                        console.log('Unexpected user choice from conflict dialog:', userChoice)
+
                     }
                 } catch (dialogError) {
                     console.error('Error in conflict dialog:', dialogError)
                 }
             } else {
                 // 文件未修改，直接同步外部变更
-                console.log('File not modified, syncing external changes')
+
                 await refreshFileContent(filePath)
             }
         } catch (error) {
@@ -1137,36 +1154,32 @@ export const useFileManager = () => {
     // 监听文件变更事件
     useEffect(() => {
         let unlisten = null
-        
+
         const setupListener = async () => {
             try {
-                console.log('Setting up file change listener...')
+
                 unlisten = await listen('file-changed', (event) => {
-                    console.log('=== FILE CHANGE EVENT RECEIVED ===')
-                    console.log('Event payload:', event.payload)
-                    console.log('Current opened files:', openedFiles.map(f => ({ path: f.path, isModified: f.isModified })))
-                    console.log('Current file path:', currentFilePath)
-                    
+
+
                     const { file_path } = event.payload
                     if (file_path) {
-                        console.log('Handling external file change for:', file_path)
-                        console.log('File exists in opened files:', openedFilesMap.has(file_path))
+
+
                         handleExternalFileChangeRef.current(file_path)
                     } else {
                         console.warn('File change event missing file_path:', event.payload)
                     }
                 })
-                console.log('File change listener setup successfully')
             } catch (error) {
                 console.warn('Failed to setup file change listener:', error)
             }
         }
-        
+
         setupListener()
 
         return () => {
             if (unlisten) {
-                console.log('Cleaning up file change listener')
+
                 unlisten()
             }
         }

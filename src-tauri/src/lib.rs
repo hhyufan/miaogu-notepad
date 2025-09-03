@@ -452,7 +452,6 @@ async fn rename_file(old_path: String, new_path: String) -> Result<FileOperation
 // 更新文件行尾序列
 #[tauri::command]
 async fn update_file_line_ending(file_path: String, line_ending: String) -> Result<FileOperationResult, String> {
-    println!("收到行结束符更新请求: {} -> {}", file_path, line_ending);
     if file_path.is_empty() {
         return Ok(FileOperationResult {
             success: false,
@@ -523,7 +522,6 @@ async fn update_file_line_ending(file_path: String, line_ending: String) -> Resu
 
             match fs::write(&file_path, &encoded_bytes) {
                 Ok(_) => {
-                    println!("文件行结束符更新成功: {} ({}字节)", file_path, encoded_bytes.len());
                     let file_name = path.file_name()
                         .and_then(|name| name.to_str())
                         .unwrap_or("未知文件")
