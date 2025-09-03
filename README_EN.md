@@ -4,9 +4,9 @@
 
 ![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB?logo=tauri) ![React](https://img.shields.io/badge/React-18.3.1-61DAFB?logo=react) ![Monaco Editor](https://img.shields.io/badge/Monaco_Editor-0.52.2-007ACC?logo=visualstudiocode) ![Vite](https://img.shields.io/badge/Vite-6.2.4-646CFF?logo=vite)![Ant Design](https://img.shields.io/badge/Ant_Design-5.10.0-0170FE?logo=antdesign)
 
-**Miaogu Notepad** is an ultra-lightweight code-highlighted notepad built with Tauri + React + Monaco Editor. It combines the performance advantages of desktop applications with the flexibility of modern web technologies, providing a clean and smooth text editing experience.
+**Miaogu Notepad** is an lightweight code-highlighted notepad built with Tauri + React + Monaco Editor. It combines the performance advantages of desktop applications with the flexibility of modern web technologies, providing a clean and smooth text editing experience.
 
-> ⚡**Tauri Lightweight Advantage**: Based on Rust + System WebView architecture, packaged as a **single exe file**, size **< 16MB**
+> ⚡**Tauri Lightweight Advantage**: Based on Rust + System WebView architecture, packaged as a **single exe file**, size **< 17MB**
 >
 > **Why can Tauri generate a single exe file?**
 >
@@ -21,9 +21,11 @@
 - **Smart Completion**: Context-aware code completion and suggestions
 - **Multi-tab Support**: Edit multiple files simultaneously with convenient tab management
 - **File Management**: Complete file operation support (new, open, save, rename, etc.)
+- **Window Always on Top**: Pin/unpin window, convenient for office work
+- **Open With**: Support setting this project as default opener / open files from terminal
 - **Theme Switching**: Built-in light/dark themes, adapting to different usage scenarios
 - **Single File Deployment**: Packaged as a single exe file, no installation required, download and use
-- **Ultra Lightweight**: Application size only **< 16MB**, 90%+ size reduction compared to Electron apps
+- **Ultra Lightweight**: Application size only **< 17MB**, 90%+ size reduction compared to Electron apps
 - **Zero Dependency Runtime**: No need to pre-install Node.js, .NET Framework, or other runtime environments
 
 ## 📸 Screenshots
