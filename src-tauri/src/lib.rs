@@ -50,11 +50,20 @@ fn detect_file_encoding(bytes: &[u8]) -> &'static Encoding {
 
 // 检测行尾序列
 fn detect_line_ending(content: &str) -> String {
-    if content.contains("\r\n") {
+    // 统计不同行结束符的数量
+    let crlf_count = content.matches("\r\n").count();
+    let lf_count = content.matches('\n').count() - crlf_count; // 减去CRLF中的LF
+    let cr_count = content.matches('\r').count() - crlf_count; // 减去CRLF中的CR
+    
+    // 根据数量最多的行结束符类型来判断
+    if crlf_count > 0 && crlf_count >= lf_count && crlf_count >= cr_count {
         "CRLF".to_string()
-    } else if content.contains('\r') && !content.contains('\n') {
+    } else if cr_count > 0 && cr_count >= lf_count {
         "CR".to_string()
+    } else if lf_count > 0 {
+        "LF".to_string()
     } else {
+        // 如果没有换行符，默认为LF
         "LF".to_string()
     }
 }
@@ -415,6 +424,7 @@ async fn rename_file(old_path: String, new_path: String) -> Result<FileOperation
 // 更新文件行尾序列
 #[tauri::command]
 async fn update_file_line_ending(file_path: String, line_ending: String) -> Result<FileOperationResult, String> {
+    println!("收到行结束符更新请求: {} -> {}", file_path, line_ending);
     if file_path.is_empty() {
         return Ok(FileOperationResult {
             success: false,
@@ -479,8 +489,13 @@ async fn update_file_line_ending(file_path: String, line_ending: String) -> Resu
                 }
             }
 
-            match fs::write(&file_path, &content) {
+            // 使用原始编码重新编码内容
+            let (encoded_bytes, _, _) = encoding.encode(&content);
+            let encoded_bytes = encoded_bytes.into_owned();
+
+            match fs::write(&file_path, &encoded_bytes) {
                 Ok(_) => {
+                    println!("文件行结束符更新成功: {} ({}字节)", file_path, encoded_bytes.len());
                     let file_name = path.file_name()
                         .and_then(|name| name.to_str())
                         .unwrap_or("未知文件")
@@ -492,7 +507,7 @@ async fn update_file_line_ending(file_path: String, line_ending: String) -> Resu
                         content: None,
                         file_path: Some(file_path),
                         file_name: Some(file_name),
-                        encoding: Some("UTF-8".to_string()),
+                        encoding: Some(encoding.name().to_string()),
                         line_ending: Some(line_ending),
                     })
                 },
@@ -671,6 +686,25 @@ async fn get_cli_args() -> Result<Vec<String>, String> {
             !arg.starts_with("--color") &&
             arg != "--" &&
             !arg.is_empty()
+        })
+        .map(|arg| {
+            // 将相对路径转换为绝对路径
+            let path = Path::new(&arg);
+            
+            // 检查是否为相对路径
+            if path.is_relative() {
+                // 获取当前工作目录
+                match std::env::current_dir() {
+                    Ok(current_dir) => {
+                        let absolute_path = current_dir.join(path);
+                        absolute_path.to_string_lossy().to_string()
+                    },
+                    Err(_) => arg // 如果获取当前目录失败，返回原始参数
+                }
+            } else {
+                // 如果已经是绝对路径，直接返回
+                arg
+            }
         })
         .collect();
 

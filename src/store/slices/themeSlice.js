@@ -2,7 +2,7 @@ import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
   theme: 'light', // 'light' | 'dark'
-  fontSize: 14,
+  fontSize: 20,
   fontFamily: 'JetBrains Mono',
   lineHeight: 1.2,
   backgroundImage: '',

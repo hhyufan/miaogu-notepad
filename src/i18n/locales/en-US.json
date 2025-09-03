@@ -46,9 +46,9 @@
     "placeholder": "Start writing your code...",
     "lineEnding": {
       "title": "Line Ending",
-      "LF": "LF (Unix)",
-      "CRLF": "CRLF (Windows)",
-      "CR": "CR (Mac)"
+      "LF": "LF (\\n)",
+      "CRLF": "CRLF (\\r\\n)",
+      "CR": "CR (\\r)"
     },
     "encoding": "Encoding",
     "language": "Language",

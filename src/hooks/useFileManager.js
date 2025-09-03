@@ -629,7 +629,18 @@ export const useFileManager = () => {
 
     // 检查未保存的临时文件和已修改文件
     const getUnsavedFiles = useCallback(() => {
-        return openedFiles.filter((file) => file.isTemporary || file.isModified)
+        const unsavedFiles = openedFiles.filter((file) => file.isTemporary || file.isModified)
+        
+        // 如果只有一个临时文件且内容为空，不触发未保存判断
+        if (unsavedFiles.length === 1 && openedFiles.length === 1) {
+            const singleFile = unsavedFiles[0]
+            if (singleFile.isTemporary && 
+                (singleFile.content === '' || singleFile.content === singleFile.originalContent)) {
+                return []
+            }
+        }
+        
+        return unsavedFiles
     }, [openedFiles])
 
     // 检查当前文件是否有未保存的修改
@@ -860,23 +871,61 @@ export const useFileManager = () => {
                 throw new Error('文件路径和行尾序号不能为空')
             }
 
-            // 更新文件状态中的行尾序号
-            setOpenedFiles((prev) =>
-                prev.map((file) =>
-                    file.path === filePath
-                        ? { ...file, lineEnding, isModified: true }
-                        : file
-                )
-            )
+            console.log(`正在更新文件行结束符: ${filePath} -> ${lineEnding}`)
 
-            // 如果有Tauri API，调用后端更新文件
+            // 如果有Tauri API，先调用后端更新文件
             if (fileApi && fileApi.updateFileLineEnding) {
-                await fileApi.updateFileLineEnding(filePath, lineEnding)
+                const result = await fileApi.updateFileLineEnding(filePath, lineEnding)
+                console.log('后端更新结果:', result)
+                
+                // 后端更新成功后，同步更新前端的编辑器内容
+                if (result && result.success) {
+                    // 转换当前编辑器内容的行结束符
+                    const convertLineEnding = (content, targetLineEnding) => {
+                        // 先统一转换为LF
+                        const normalizedContent = content.replace(/\r\n|\r/g, '\n')
+                        
+                        // 然后转换为目标格式
+                        switch (targetLineEnding) {
+                            case 'CRLF':
+                                return normalizedContent.replace(/\n/g, '\r\n')
+                            case 'CR':
+                                return normalizedContent.replace(/\n/g, '\r')
+                            case 'LF':
+                            default:
+                                return normalizedContent
+                        }
+                    }
+                    
+                    // 如果是当前文件，更新编辑器内容
+                    if (filePath === currentFilePath) {
+                        const convertedContent = convertLineEnding(editorCode, lineEnding)
+                        setEditorCode(convertedContent)
+                        throttledEditorUpdate(convertedContent)
+                    }
+                    
+                    // 更新文件状态中的行尾序号和内容
+                    setOpenedFiles((prev) =>
+                        prev.map((file) => {
+                            if (file.path === filePath) {
+                                const convertedContent = convertLineEnding(file.content, lineEnding)
+                                return { 
+                                    ...file, 
+                                    lineEnding, 
+                                    isModified: true,
+                                    content: convertedContent
+                                }
+                            }
+                            return file
+                        })
+                    )
+                }
             }
         } catch (error) {
+            console.error('更新文件行结束符失败:', error)
             handleError('updateFileLineEndingFailed', error)
         }
-    }, [])
+    }, [currentFilePath, editorCode, throttledEditorUpdate])
 
     // 切换到文件（用于面包屑点击）
     const switchToFile = useCallback(async (filePath) => {

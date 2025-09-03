@@ -353,7 +353,6 @@ const AppHeader = ({ fileManager }) => {
                             style={{ cursor: 'pointer' }}
                         >
                             {getCurrentFileName()}
-                            {currentFile?.isModified && ' *'}
                         </Title>
                     )}
                     {currentFile?.path && !currentFile?.isTemporary && (

@@ -46,9 +46,9 @@
     "placeholder": "开始编写您的代码...",
     "lineEnding": {
       "title": "行结束符",
-      "LF": "LF (Unix)",
-      "CRLF": "CRLF (Windows)",
-      "CR": "CR (Mac)"
+      "LF": "LF (\\n)",
+      "CRLF": "CRLF (\\r\\n)",
+      "CR": "CR (\\r)"
     },
     "encoding": "编码",
     "language": "语言",
