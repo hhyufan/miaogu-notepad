@@ -313,7 +313,7 @@ const EditorStatusBar = ({ fileManager }) => {
                     placement="topLeft"
                     overlayStyle={{
                         maxHeight: '265px',
-                        overflow: 'hidden'
+                        overflow: 'auto'
                     }}
                     onOpenChange={(open) => {
                         if (open) handleBreadcrumbClick(index).catch(() => {

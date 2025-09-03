@@ -1,3 +1,21 @@
+/* 全局禁用滚动条 */
+body {
+  overflow: hidden;
+  /* 隐藏滚动条但仍可滚动 */
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE 和 Edge */
+}
+
+/* 隐藏所有滚动条 */
+::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari 和 Opera */
+  width: 0;
+  height: 0;
+}
+
 :root {
   /* 亮色主题变量 */
   --editor-background-light: rgba(255, 255, 255, 0.5);
