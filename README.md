@@ -4,7 +4,7 @@
 
 ![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB?logo=tauri) ![React](https://img.shields.io/badge/React-18.3.1-61DAFB?logo=react) ![Monaco Editor](https://img.shields.io/badge/Monaco_Editor-0.52.2-007ACC?logo=visualstudiocode) ![Vite](https://img.shields.io/badge/Vite-6.2.4-646CFF?logo=vite) ![Ant Design](https://img.shields.io/badge/Ant_Design-5.10.0-0170FE?logo=antdesign)
 
-**喵咕记事本** 是一款基于 Tauri + React + Monaco Editor 构建的超轻量化代码高亮记事本。结合了桌面应用的性能优势和现代 Web 技术的灵活性，提供简洁、流畅的文本编辑体验。
+**喵咕记事本** 是一款基于 Tauri + React + Monaco Editor 构建的轻量化代码高亮记事本。结合了桌面应用的性能优势和现代 Web 技术的灵活性，提供简洁、流畅的文本编辑体验。
 
 >  ⚡**Tauri 轻量化优势**：基于 Rust + 系统 WebView 架构，打包生成 **单个 exe 文件**，体积 **< 16MB**
 >
