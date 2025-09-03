@@ -759,15 +759,11 @@ async fn start_file_watching(app_handle: AppHandle, file_path: String) -> Result
     let mut watcher = match notify::recommended_watcher(move |res: Result<Event, notify::Error>| {
         if let Ok(event) = res {
             match event.kind {
-                EventKind::Modify(_) | EventKind::Create(_) | EventKind::Remove(_) => {
+                // 只监听文件内容修改事件，忽略文件名变化（重命名）事件
+                EventKind::Modify(_) => {
                     for path in event.paths {
                         if path.to_string_lossy() == file_path_clone {
-                            let event_type = match event.kind {
-                                EventKind::Modify(_) => "modified",
-                                EventKind::Create(_) => "created",
-                                EventKind::Remove(_) => "deleted",
-                                _ => "unknown",
-                            };
+                            let event_type = "modified";
 
                             let timestamp = SystemTime::now()
                                 .duration_since(UNIX_EPOCH)
