@@ -23,7 +23,8 @@
         "closable": true,
         "center": true,
         "decorations": false,
-        "transparent": true
+        "transparent": true,
+         "devtools": true
       }
     ],
     "security": {
@@ -34,16 +35,94 @@
     "fs": null,
     "dialog": null,
     "store": null,
-    "opener": null
+    "opener": null,
+    "shell": {
+      "open": true,
+      "scope": [
+        {
+          "name": "execute-any",
+          "cmd": "cmd",
+          "args": true
+        },
+        {
+          "name": "powershell-any",
+          "cmd": "powershell",
+          "args": true
+        },
+        {
+          "name": "open-terminal",
+          "cmd": "wt",
+          "args": true
+        }
+      ]
+    }
   },
   "bundle": {
-    "active": false,
+    "active": true,
+    "targets": "all",
     "icon": [
-      "icons/icon.ico",
-      "icons/icon.icns",
       "icons/32x32.png",
       "icons/128x128.png",
-      "icons/128x128@2x.png"
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "fileAssociations": [
+      {
+        "ext": ["txt"],
+        "name": "Text File",
+        "description": "Plain text file"
+      },
+      {
+        "ext": ["md"],
+        "name": "Markdown File",
+        "description": "Markdown document"
+      },
+      {
+        "ext": ["js"],
+        "name": "JavaScript File",
+        "description": "JavaScript source file"
+      },
+      {
+        "ext": ["json"],
+        "name": "JSON File",
+        "description": "JSON data file"
+      },
+      {
+        "ext": ["html"],
+        "name": "HTML File",
+        "description": "HTML document"
+      },
+      {
+        "ext": ["css"],
+        "name": "CSS File",
+        "description": "CSS stylesheet"
+      },
+      {
+        "ext": ["py"],
+        "name": "Python File",
+        "description": "Python source file"
+      },
+      {
+        "ext": ["xml"],
+        "name": "XML File",
+        "description": "XML document"
+      },
+      {
+        "ext": ["log"],
+        "name": "Log File",
+        "description": "Log file"
+      },
+      {
+        "ext": ["cfg"],
+        "name": "Configuration File",
+        "description": "Configuration file"
+      },
+      {
+        "ext": ["ini"],
+        "name": "INI File",
+        "description": "INI configuration file"
+      }
     ]
   }
 }

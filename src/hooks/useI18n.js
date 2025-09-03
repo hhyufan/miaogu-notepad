@@ -15,7 +15,7 @@ export const useI18n = () => {
       // 保存到localStorage
       localStorage.setItem('miaogu-notepad-language', language);
     } catch (error) {
-      console.error('Failed to change language:', error);
+      // 静默处理语言切换错误
     }
   }, [i18n]);
 

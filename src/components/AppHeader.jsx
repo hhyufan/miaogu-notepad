@@ -92,7 +92,7 @@ const AppHeader = ({ fileManager }) => {
             const appWindow = getCurrentWindow();
             await appWindow.minimize();
         } catch (error) {
-            console.error('Failed to minimize window:', error);
+            // 静默处理窗口最小化错误
         }
     };
 
@@ -113,7 +113,7 @@ const AppHeader = ({ fileManager }) => {
                 setIsMaximized(true);
             }
         } catch (error) {
-            console.error('Failed to toggle maximize window:', error);
+            // 静默处理窗口最大化切换错误
         }
     };
 
@@ -150,10 +150,10 @@ const AppHeader = ({ fileManager }) => {
 
             } else {
                 // 有文件保存失败
-                console.error('Some files failed to save');
+                // 静默处理部分文件保存失败
             }
         } catch (error) {
-            console.error('Error occurred while saving files:', error);
+            // 静默处理文件保存错误
         }
     };
 
@@ -167,7 +167,7 @@ const AppHeader = ({ fileManager }) => {
             const appWindow = getCurrentWindow();
             await appWindow.close();
         } catch (error) {
-            console.error('Failed to close window:', error);
+            // 静默处理窗口关闭错误
         }
     };
 
@@ -207,7 +207,7 @@ const AppHeader = ({ fileManager }) => {
 
                 await renameFile(currentFile.path, editedFileName.trim());
             } catch (error) {
-                console.error('Failed to rename file:', error);
+                // 静默处理文件重命名错误
                 // 重命名失败时恢复原文件名
                 setEditedFileName(getCurrentFileName());
             }
@@ -231,7 +231,7 @@ const AppHeader = ({ fileManager }) => {
                     setIsMaximized(maximized);
                 });
             } catch (error) {
-                console.error('Failed to setup window listener:', error);
+                // 静默处理窗口监听器设置错误
             }
         };
         setupWindowListener().catch();
@@ -426,7 +426,7 @@ const AppHeader = ({ fileManager }) => {
                             import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
                                 const appWindow = getCurrentWindow();
                                 appWindow.close().catch();
-                            }).catch(console.error);
+                            }).catch(() => { });
                         }}
                     >
                         {t('dialog.dontSave')}

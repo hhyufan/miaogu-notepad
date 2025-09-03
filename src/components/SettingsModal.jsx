@@ -148,7 +148,7 @@ const SettingsModal = ({ visible, onClose }) => {
 
       message.success(t('settings.saveSuccess'));
     } catch (error) {
-      console.error('Failed to save settings:', error);
+      // 静默处理设置保存错误
       message.error(t('settings.saveError'));
     }
   }, [localSettings, setFontSize, setFontFamily, setLineHeight, setBackgroundImage, setBackgroundEnabled, setBackgroundTransparency]);
@@ -181,7 +181,7 @@ const SettingsModal = ({ visible, onClose }) => {
         message.success(t('settings.backgroundSuccess'));
       }
     } catch (error) {
-      console.error('选择背景图片失败:', error);
+      // 静默处理背景图片选择错误
       message.error(t('settings.backgroundError'));
     }
   }, [updateLocalSetting, t]);
@@ -198,7 +198,7 @@ const SettingsModal = ({ visible, onClose }) => {
       reader.readAsDataURL(file);
       return false; // 阻止默认上传行为
     } catch (error) {
-      console.error('上传背景图片失败:', error);
+      // 静默处理背景图片上传错误
       message.error('上传背景图片失败');
       return false;
     }

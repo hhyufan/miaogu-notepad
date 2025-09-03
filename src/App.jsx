@@ -5,7 +5,7 @@ import { Provider, useSelector } from 'react-redux';
 import { store } from './store';
 import { useTheme } from './hooks/redux';
 import { useI18n } from './hooks/useI18n';
-import { settingsApi } from './utils/tauriApi';
+import { settingsApi, appApi } from './utils/tauriApi';
 import { useSessionRestore } from './hooks/useSessionRestore';
 import AppHeader from './components/AppHeader';
 import TabBar from './components/TabBar';
@@ -20,7 +20,7 @@ const { Content } = Layout;
 // 内部组件，用于访问文件上下文
 const AppContent = ({ isDarkMode, toggleTheme, fileManager }) => {
   const { t } = useI18n();
-  
+
   return (
     <>
       <div className="theme-toggle">
@@ -67,13 +67,157 @@ const MainApp = () => {
 
     // 保存到Tauri设置
     if (window.__TAURI__) {
-      settingsApi.set('theme', newTheme).catch(error => {
-        console.error('Failed to save theme settings:', error);
+      settingsApi.set('theme', newTheme).catch(() => {
+        // Silently handle theme save errors
       });
     } else {
       localStorage.setItem('theme', newTheme);
     }
   }, [currentTheme, setTheme]);
+
+  // 手动测试CLI参数的函数
+  const testCliArgs = async () => {
+    try {
+      const args = await appApi.getCliArgs();
+      return args;
+    } catch (error) {
+      // Silently handle CLI args test errors
+      return [];
+    }
+  };
+
+  // 设置调试文件路径的函数
+  const setDebugFile = (filePath) => {
+    if (!window.__TAURI__) {
+      localStorage.setItem('miaogu-notepad-debug-file', filePath);
+    }
+  };
+
+  // 测试文件打开的函数
+  const testFileOpen = async () => {
+    try {
+      const args = await appApi.getCliArgs();
+
+      if (args && args.length > 0) {
+        const filePath = args[0];
+
+        // 检查文件是否存在
+        try {
+          await fileApi.fileExists(filePath);
+        } catch (error) {
+          // Silently handle file existence check errors
+        }
+
+        try {
+          await fileManager.setOpenFile(filePath);
+          return { success: true, filePath };
+        } catch (error) {
+          return { success: false, error };
+        }
+      } else {
+        // 检查开发模式下的调试文件
+        if (!hasTauri) {
+          const debugFile = localStorage.getItem('miaogu-notepad-debug-file');
+          if (debugFile) {
+            try {
+              await fileManager.setOpenFile(debugFile);
+              return { success: true, filePath: debugFile };
+            } catch (error) {
+              return { success: false, error };
+            }
+          }
+        }
+      }
+    } catch (error) {
+      return { success: false, error };
+    }
+    return { success: false };
+  };
+
+  // 用于跟踪是否已经处理过CLI参数
+  const cliArgsProcessedRef = useRef(false);
+
+  // 处理命令行参数中的文件路径 - 只在应用初始化时执行一次
+  useEffect(() => {
+    const handleCliArgs = async () => {
+      // 如果已经处理过CLI参数，直接返回
+      if (cliArgsProcessedRef.current) {
+        return;
+      }
+
+      // 在 Tauri v2 中，检查是否在 Tauri 环境中运行
+      const hasTauri = typeof window !== 'undefined' && window.__TAURI_INTERNALS__ !== undefined;
+
+      // 查看当前文件状态的函数
+      const showFileStatus = () => {
+        return {
+          currentFile: fileManager.currentFile,
+          openedFiles: fileManager.openedFiles,
+          editorContentLength: fileManager.currentCode?.length || 0
+        };
+      };
+
+      // 添加调试函数到window对象，方便调试
+      window.testCliArgs = testCliArgs;
+      window.setDebugFile = setDebugFile;
+      window.testFileOpen = testFileOpen;
+      window.showFileStatus = showFileStatus;
+
+      if (!isRestoring && !loading) {
+        // 标记CLI参数已开始处理
+        cliArgsProcessedRef.current = true;
+
+        // 尝试获取CLI参数（无论是否在Tauri环境中）
+        try {
+          const args = await appApi.getCliArgs();
+
+          if (args && args.length > 0) {
+            // 获取第一个参数作为文件路径
+            const filePath = args[0];
+
+            if (filePath && typeof filePath === 'string') {
+              // 检查文件是否存在
+              try {
+                await fileApi.fileExists(filePath);
+              } catch (error) {
+                // Silently handle file existence check errors
+              }
+
+              // 尝试打开文件
+              try {
+                await fileManager.setOpenFile(filePath);
+                return; // 成功打开文件，不需要创建新文件
+              } catch (error) {
+                // 静默处理CLI参数文件打开错误
+              }
+            }
+          }
+        } catch (error) {
+          // Silently handle CLI args errors in development mode
+        }
+
+        // 开发模式：检查localStorage中的调试文件
+        if (!window.__TAURI__) {
+          const debugFile = localStorage.getItem('miaogu-notepad-debug-file');
+          if (debugFile) {
+            try {
+              await fileManager.setOpenFile(debugFile);
+              return;
+            } catch (error) {
+              // 静默处理调试文件打开错误
+            }
+          }
+        }
+
+        // 如果没有命令行参数或打开失败，且没有其他打开的文件，则创建新文件
+        if (fileManager.openedFiles.length === 0) {
+          fileManager.createFile();
+        }
+      }
+    };
+
+    handleCliArgs();
+  }, [isRestoring, loading]); // 移除fileManager相关依赖，避免重复执行
 
 
 
@@ -101,7 +245,6 @@ const MainApp = () => {
           }
         }
       } catch (error) {
-        console.error('Failed to initialize app:', error);
         // 出错时使用默认设置
         if (!document.documentElement.getAttribute('data-theme')) {
           setTheme('light');

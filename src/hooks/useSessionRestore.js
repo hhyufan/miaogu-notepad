@@ -65,7 +65,6 @@ export const useSessionRestore = () => {
 
 
       } catch (error) {
-        console.error('Session restore failed:', error);
         setRestoreError(error.message);
       } finally {
         setIsRestoring(false);
@@ -107,7 +106,7 @@ export const useSessionRestore = () => {
       }
 
     } catch (error) {
-      console.error('Failed to restore theme settings:', error);
+      // Silently handle theme restore errors
     }
   };
 
@@ -170,7 +169,7 @@ export const useSessionRestore = () => {
         dispatch(setFormatOnType(editorSettings.formatOnType));
       }
     } catch (error) {
-      console.error('Failed to restore editor settings:', error);
+      // Silently handle editor settings restore errors
     }
   };
 
@@ -218,10 +217,10 @@ export const useSessionRestore = () => {
                     originalContent: content
                   }));
                 } else {
-                  console.warn(`File does not exist, skipping restore: ${fileInfo.path}`);
+                  // File does not exist, skip restore
                 }
               } catch (timeoutError) {
-                console.warn(`File operation timeout, skipping restore: ${fileInfo.path}`);
+                // File operation timeout, skip restore
               }
             } else if (fileInfo.isTemporary) {
               // 恢复临时文件
@@ -232,7 +231,7 @@ export const useSessionRestore = () => {
               }));
             }
           } catch (error) {
-            console.error(`Failed to restore file: ${fileInfo.path}`, error);
+            // Silently handle file restore errors
           }
         }
 
@@ -242,7 +241,7 @@ export const useSessionRestore = () => {
         }
       }
     } catch (error) {
-      console.error('Failed to restore file state:', error);
+      // Silently handle file state restore errors
     }
   };
 
@@ -255,7 +254,7 @@ export const useSessionRestore = () => {
       // 通常由Redux中间件自动处理
 
     } catch (error) {
-      console.error('Failed to manually save session:', error);
+      // Silently handle manual save errors
     }
   };
 
@@ -267,7 +266,7 @@ export const useSessionRestore = () => {
       await persistenceManager.clearAll();
 
     } catch (error) {
-      console.error('Failed to clear session data:', error);
+      // Silently handle clear session errors
     }
   };
 

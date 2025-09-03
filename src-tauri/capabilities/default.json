@@ -20,6 +20,18 @@
     "core:window:allow-set-resizable",
     "core:window:allow-set-title",
     "core:event:allow-listen",
-    "core:event:allow-unlisten"
+    "core:event:allow-unlisten",
+    "store:allow-get",
+    "store:allow-set",
+    "store:allow-has",
+    "store:allow-delete",
+    "store:allow-clear",
+    "store:allow-reset",
+    "store:allow-keys",
+    "store:allow-values",
+    "store:allow-entries",
+    "store:allow-length",
+    "store:allow-load",
+    "store:allow-save"
   ]
 }

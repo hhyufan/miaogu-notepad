@@ -113,7 +113,7 @@ const TabBar = ({ fileManager }) => {
 
     // 设置标签栏高度CSS变量
     useEffect(() => {
-        if (openedFiles.length === 0) {
+        if (openedFiles.length === 0 || (openedFiles.length === 1 && openedFiles[0].isTemporary)) {
             document.documentElement.style.setProperty('--tab-bar-height', '0px')
         } else {
             document.documentElement.style.setProperty('--tab-bar-height', '40px')
@@ -123,10 +123,10 @@ const TabBar = ({ fileManager }) => {
         return () => {
             document.documentElement.style.setProperty('--tab-bar-height', '0px')
         }
-    }, [openedFiles.length])
+    }, [openedFiles.length, openedFiles])
 
-    // 如果没有打开的文件，不渲染标签栏
-    if (openedFiles.length === 0) {
+    // 如果没有打开的文件，或者只有一个临时文件，不渲染标签栏
+    if (openedFiles.length === 0 || (openedFiles.length === 1 && openedFiles[0].isTemporary)) {
         return null
     }
 

@@ -13,18 +13,15 @@ const initStore = async () => {
   if (storeInitialized) return store;
   
   try {
-    if (typeof window !== 'undefined' && window.__TAURI__) {
+    if (typeof window !== 'undefined' && window.__TAURI_INTERNALS__ !== undefined) {
       store = new Store('settings.json');
       storeInitialized = true;
-      console.log('Tauri store initialized successfully');
     } else {
       // 在非 Tauri 环境中使用 localStorage 作为备用
       useLocalStorage = true;
       storeInitialized = true;
-      console.log('Using localStorage as fallback storage');
     }
   } catch (error) {
-    console.warn('Failed to initialize Tauri store, using localStorage:', error);
     useLocalStorage = true;
     storeInitialized = true;
   }
@@ -39,7 +36,6 @@ const localStorageStore = {
       const value = localStorage.getItem(`miaogu-notepad-${key}`);
       return value ? JSON.parse(value) : null;
     } catch (error) {
-      console.error('Failed to get from localStorage:', error);
       return null;
     }
   },
@@ -48,7 +44,6 @@ const localStorageStore = {
     try {
       localStorage.setItem(`miaogu-notepad-${key}`, JSON.stringify(value));
     } catch (error) {
-      console.error('Failed to set to localStorage:', error);
       throw error;
     }
   },
@@ -57,7 +52,6 @@ const localStorageStore = {
     try {
       localStorage.removeItem(`miaogu-notepad-${key}`);
     } catch (error) {
-      console.error('Failed to delete from localStorage:', error);
       throw error;
     }
   },
@@ -67,7 +61,6 @@ const localStorageStore = {
       const keys = Object.keys(localStorage).filter(key => key.startsWith('miaogu-notepad-'));
       keys.forEach(key => localStorage.removeItem(key));
     } catch (error) {
-      console.error('Failed to clear localStorage:', error);
       throw error;
     }
   },
@@ -87,7 +80,6 @@ const localStorageStore = {
       });
       return entries;
     } catch (error) {
-      console.error('Failed to get entries from localStorage:', error);
       return {};
     }
   },
@@ -111,7 +103,6 @@ export const fileApi = {
         }]
       });
     } catch (error) {
-      console.error('Failed to open file dialog:', error);
       throw error;
     }
   },
@@ -139,7 +130,6 @@ export const fileApi = {
         }]
       });
     } catch (error) {
-      console.error('Failed to open save dialog:', error);
       throw error;
     }
   },
@@ -173,7 +163,6 @@ export const fileApi = {
       
       return null;
     } catch (error) {
-      console.error('Failed to open image selection dialog:', error);
       throw error;
     }
   },
@@ -183,12 +172,6 @@ export const fileApi = {
     try {
       return await readTextFile(filePath);
     } catch (error) {
-      // 忽略回调相关的错误，避免控制台噪音
-      if (error.message && error.message.includes('callback id')) {
-        console.warn('Tauri callback interrupted, this is expected during page reloads');
-        throw new Error('Operation interrupted');
-      }
-      console.error('Failed to read file:', error);
       throw error;
     }
   },
@@ -207,7 +190,6 @@ export const fileApi = {
       const base64 = btoa(binary);
       return base64;
     } catch (error) {
-      console.error('Failed to read binary file:', error);
       throw error;
     }
   },
@@ -218,7 +200,6 @@ export const fileApi = {
       await writeTextFile(filePath, content);
       return { success: true };
     } catch (error) {
-      console.error('Failed to write file:', error);
       throw error;
     }
   },
@@ -228,12 +209,6 @@ export const fileApi = {
     try {
       return await exists(filePath);
     } catch (error) {
-      // 忽略回调相关的错误，避免控制台噪音
-      if (error.message && error.message.includes('callback id')) {
-        console.warn('Tauri callback interrupted, this is expected during page reloads');
-        return false;
-      }
-      console.error('Failed to check file existence:', error);
       return false;
     }
   },
@@ -248,12 +223,6 @@ export const fileApi = {
         lineEnding: result.line_ending || 'LF'
       };
     } catch (error) {
-      // 忽略回调相关的错误，避免控制台噪音
-      if (error.message && error.message.includes('callback id')) {
-        console.warn('Tauri callback interrupted, this is expected during page reloads');
-        throw new Error('Operation interrupted');
-      }
-      console.error('Failed to read file content:', error);
       throw error;
     }
   },
@@ -264,7 +233,6 @@ export const fileApi = {
       await invoke('write_file_content', { path: filePath, content });
       return { success: true };
     } catch (error) {
-      console.error('Failed to write file content:', error);
       throw error;
     }
   },
@@ -274,7 +242,6 @@ export const fileApi = {
     try {
       return await invoke('check_file_exists', { path: filePath });
     } catch (error) {
-      console.error('Failed to check file exists:', error);
       return false;
     }
   },
@@ -284,7 +251,6 @@ export const fileApi = {
     try {
       return await invoke('get_file_info', { path: filePath });
     } catch (error) {
-      console.error('Failed to get file info:', error);
       throw error;
     }
   },
@@ -296,7 +262,6 @@ export const fileApi = {
         lineEnding: lineEnding 
       });
     } catch (error) {
-      console.error('Failed to update file line ending:', error);
       throw error;
     }
   },
@@ -309,7 +274,6 @@ export const fileApi = {
       }
       return await invoke('set_open_file', { filePath: filePath });
     } catch (error) {
-      console.error('Failed to set open file:', error);
       throw error;
     }
   },
@@ -319,7 +283,6 @@ export const fileApi = {
     try {
       return await invoke('save_file', { filePath, content, encoding });
     } catch (error) {
-      console.error('Failed to save file:', error);
       throw error;
     }
   },
@@ -330,20 +293,44 @@ async getDirectoryContents(dirPath) {
       const contents = await invoke('get_directory_contents', { dirPath });
       return contents;
     } catch (error) {
-      console.error('Failed to get directory contents:', error);
       throw error;
     }
   },
 
   async renameFile(oldPath, newPath) {
     try {
-      const result = await invoke('rename_file', { oldPath, newPath });
-      return result;
+      return await invoke('rename_file', { oldPath, newPath });
     } catch (error) {
-      console.error('Failed to rename file:', error);
       throw error;
     }
-  }
+  },
+
+  // 执行文件
+  async executeFile(filePath) {
+    try {
+      return await invoke('execute_file', { filePath });
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // 在终端中打开
+  async openInTerminal(path) {
+    try {
+      return await invoke('open_in_terminal', { path });
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // 在资源管理器中显示
+   async showInExplorer(path) {
+     try {
+       return await invoke('show_in_explorer', { path });
+     } catch (error) {
+       throw error;
+     }
+   }
 };
 
 // 设置存储 API
@@ -354,13 +341,11 @@ export const settingsApi = {
       await initStore();
       const currentStore = useLocalStorage ? localStorageStore : store;
       if (!currentStore) {
-        console.warn('Store not available, returning default value for:', key);
         return defaultValue;
       }
       const value = await currentStore.get(key);
       return value !== null ? value : defaultValue;
     } catch (error) {
-      console.error('Failed to get setting:', error);
       return defaultValue;
     }
   },
@@ -371,13 +356,11 @@ export const settingsApi = {
       await initStore();
       const currentStore = useLocalStorage ? localStorageStore : store;
       if (!currentStore) {
-        console.warn('Store not available, setting not saved:', key, value);
         return;
       }
       await currentStore.set(key, value);
       await currentStore.save();
     } catch (error) {
-      console.error('Failed to set setting:', error);
       throw error;
     }
   },
@@ -388,13 +371,11 @@ export const settingsApi = {
       await initStore();
       const currentStore = useLocalStorage ? localStorageStore : store;
       if (!currentStore) {
-        console.warn('Store not available, cannot delete:', key);
         return;
       }
       await currentStore.delete(key);
       await currentStore.save();
     } catch (error) {
-      console.error('Failed to delete setting:', error);
       throw error;
     }
   },
@@ -405,13 +386,12 @@ export const settingsApi = {
       await initStore();
       const currentStore = useLocalStorage ? localStorageStore : store;
       if (!currentStore) {
-        console.warn('Store not available, cannot clear settings');
         return;
       }
       await currentStore.clear();
       await currentStore.save();
     } catch (error) {
-      console.error('Failed to clear settings:', error);
+      // Silently handle clear errors
     }
   },
 
@@ -421,12 +401,10 @@ export const settingsApi = {
       await initStore();
       const currentStore = useLocalStorage ? localStorageStore : store;
       if (!currentStore) {
-        console.warn('Store not available, returning empty object');
         return {};
       }
       return await currentStore.entries();
     } catch (error) {
-      console.error('Failed to get all settings:', error);
       return {};
     }
   }
@@ -439,8 +417,35 @@ export const appApi = {
     try {
       return await invoke('greet', { name });
     } catch (error) {
-      console.error('Failed to greet:', error);
       throw error;
+    }
+  },
+
+  // 获取命令行参数
+  async getCliArgs() {
+    try {
+      // 在Tauri环境中调用原生方法
+      if (typeof window !== 'undefined' && window.__TAURI_INTERNALS__ !== undefined) {
+        const args = await invoke('get_cli_args');
+        return args;
+      } else {
+        // 在开发环境中，从URL参数或localStorage获取模拟的文件路径
+        const urlParams = new URLSearchParams(window.location.search);
+        const fileParam = urlParams.get('file');
+        
+        // 检查localStorage中是否有调试用的文件路径
+        const debugFilePath = localStorage.getItem('miaogu-notepad-debug-file');
+        
+        if (fileParam) {
+          return [fileParam];
+        } else if (debugFilePath) {
+          return [debugFilePath];
+        } else {
+          return [];
+        }
+      }
+    } catch (error) {
+      return [];
     }
   }
 };

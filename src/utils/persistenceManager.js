@@ -23,7 +23,7 @@ class PersistenceManager {
       this.isInitialized = true;
 
     } catch (error) {
-      console.error('Persistence manager initialization failed:', error);
+      // Silently handle initialization errors
     }
   }
 
@@ -57,7 +57,6 @@ class PersistenceManager {
         window: windowState
       };
     } catch (error) {
-      console.error('Failed to restore app state:', error);
       return null;
     }
   }
@@ -73,7 +72,7 @@ class PersistenceManager {
       // 防抖保存，避免频繁写入
       this.debouncedSave(state);
     } catch (error) {
-      console.error('Failed to save app state:', error);
+      // Silently handle save errors
     }
   }
 
@@ -158,7 +157,7 @@ class PersistenceManager {
 
 
     } catch (error) {
-      console.error('Error occurred while saving app state:', error);
+      // Silently handle save operation errors
     }
   }
 
@@ -171,7 +170,7 @@ class PersistenceManager {
     try {
       await settingsApi.set(key, value);
     } catch (error) {
-      console.error(`Failed to save setting ${key}:`, error);
+      // Silently handle setting save errors
     }
   }
 
@@ -185,7 +184,6 @@ class PersistenceManager {
     try {
       return await settingsApi.get(key, defaultValue);
     } catch (error) {
-      console.error(`Failed to get setting ${key}:`, error);
       return defaultValue;
     }
   }
@@ -198,7 +196,7 @@ class PersistenceManager {
       await settingsApi.clear();
 
     } catch (error) {
-      console.error('Failed to clear persistence data:', error);
+      // Silently handle clear errors
     }
   }
 

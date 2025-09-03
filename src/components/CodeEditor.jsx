@@ -1,10 +1,11 @@
-import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {Empty} from 'antd';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Empty, message } from 'antd';
 import '../monaco-worker';
 import * as monaco from 'monaco-editor';
-import {shikiToMonaco} from '@shikijs/monaco';
-import {createHighlighter} from 'shiki';
-import {useEditor, useTheme} from '../hooks/redux';
+import { shikiToMonaco } from '@shikijs/monaco';
+import { createHighlighter } from 'shiki';
+import { useEditor, useTheme } from '../hooks/redux';
+import { fileApi } from '../utils/tauriApi';
 // 内联主题配置，只保留使用的One主题
 const themes = {
   'One': ['one-dark-pro', 'one-light']
@@ -20,6 +21,57 @@ function CodeEditor({ isDarkMode, fileManager }) {
   const { fontSize, fontFamily, lineHeight } = useTheme();
   const { wordWrap, scrollBeyondLastLine, tabSize, insertSpaces, minimap, lineNumbers, folding, matchBrackets, autoIndent, formatOnPaste, formatOnType, renderWhitespace, cursorBlinking, cursorStyle, glyphMargin, showFoldingControls } = useEditor();
   const { currentFile, updateCode: updateContent } = fileManager;
+
+  // 处理执行文件
+  const handleExecuteFile = useCallback(async () => {
+    if (!currentFile?.path) {
+      message.warning('请先保存文件');
+      return;
+    }
+
+    try {
+      const result = await fileApi.executeFile(currentFile.path);
+      message.success(result);
+    } catch (error) {
+      message.error(`执行失败: ${error}`);
+    }
+  }, [currentFile]);
+
+  // 处理在终端中打开
+  const handleOpenInTerminal = useCallback(async () => {
+    if (!currentFile?.path) {
+      message.warning('请先保存文件');
+      return;
+    }
+
+    try {
+      const result = await fileApi.openInTerminal(currentFile.path);
+      message.success(result);
+    } catch (error) {
+      message.error(`打开终端失败: ${error}`);
+    }
+  }, [currentFile]);
+
+  // 处理在资源管理器中显示
+  const handleShowInExplorer = useCallback(async () => {
+    if (!currentFile?.path) {
+      message.warning('请先保存文件');
+      return;
+    }
+
+    try {
+      const result = await fileApi.showInExplorer(currentFile.path);
+      message.success(result);
+    } catch (error) {
+      message.error(`打开资源管理器失败: ${error}`);
+    }
+  }, [currentFile]);
+
+  // 获取文件扩展名
+  const getFileExtension = useCallback((fileName) => {
+    if (!fileName) return '';
+    return fileName.split('.').pop()?.toLowerCase() || '';
+  }, []);
 
   // 获取编辑器主题 - 固定使用One主题
   const getEditorTheme = useCallback(() => {
@@ -91,7 +143,7 @@ function CodeEditor({ isDarkMode, fileManager }) {
           setHighlighterReady(true);
         }
       } catch (error) {
-        console.error('CodeEditor: Failed to initialize Shiki highlighter:', error);
+        // 静默处理Shiki高亮器初始化错误
         // 即使Shiki初始化失败，也允许编辑器正常工作
         if (mounted) {
           setHighlighterReady(true);
@@ -140,17 +192,55 @@ function CodeEditor({ isDarkMode, fileManager }) {
           roundedSelection: false,
           readOnly: false,
           cursorSmoothCaretAnimation: 'on',
-          contextmenu: true,
+          contextmenu: false, // 禁用默认右键菜单
           mouseWheelZoom: true,
           smoothScrolling: true,
           multiCursorModifier: 'ctrlCmd',
           accessibilitySupport: 'auto',
         });
 
+        // 添加自定义右键菜单
+        editorRef.current.addAction({
+          id: 'execute-file',
+          label: '执行文件',
+          contextMenuGroupId: 'file-operations',
+          contextMenuOrder: 1,
+          run: handleExecuteFile,
+          precondition: 'editorTextFocus'
+        });
+
+        editorRef.current.addAction({
+          id: 'open-in-terminal',
+          label: '在终端中打开',
+          contextMenuGroupId: 'file-operations',
+          contextMenuOrder: 2,
+          run: handleOpenInTerminal,
+          precondition: 'editorTextFocus'
+        });
+
+        editorRef.current.addAction({
+          id: 'show-in-explorer',
+          label: '在资源管理器中显示',
+          contextMenuGroupId: 'file-operations',
+          contextMenuOrder: 3,
+          run: handleShowInExplorer,
+          precondition: 'editorTextFocus'
+        });
+
+        // 添加分隔符
+        editorRef.current.addAction({
+          id: 'separator-1',
+          label: '',
+          contextMenuGroupId: 'file-operations',
+          contextMenuOrder: 4,
+          run: () => { },
+          precondition: null
+        });
+
 
 
       } catch (error) {
-        console.error('Failed to create Monaco editor:', error);
+        // 静默处理Monaco编辑器创建错误
       }
     }
 

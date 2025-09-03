@@ -1,11 +1,11 @@
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react'
-import {Breadcrumb, Button, Divider, Dropdown, Tooltip} from 'antd'
-import {FileOutlined, FolderOutlined, ZoomInOutlined, ZoomOutOutlined} from '@ant-design/icons'
-import {useCurrentFile, useFileActions} from '../hooks/useFileManager'
-import {useTheme} from '../hooks/redux'
-import {useI18n} from '../hooks/useI18n'
-import {fileApi, settingsApi} from '../utils/tauriApi'
-import {splitPath, buildFullPath} from '../utils/pathUtils'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Breadcrumb, Button, Divider, Dropdown, Tooltip } from 'antd'
+import { FileOutlined, FolderOutlined, ZoomInOutlined, ZoomOutOutlined } from '@ant-design/icons'
+import { useCurrentFile, useFileActions } from '../hooks/useFileManager'
+import { useTheme } from '../hooks/redux'
+import { useI18n } from '../hooks/useI18n'
+import { fileApi, settingsApi } from '../utils/tauriApi'
+import { splitPath, buildFullPath } from '../utils/pathUtils'
 import './EditorStatusBar.scss'
 
 // 编码标准化函数
@@ -221,7 +221,7 @@ const EditorStatusBar = ({ fileManager }) => {
             try {
                 await settingsApi.set('fontSize', validSize)
             } catch (error) {
-                console.error('Failed to save font size:', error)
+                // 静默处理字体大小保存错误
             }
         }
     }
@@ -307,7 +307,7 @@ const EditorStatusBar = ({ fileManager }) => {
             key: index,
             title: (
                 <Dropdown
-                    menu={{items: getDropdownItems(index)}}
+                    menu={{ items: getDropdownItems(index) }}
                     trigger={['click']}
                     placement="topLeft"
                     overlayStyle={{
@@ -319,7 +319,7 @@ const EditorStatusBar = ({ fileManager }) => {
                         })
                     }}
                 >
-                    <span style={{cursor: 'pointer'}}>
+                    <span style={{ cursor: 'pointer' }}>
                         {/^[A-Z]:\\$/i.test(segment) ? segment.substring(0, 2) : segment}
                     </span>
                 </Dropdown>
@@ -343,7 +343,7 @@ const EditorStatusBar = ({ fileManager }) => {
                 const fontSize = await settingsApi.get('fontSize', 14)
                 setFontSize(fontSize)
             } catch (error) {
-                console.error('Failed to load font size settings:', error)
+                // 静默处理字体大小加载错误
             }
         }
         loadFontSize().catch()

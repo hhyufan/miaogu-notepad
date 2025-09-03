@@ -1,5 +1,6 @@
 use std::fs;
 use std::path::Path;
+use std::process::Command;
 use serde::{Deserialize, Serialize};
 use encoding_rs::{Encoding, UTF_8};
 
@@ -37,12 +38,12 @@ fn detect_file_encoding(bytes: &[u8]) -> &'static Encoding {
     if bytes.starts_with(&[0xEF, 0xBB, 0xBF]) {
         return UTF_8;
     }
-    
+
     // 检查是否为有效的UTF-8
     if std::str::from_utf8(bytes).is_ok() {
         return UTF_8;
     }
-    
+
     // 默认使用UTF-8
     UTF_8
 }
@@ -67,7 +68,7 @@ async fn read_file_content(path: String) -> Result<FileOperationResult, String> 
             let (content, _, _) = encoding.decode(&bytes);
             let content_str = content.to_string();
             let line_ending = detect_line_ending(&content_str);
-            
+
             Ok(FileOperationResult {
                 success: true,
                 message: "文件读取成功".to_string(),
@@ -98,7 +99,7 @@ async fn write_file_content(path: String, content: String) -> Result<(), String>
             return Err(format!("Failed to create directory: {}", e));
         }
     }
-    
+
     match fs::write(&path, content) {
         Ok(_) => Ok(()),
         Err(e) => Err(format!("Failed to write file: {}", e)),
@@ -149,9 +150,9 @@ async fn set_open_file(file_path: String) -> Result<FileOperationResult, String>
             line_ending: None,
         });
     }
-    
+
     let path = Path::new(&file_path);
-    
+
     // 检查文件是否存在
     if !path.exists() {
         return Ok(FileOperationResult {
@@ -164,7 +165,7 @@ async fn set_open_file(file_path: String) -> Result<FileOperationResult, String>
             line_ending: None,
         });
     }
-    
+
     // 检查是否为目录
     if path.is_dir() {
         return Ok(FileOperationResult {
@@ -177,7 +178,7 @@ async fn set_open_file(file_path: String) -> Result<FileOperationResult, String>
             line_ending: None,
         });
     }
-    
+
     // 读取文件内容
     match fs::read(&file_path) {
         Ok(bytes) => {
@@ -189,7 +190,7 @@ async fn set_open_file(file_path: String) -> Result<FileOperationResult, String>
                 .and_then(|name| name.to_str())
                 .unwrap_or("未知文件")
                 .to_string();
-            
+
             Ok(FileOperationResult {
                 success: true,
                 message: "文件读取成功".to_string(),
@@ -226,9 +227,9 @@ async fn save_file(file_path: String, content: String, encoding: Option<String>)
             line_ending: None,
         });
     }
-    
+
     let path = Path::new(&file_path);
-    
+
     // 确保目录存在
     if let Some(parent) = path.parent() {
         if let Err(e) = fs::create_dir_all(parent) {
@@ -243,14 +244,14 @@ async fn save_file(file_path: String, content: String, encoding: Option<String>)
             });
         }
     }
-    
+
     // 确定使用的编码
     let target_encoding = encoding.as_deref().unwrap_or("UTF-8");
     let encoding_obj = Encoding::for_label(target_encoding.as_bytes()).unwrap_or(UTF_8);
-    
+
     // 将字符串编码为指定编码的字节
     let (encoded_bytes, _, _) = encoding_obj.encode(&content);
-    
+
     // 写入文件
     match fs::write(&file_path, &encoded_bytes) {
         Ok(_) => {
@@ -258,7 +259,7 @@ async fn save_file(file_path: String, content: String, encoding: Option<String>)
                 .and_then(|name| name.to_str())
                 .unwrap_or("未知文件")
                 .to_string();
-            
+
             Ok(FileOperationResult {
                 success: true,
                 message: "文件保存成功".to_string(),
@@ -285,15 +286,15 @@ async fn save_file(file_path: String, content: String, encoding: Option<String>)
 #[tauri::command]
 async fn get_directory_contents(dir_path: String) -> Result<Vec<FileInfo>, String> {
     let path = Path::new(&dir_path);
-    
+
     if !path.exists() {
         return Err("目录不存在".to_string());
     }
-    
+
     if !path.is_dir() {
         return Err("提供的路径不是目录".to_string());
     }
-    
+
     match fs::read_dir(path) {
         Ok(entries) => {
             let mut contents = Vec::new();
@@ -336,10 +337,10 @@ async fn rename_file(old_path: String, new_path: String) -> Result<FileOperation
             line_ending: None,
         });
     }
-    
+
     let old_file_path = Path::new(&old_path);
     let new_file_path = Path::new(&new_path);
-    
+
     // 检查源文件是否存在
     if !old_file_path.exists() {
         return Ok(FileOperationResult {
@@ -352,7 +353,7 @@ async fn rename_file(old_path: String, new_path: String) -> Result<FileOperation
             line_ending: None,
         });
     }
-    
+
     // 检查目标文件是否已存在
     if new_file_path.exists() {
         return Ok(FileOperationResult {
@@ -365,7 +366,7 @@ async fn rename_file(old_path: String, new_path: String) -> Result<FileOperation
             line_ending: None,
         });
     }
-    
+
     // 确保目标目录存在
     if let Some(parent) = new_file_path.parent() {
         if let Err(e) = fs::create_dir_all(parent) {
@@ -380,7 +381,7 @@ async fn rename_file(old_path: String, new_path: String) -> Result<FileOperation
             });
         }
     }
-    
+
     // 执行重命名操作
     match fs::rename(&old_path, &new_path) {
         Ok(_) => {
@@ -388,7 +389,7 @@ async fn rename_file(old_path: String, new_path: String) -> Result<FileOperation
                 .and_then(|name| name.to_str())
                 .unwrap_or("未知文件")
                 .to_string();
-            
+
             Ok(FileOperationResult {
                 success: true,
                 message: "文件重命名成功".to_string(),
@@ -439,7 +440,7 @@ async fn update_file_line_ending(file_path: String, line_ending: String) -> Resu
     }
 
     let path = Path::new(&file_path);
-    
+
     if !path.exists() {
         return Ok(FileOperationResult {
             success: false,
@@ -484,7 +485,7 @@ async fn update_file_line_ending(file_path: String, line_ending: String) -> Resu
                         .and_then(|name| name.to_str())
                         .unwrap_or("未知文件")
                         .to_string();
-                    
+
                     Ok(FileOperationResult {
                         success: true,
                         message: "文件行尾序列已更新".to_string(),
@@ -518,15 +519,169 @@ async fn update_file_line_ending(file_path: String, line_ending: String) -> Resu
     }
 }
 
+// 执行文件命令
+#[tauri::command]
+async fn execute_file(file_path: String) -> Result<String, String> {
+    let path = Path::new(&file_path);
+
+    if !path.exists() {
+        return Err("文件不存在".to_string());
+    }
+
+    if !path.is_file() {
+        return Err("路径不是文件".to_string());
+    }
+
+    // 获取文件扩展名
+    let extension = path.extension()
+        .and_then(|ext| ext.to_str())
+        .unwrap_or("");
+
+    match extension.to_lowercase().as_str() {
+        "exe" | "bat" | "cmd" => {
+            // 直接执行可执行文件
+            match Command::new(&file_path).spawn() {
+                Ok(_) => Ok(format!("成功启动文件: {}", file_path)),
+                Err(e) => Err(format!("执行文件失败: {}", e))
+            }
+        },
+        "ps1" => {
+            // PowerShell 脚本
+            match Command::new("powershell")
+                .args(["-ExecutionPolicy", "Bypass", "-File", &file_path])
+                .spawn() {
+                Ok(_) => Ok(format!("成功执行PowerShell脚本: {}", file_path)),
+                Err(e) => Err(format!("执行PowerShell脚本失败: {}", e))
+            }
+        },
+        "py" => {
+            // Python 脚本
+            match Command::new("python")
+                .arg(&file_path)
+                .spawn() {
+                Ok(_) => Ok(format!("成功执行Python脚本: {}", file_path)),
+                Err(e) => Err(format!("执行Python脚本失败: {}", e))
+            }
+        },
+        "js" => {
+            // JavaScript 文件
+            match Command::new("node")
+                .arg(&file_path)
+                .spawn() {
+                Ok(_) => Ok(format!("成功执行JavaScript文件: {}", file_path)),
+                Err(e) => Err(format!("执行JavaScript文件失败: {}", e))
+            }
+        },
+        _ => {
+             // 尝试使用系统默认程序打开
+             #[cfg(target_os = "windows")]
+             {
+                 match Command::new("cmd")
+                     .args(["/c", "start", "", &file_path])
+                     .spawn() {
+                     Ok(_) => Ok(format!("成功使用默认程序打开: {}", file_path)),
+                     Err(e) => Err(format!("打开文件失败: {}", e))
+                 }
+             }
+             #[cfg(not(target_os = "windows"))]
+             {
+                 Err("当前平台不支持此操作".to_string())
+             }
+         }
+    }
+}
+
+// 在终端中打开文件或目录
+#[tauri::command]
+async fn open_in_terminal(path: String) -> Result<String, String> {
+    let target_path = Path::new(&path);
+
+    if !target_path.exists() {
+        return Err("路径不存在".to_string());
+    }
+
+    // 确定工作目录
+    let work_dir = if target_path.is_file() {
+        target_path.parent().unwrap_or(target_path)
+    } else {
+        target_path
+    };
+
+    // 尝试使用 Windows Terminal
+    if let Ok(_) = Command::new("wt")
+        .args(["-d", work_dir.to_str().unwrap_or(".")])
+        .spawn() {
+        return Ok(format!("成功在Windows Terminal中打开: {}", work_dir.display()));
+    }
+
+    // 备用方案：使用 PowerShell
+    if let Ok(_) = Command::new("powershell")
+        .args(["-NoExit", "-Command", &format!("cd '{}'", work_dir.display())])
+        .spawn() {
+        return Ok(format!("成功在PowerShell中打开: {}", work_dir.display()));
+    }
+
+    // 最后备用方案：使用 cmd
+    match Command::new("cmd")
+        .args(["/k", &format!("cd /d {}", work_dir.display())])
+        .spawn() {
+        Ok(_) => Ok(format!("成功在命令提示符中打开: {}", work_dir.display())),
+        Err(e) => Err(format!("打开终端失败: {}", e))
+    }
+}
+
+// 在文件资源管理器中显示文件
+#[tauri::command]
+async fn show_in_explorer(path: String) -> Result<String, String> {
+    let target_path = Path::new(&path);
+
+    if !target_path.exists() {
+        return Err("路径不存在".to_string());
+    }
+
+    let args = if target_path.is_file() {
+        vec!["/select,".to_string(), path]
+    } else {
+        vec![path]
+    };
+
+    match Command::new("explorer").args(&args).spawn() {
+        Ok(_) => Ok("成功在资源管理器中显示".to_string()),
+        Err(e) => Err(format!("打开资源管理器失败: {}", e))
+    }
+}
+
 // 应用设置相关的命令
 #[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {}! Welcome to 喵咕记事本!", name)
 }
 
+// 获取命令行参数中的文件路径
+#[tauri::command]
+async fn get_cli_args() -> Result<Vec<String>, String> {
+    let args: Vec<String> = std::env::args().collect();
+
+    // 过滤掉Tauri开发模式的参数
+    let filtered_args: Vec<String> = args.into_iter()
+        .skip(1) // 跳过程序路径
+        .filter(|arg| {
+            // 过滤掉Tauri开发模式的参数
+            !arg.starts_with("--no-default-features") &&
+            !arg.starts_with("--color") &&
+            arg != "--" &&
+            !arg.is_empty()
+        })
+        .collect();
+
+    Ok(filtered_args)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let builder = tauri::Builder::default();
+
+    builder
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
@@ -541,7 +696,11 @@ pub fn run() {
             save_file,
             get_directory_contents,
             rename_file,
-            update_file_line_ending
+            update_file_line_ending,
+            execute_file,
+            open_in_terminal,
+            show_in_explorer,
+            get_cli_args
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
