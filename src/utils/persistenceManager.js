@@ -1,4 +1,5 @@
-import { settingsApi } from './tauriApi';
+import tauriApi from './tauriApi';
+const { settings: settingsApi } = tauriApi;
 
 /**
  * 持久化管理器

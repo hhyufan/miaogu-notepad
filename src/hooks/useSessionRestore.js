@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { persistenceManager } from '../utils/persistenceManager';
-import { fileApi } from '../utils/tauriApi';
+import tauriApi from '../utils/tauriApi';
+const { file: fileApi } = tauriApi;
 import {
   openFile,
   switchFile,

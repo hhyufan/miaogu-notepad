@@ -330,7 +330,34 @@ async getDirectoryContents(dirPath) {
      } catch (error) {
        throw error;
      }
-   }
+   },
+
+  // 开始文件监听
+  async startFileWatching(filePath) {
+    try {
+      return await invoke('start_file_watching', { filePath });
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // 停止文件监听
+  async stopFileWatching(filePath) {
+    try {
+      return await invoke('stop_file_watching', { filePath });
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // 检查文件外部变更
+  async checkFileExternalChanges(filePath) {
+    try {
+      return await invoke('check_file_external_changes', { filePath });
+    } catch (error) {
+      throw error;
+    }
+  }
 };
 
 // 设置存储 API

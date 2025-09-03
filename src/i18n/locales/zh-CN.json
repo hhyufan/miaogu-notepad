@@ -42,6 +42,11 @@
     "temporary": "临时文件",
     "loading": "加载中..."
   },
+  "tabs": {
+    "close": "关闭",
+    "closeOthers": "关闭其他",
+    "closeAll": "关闭全部"
+  },
   "editor": {
     "placeholder": "开始编写您的代码...",
     "lineEnding": {
@@ -119,6 +124,13 @@
     "resetSuccess": "设置已重置",
     "backgroundSuccess": "背景图片设置成功",
     "backgroundError": "选择背景图片失败"
+  },
+  "fileConflict": {
+    "fileConflictMessage": "文件 {{fileName}} 已被外部程序修改",
+    "fileConflictOptions": "点击确定使用外部修改版本，点击取消保留当前版本",
+    "chooseVersion": "请选择要保留的版本：",
+    "useExternal": "使用外部版本",
+    "keepCurrent": "保留当前版本"
   },
   "dialog": {
     "confirm": {

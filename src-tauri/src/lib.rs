@@ -1,8 +1,14 @@
 use std::fs;
 use std::path::Path;
 use std::process::Command;
+use std::sync::{Arc, Mutex};
+use std::collections::HashMap;
+use std::time::{SystemTime, UNIX_EPOCH};
 use serde::{Deserialize, Serialize};
 use encoding_rs::{Encoding, UTF_8};
+use notify::{Watcher, RecursiveMode, Event, EventKind};
+use once_cell::sync::Lazy;
+use tauri::{AppHandle, Emitter};
 
 // 文件信息结构体
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -54,7 +60,7 @@ fn detect_line_ending(content: &str) -> String {
     let crlf_count = content.matches("\r\n").count();
     let lf_count = content.matches('\n').count() - crlf_count; // 减去CRLF中的LF
     let cr_count = content.matches('\r').count() - crlf_count; // 减去CRLF中的CR
-    
+
     // 根据数量最多的行结束符类型来判断
     if crlf_count > 0 && crlf_count >= lf_count && crlf_count >= cr_count {
         "CRLF".to_string()
@@ -67,6 +73,28 @@ fn detect_line_ending(content: &str) -> String {
         "LF".to_string()
     }
 }
+
+// 文件变更事件结构体
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct FileChangeEvent {
+    file_path: String,
+    event_type: String, // "modified", "created", "deleted"
+    timestamp: u64,
+}
+
+// 文件监听器状态
+struct FileWatcherState {
+    watchers: HashMap<String, Box<dyn Watcher + Send>>,
+    watched_files: HashMap<String, u64>, // 文件路径 -> 最后修改时间
+}
+
+// 全局文件监听器状态
+static FILE_WATCHER_STATE: Lazy<Arc<Mutex<FileWatcherState>>> = Lazy::new(|| {
+    Arc::new(Mutex::new(FileWatcherState {
+        watchers: HashMap::new(),
+        watched_files: HashMap::new(),
+    }))
+});
 
 // 文件操作相关的命令
 #[tauri::command]
@@ -690,7 +718,7 @@ async fn get_cli_args() -> Result<Vec<String>, String> {
         .map(|arg| {
             // 将相对路径转换为绝对路径
             let path = Path::new(&arg);
-            
+
             // 检查是否为相对路径
             if path.is_relative() {
                 // 获取当前工作目录
@@ -709,6 +737,161 @@ async fn get_cli_args() -> Result<Vec<String>, String> {
         .collect();
 
     Ok(filtered_args)
+}
+
+// 开始监听文件变更
+#[tauri::command]
+async fn start_file_watching(app_handle: AppHandle, file_path: String) -> Result<bool, String> {
+    let path = Path::new(&file_path);
+    if !path.exists() {
+        return Err("文件不存在".to_string());
+    }
+    let app_handle_clone = app_handle.clone();
+    let file_path_clone = file_path.clone();
+
+    // 获取文件的初始修改时间
+    let initial_modified = match fs::metadata(&file_path) {
+        Ok(metadata) => metadata.modified()
+            .map(|time| time.duration_since(UNIX_EPOCH).unwrap_or_default().as_secs())
+            .unwrap_or(0),
+        Err(_) => 0,
+    };
+
+    // 创建文件监听器
+    let mut watcher = match notify::recommended_watcher(move |res: Result<Event, notify::Error>| {
+        if let Ok(event) = res {
+            match event.kind {
+                EventKind::Modify(_) | EventKind::Create(_) | EventKind::Remove(_) => {
+                    for path in event.paths {
+                        if path.to_string_lossy() == file_path_clone {
+                            let event_type = match event.kind {
+                                EventKind::Modify(_) => "modified",
+                                EventKind::Create(_) => "created",
+                                EventKind::Remove(_) => "deleted",
+                                _ => "unknown",
+                            };
+
+                            let timestamp = SystemTime::now()
+                                .duration_since(UNIX_EPOCH)
+                                .unwrap_or_default()
+                                .as_secs();
+
+                            // 检查是否需要发送事件（去重处理）
+                            let should_emit = {
+                                let mut state = FILE_WATCHER_STATE.lock().unwrap();
+                                if let Some(last_modified) = state.watched_files.get_mut(&file_path_clone) {
+                                    // 只有当文件修改时间发生变化时才发送事件
+                                    if let Ok(metadata) = fs::metadata(&path) {
+                                        if let Ok(modified_time) = metadata.modified() {
+                                            let current_modified = modified_time
+                                                .duration_since(UNIX_EPOCH)
+                                                .unwrap_or_default()
+                                                .as_secs();
+
+                                            if current_modified != *last_modified {
+                                                *last_modified = current_modified;
+                                                true
+                                            } else {
+                                                false
+                                            }
+                                        } else {
+                                            true // 无法获取修改时间，发送事件
+                                        }
+                                    } else {
+                                        true // 无法获取文件元数据，发送事件
+                                    }
+                                } else {
+                                    true // 文件不在监听列表中，发送事件
+                                }
+                            };
+
+                            if should_emit {
+                                let change_event = FileChangeEvent {
+                                    file_path: path.to_string_lossy().to_string(),
+                                    event_type: event_type.to_string(),
+                                    timestamp,
+                                };
+
+                                // 发送事件到前端
+                                let _ = app_handle_clone.emit("file-changed", &change_event);
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+    }) {
+        Ok(watcher) => watcher,
+        Err(e) => return Err(format!("创建文件监听器失败: {}", e)),
+    };
+
+    // 监听文件所在的目录
+    if let Some(parent_dir) = path.parent() {
+        if let Err(e) = watcher.watch(parent_dir, RecursiveMode::NonRecursive) {
+            return Err(format!("开始监听文件失败: {}", e));
+        }
+    } else {
+        return Err("无法获取文件所在目录".to_string());
+    }
+
+    // 保存监听器状态
+    {
+        let mut state = FILE_WATCHER_STATE.lock().unwrap();
+        state.watchers.insert(file_path.clone(), Box::new(watcher));
+        state.watched_files.insert(file_path.clone(), initial_modified);
+    }
+
+    Ok(true)
+}
+
+// 停止监听文件变更
+#[tauri::command]
+async fn stop_file_watching(file_path: String) -> Result<bool, String> {
+    let mut state = FILE_WATCHER_STATE.lock().unwrap();
+
+    if state.watchers.remove(&file_path).is_some() {
+        state.watched_files.remove(&file_path);
+        Ok(true)
+    } else {
+        Ok(false)
+    }
+}
+
+// 检查文件是否被外部修改
+#[tauri::command]
+async fn check_file_external_changes(file_path: String) -> Result<Option<FileChangeEvent>, String> {
+    let path = Path::new(&file_path);
+    if !path.exists() {
+        return Ok(Some(FileChangeEvent {
+            file_path: file_path.clone(),
+            event_type: "deleted".to_string(),
+            timestamp: SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs(),
+        }));
+    }
+
+    let current_modified = match fs::metadata(&file_path) {
+        Ok(metadata) => metadata.modified()
+            .map(|time| time.duration_since(UNIX_EPOCH).unwrap_or_default().as_secs())
+            .unwrap_or(0),
+        Err(_) => return Err("无法获取文件信息".to_string()),
+    };
+
+    let state = FILE_WATCHER_STATE.lock().unwrap();
+    if let Some(&last_modified) = state.watched_files.get(&file_path) {
+        if current_modified > last_modified {
+            return Ok(Some(FileChangeEvent {
+                file_path: file_path.clone(),
+                event_type: "modified".to_string(),
+                timestamp: current_modified,
+            }));
+        }
+    }
+
+    Ok(None)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -734,7 +917,10 @@ pub fn run() {
             execute_file,
             open_in_terminal,
             show_in_explorer,
-            get_cli_args
+            get_cli_args,
+            start_file_watching,
+            stop_file_watching,
+            check_file_external_changes
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

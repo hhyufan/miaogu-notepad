@@ -42,6 +42,11 @@
     "temporary": "Temporary File",
     "loading": "Loading..."
   },
+  "tabs": {
+    "close": "Close",
+    "closeOthers": "Close Others",
+    "closeAll": "Close All"
+  },
   "editor": {
     "placeholder": "Start writing your code...",
     "lineEnding": {
@@ -130,6 +135,13 @@
     "resetSuccess": "Settings reset successfully",
     "backgroundSuccess": "Background image set successfully",
     "backgroundError": "Failed to select background image"
+  },
+  "fileConflict": {
+    "fileConflictMessage": "File {{fileName}} has been modified by an external program",
+    "fileConflictOptions": "Click OK to use the external version, or Cancel to keep the current version",
+    "chooseVersion": "Please choose which version to keep:",
+    "useExternal": "Use External Version",
+    "keepCurrent": "Keep Current Version"
   },
   "dialog": {
     "confirm": {

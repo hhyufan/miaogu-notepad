@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Modal } from 'antd'
-import { fileApi } from '../utils/tauriApi'
+import tauriApi from '../utils/tauriApi';
+const { file: fileApi } = tauriApi;
 import { useI18n } from './useI18n'
 import { listen } from '@tauri-apps/api/event'
 
@@ -32,7 +33,7 @@ const throttle = (func, limit) => {
 
 // 获取文件名的工具函数
 const getFileName = (path, t) => {
-    return path.split(/[\/\\]/).pop() || t('untitled')
+    return path.split(/[\/\\]/).pop() || t('common.untitled')
 }
 
 // 获取文件扩展名的工具函数
@@ -131,6 +132,9 @@ export const useFileManager = () => {
     const defaultFileNameRef = useRef(defaultFileName)
     const [fileWatchers, setFileWatchers] = useState(new Map())
 
+    // 跟踪用户主动保存操作的ref
+    const userSavingFiles = useRef(new Set())
+
     // 性能优化：使用 Map 来快速查找文件
     const openedFilesMap = useMemo(() => {
         const map = new Map()
@@ -185,15 +189,15 @@ export const useFileManager = () => {
             if (filePath) {
                 const now = Date.now()
                 const lastOpened = lastOpenedFileRef.current
-                
+
                 // 防止短时间内重复打开同一个文件（2秒内）
                 if (lastOpened.path === filePath && (now - lastOpened.timestamp) < 2000) {
                     return
                 }
-                
+
                 // 更新最后打开的文件信息
                 lastOpenedFileRef.current = { path: filePath, timestamp: now }
-                
+
                 try {
                     await setOpenFile(filePath)
                     // 文件关联打开成功
@@ -210,7 +214,7 @@ export const useFileManager = () => {
             const unlisten = listen('open-file', (event) => {
                 handleFileOpen(event.payload)
             })
-            
+
             // 清理监听器
             return () => {
                 unlisten.then(fn => fn())
@@ -260,17 +264,17 @@ export const useFileManager = () => {
     const cleanupEmptyTempFiles = useCallback(() => {
         setOpenedFiles((prev) => {
             // 查找空的临时文件（内容为空且未修改）
-            const emptyTempFiles = prev.filter(file => 
-                file.isTemporary && 
-                !file.isModified && 
+            const emptyTempFiles = prev.filter(file =>
+                file.isTemporary &&
+                !file.isModified &&
                 (file.content === '' || file.content === file.originalContent)
             )
-            
+
             if (emptyTempFiles.length === 0) return prev
-            
+
             // 移除空的临时文件
             const newFiles = prev.filter(file => !emptyTempFiles.includes(file))
-            
+
             // 如果当前文件是被清理的空临时文件之一，需要切换到其他文件
             const currentFileWasRemoved = emptyTempFiles.some(file => file.path === currentFilePath)
             if (currentFileWasRemoved && newFiles.length > 0) {
@@ -285,14 +289,14 @@ export const useFileManager = () => {
                 setEditorCode('')
                 throttledEditorUpdate('')
             }
-            
+
             return newFiles
         })
     }, [currentFilePath, throttledEditorUpdate])
 
     // 检查并关闭空的当前临时文件
     const closeEmptyCurrentTempFile = useCallback(() => {
-        if (currentFile && currentFile.isTemporary && !currentFile.isModified && 
+        if (currentFile && currentFile.isTemporary && !currentFile.isModified &&
             (currentFile.content === '' || currentFile.content === currentFile.originalContent)) {
             // 关闭当前空的临时文件
             setOpenedFiles((prev) => prev.filter(f => f.path !== currentFile.path))
@@ -355,6 +359,15 @@ export const useFileManager = () => {
             // 缓存文件内容
             fileCache.set(filePath, fileContent)
 
+            // 开始监听文件变更（仅对非临时文件）
+            if (!filePath.startsWith('temp://')) {
+                try {
+                    await fileApi.startFileWatching(filePath)
+                } catch (error) {
+                    console.warn('Failed to start file watching:', error)
+                }
+            }
+
             // 检查并处理可能的路径冲突
             handlePathConflict(filePath)
         } catch (error) {
@@ -379,7 +392,7 @@ export const useFileManager = () => {
         try {
             // 在创建新文件前，检查并关闭空的当前临时文件
             closeEmptyCurrentTempFile()
-            
+
             const finalFileName = fileName || defaultFileName
             // 生成临时文件路径
             const tempPath = `temp://${finalFileName}-${Date.now()}`
@@ -468,6 +481,15 @@ export const useFileManager = () => {
         // 清除相关缓存
         fileCache.delete(`file_${key}`)
 
+        // 停止文件监听（仅对非临时文件）
+        if (!key.startsWith('temp://')) {
+            try {
+                fileApi.stopFileWatching(key)
+            } catch (error) {
+                console.warn('Failed to stop file watching:', error)
+            }
+        }
+
         setOpenedFiles((prev) => {
             // 查找要关闭的文件
             let fileToClose = prev.find(f => f.path === key)
@@ -509,11 +531,11 @@ export const useFileManager = () => {
 
     // 保存文件
     const saveFile = useCallback(async (saveAs = false) => {
+        let targetPath = null // 初始化targetPath
+
         try {
             const contentToSave = editorCode
             const hasNoOpenFile = !currentFilePath || currentFilePath.startsWith('temp://')
-
-            let targetPath
 
             if (saveAs || hasNoOpenFile) {
                 // 另存为或保存新文件
@@ -525,6 +547,9 @@ export const useFileManager = () => {
                 // 保存现有文件
                 targetPath = currentFilePath
             }
+
+            // 标记文件正在被用户主动保存
+            userSavingFiles.current.add(targetPath)
 
             // 检查是否与已打开的文件路径重复（不包括当前文件）
             const duplicateOpenedFile = openedFiles.find(
@@ -548,7 +573,7 @@ export const useFileManager = () => {
 
             // 先更新当前文件路径，然后更新文件列表
             setCurrentFilePath(targetPath)
-            
+
             if (currentFilePath && openedFiles.some((file) => file.path === currentFilePath)) {
                 // 如果当前有打开的文件，更新它
                 setOpenedFiles((prev) =>
@@ -585,7 +610,7 @@ export const useFileManager = () => {
             // 如果成功保存了临时文件，重置默认文件名但不清除编辑器内容
             if (hasNoOpenFile) {
                 // 立即更新状态，避免UI延迟
-                setDefaultFileName(t('untitled'))
+                setDefaultFileName(t('common.untitled'))
                 // 注意：不清除编辑器内容，保持用户的编辑状态
             }
 
@@ -596,6 +621,11 @@ export const useFileManager = () => {
         } catch (error) {
             handleError('fileSaveFailed', error)
             return { success: false, error: error.message || '未知错误' }
+        } finally {
+            // 清除保存标记
+            if (targetPath) {
+                userSavingFiles.current.delete(targetPath)
+            }
         }
     }, [currentFilePath, openedFiles, editorCode, currentFile, closeFile, handlePathConflict, throttledEditorUpdate])
 
@@ -630,16 +660,16 @@ export const useFileManager = () => {
     // 检查未保存的临时文件和已修改文件
     const getUnsavedFiles = useCallback(() => {
         const unsavedFiles = openedFiles.filter((file) => file.isTemporary || file.isModified)
-        
+
         // 如果只有一个临时文件且内容为空，不触发未保存判断
         if (unsavedFiles.length === 1 && openedFiles.length === 1) {
             const singleFile = unsavedFiles[0]
-            if (singleFile.isTemporary && 
+            if (singleFile.isTemporary &&
                 (singleFile.content === '' || singleFile.content === singleFile.originalContent)) {
                 return []
             }
         }
-        
+
         return unsavedFiles
     }, [openedFiles])
 
@@ -828,6 +858,7 @@ export const useFileManager = () => {
 
             // 如果刷新的是当前文件，更新编辑器内容
             if (currentFilePath === filePath) {
+                setEditorCode(fileContent)
                 throttledEditorUpdate(fileContent)
             }
 
@@ -857,6 +888,7 @@ export const useFileManager = () => {
 
         // 如果更新的是当前文件，同步编辑器内容
         if (currentFilePath === filePath) {
+            setEditorCode(newContent)
             throttledEditorUpdate(newContent)
         }
 
@@ -871,20 +903,18 @@ export const useFileManager = () => {
                 throw new Error('文件路径和行尾序号不能为空')
             }
 
-            console.log(`正在更新文件行结束符: ${filePath} -> ${lineEnding}`)
-
             // 如果有Tauri API，先调用后端更新文件
             if (fileApi && fileApi.updateFileLineEnding) {
                 const result = await fileApi.updateFileLineEnding(filePath, lineEnding)
-                console.log('后端更新结果:', result)
-                
+
+
                 // 后端更新成功后，同步更新前端的编辑器内容
                 if (result && result.success) {
                     // 转换当前编辑器内容的行结束符
                     const convertLineEnding = (content, targetLineEnding) => {
                         // 先统一转换为LF
                         const normalizedContent = content.replace(/\r\n|\r/g, '\n')
-                        
+
                         // 然后转换为目标格式
                         switch (targetLineEnding) {
                             case 'CRLF':
@@ -896,22 +926,22 @@ export const useFileManager = () => {
                                 return normalizedContent
                         }
                     }
-                    
+
                     // 如果是当前文件，更新编辑器内容
                     if (filePath === currentFilePath) {
                         const convertedContent = convertLineEnding(editorCode, lineEnding)
                         setEditorCode(convertedContent)
                         throttledEditorUpdate(convertedContent)
                     }
-                    
+
                     // 更新文件状态中的行尾序号和内容
                     setOpenedFiles((prev) =>
                         prev.map((file) => {
                             if (file.path === filePath) {
                                 const convertedContent = convertLineEnding(file.content, lineEnding)
-                                return { 
-                                    ...file, 
-                                    lineEnding, 
+                                return {
+                                    ...file,
+                                    lineEnding,
                                     isModified: true,
                                     content: convertedContent
                                 }
@@ -943,11 +973,198 @@ export const useFileManager = () => {
         }
     }, [openedFilesMap, switchFile, setOpenFile])
 
+    // 防止重复处理外部文件变更的标记
+    const processingExternalChanges = useRef(new Set())
+
+    // 显示文件冲突解决对话框
+    const showFileConflictDialog = useCallback(async (filePath) => {
+        return new Promise((resolve) => {
+            const fileName = filePath.split(/[\/]/).pop()
+
+
+
+            try {
+                Modal.confirm({
+                    title: t('dialog.confirm.title'),
+                    content: (
+                        <div>
+                            <p>{t('fileConflict.fileConflictMessage', { fileName })}</p>
+                            <p style={{ marginTop: '12px', fontSize: '14px', color: '#666' }}>
+                                {t('fileConflict.chooseVersion')}
+                            </p>
+                        </div>
+                    ),
+                    okText: t('fileConflict.useExternal'),
+                    cancelText: t('fileConflict.keepCurrent'),
+                    onOk: () => {
+
+                        resolve('external')
+                    },
+                    onCancel: () => {
+
+                        resolve('current')
+                    },
+                    width: 480,
+                    centered: true
+                })
+
+            } catch (error) {
+                console.error('Error calling Modal.confirm:', error)
+                resolve('current') // 默认保留当前版本
+            }
+        })
+    }, [t])
+
+    // 处理外部文件变更
+    const handleExternalFileChange = useCallback(async (filePath) => {
+        try {
+            // 防止重复处理同一个文件的变更
+            if (processingExternalChanges.current.has(filePath)) {
+
+                return
+            }
+
+            processingExternalChanges.current.add(filePath)
+
+
+            const currentFile = openedFilesMap.get(filePath)
+
+            if (!currentFile) {
+
+                processingExternalChanges.current.delete(filePath)
+                return
+            }
+
+            if (currentFile.isModified) {
+
+
+
+                // 如果用户正在主动保存该文件，跳过冲突检查
+                if (userSavingFiles.current.has(filePath)) {
+
+                    processingExternalChanges.current.delete(filePath)
+                    return
+                }
+
+                // 显示冲突解决对话框
+
+
+
+                try {
+                    const userChoice = await showFileConflictDialog(filePath)
+
+
+                    if (userChoice === 'external') {
+                        // 用户选择使用外部版本
+
+                        await refreshFileContent(filePath)
+                    } else if (userChoice === 'current') {
+                        // 用户选择保留当前版本，直接保存当前修改
+
+                        try {
+                            // 如果是当前文件，保存当前编辑器内容
+                            if (filePath === currentFilePath) {
+
+                                const saveResult = await saveFile(false)
+                                if (saveResult.success) {
+
+                                } else {
+                                    console.error('Failed to save current modifications:', saveResult)
+                                }
+                            } else {
+                                // 如果不是当前文件，保存该文件的内容
+
+                                const fileEncoding = currentFile.encoding || 'UTF-8'
+                                const saveResult = await fileApi.saveFile(filePath, currentFile.content, fileEncoding)
+                                if (saveResult.success) {
+
+                                    // 更新文件状态
+                                    setOpenedFiles((prev) =>
+                                        prev.map((f) =>
+                                            f.path === filePath
+                                                ? {
+                                                    ...f,
+                                                    originalContent: f.content,
+                                                    isModified: false,
+                                                    encoding: saveResult.encoding || fileEncoding,
+                                                    lineEnding: saveResult['line_ending'] || f.lineEnding || 'LF'
+                                                }
+                                                : f
+                                        )
+                                    )
+                                } else {
+                                    console.error('Failed to save file modifications:', saveResult)
+                                }
+                            }
+                        } catch (error) {
+                            console.error('Error saving file modifications:', error)
+                        }
+                    } else {
+
+                    }
+                } catch (dialogError) {
+                    console.error('Error in conflict dialog:', dialogError)
+                }
+            } else {
+                // 文件未修改，直接同步外部变更
+
+                await refreshFileContent(filePath)
+            }
+        } catch (error) {
+            console.error('Failed to handle external file change:', error)
+        } finally {
+            // 清除处理标记
+            processingExternalChanges.current.delete(filePath)
+        }
+    }, [openedFilesMap, refreshFileContent, showFileConflictDialog])
+
+    // 保存handleExternalFileChange的最新引用
+    const handleExternalFileChangeRef = useRef(handleExternalFileChange)
+    handleExternalFileChangeRef.current = handleExternalFileChange
+
+    // 监听文件变更事件
+    useEffect(() => {
+        let unlisten = null
+
+        const setupListener = async () => {
+            try {
+
+                unlisten = await listen('file-changed', (event) => {
+
+
+
+
+
+                    const { file_path } = event.payload
+                    if (file_path) {
+
+
+                        handleExternalFileChangeRef.current(file_path)
+                    } else {
+                        console.warn('File change event missing file_path:', event.payload)
+                    }
+                })
+
+            } catch (error) {
+                console.warn('Failed to setup file change listener:', error)
+            }
+        }
+
+        setupListener()
+
+        return () => {
+            if (unlisten) {
+
+                unlisten()
+            }
+        }
+    }, [])
+
     // 在编辑器启动时重置默认文件名
     useEffect(() => {
         // 当编辑器初始化时，如果没有打开的文件，重置默认文件名
         if (openedFiles.length === 0) {
-            updateDefaultFileName(t('untitled'))
+            updateDefaultFileName(t('common.untitled'))
             throttledEditorUpdate('')
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps

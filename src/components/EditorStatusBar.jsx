@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Breadcrumb, Button, Divider, Dropdown, Tooltip } from 'antd'
 import { FileOutlined, FolderOutlined, ZoomInOutlined, ZoomOutOutlined } from '@ant-design/icons'
-import { useCurrentFile, useFileActions } from '../hooks/useFileManager'
+import { useCurrentFile, useFileActions } from '../hooks/useFileManager.jsx'
 import { useTheme } from '../hooks/redux'
 import { useI18n } from '../hooks/useI18n'
-import { fileApi, settingsApi } from '../utils/tauriApi'
+import tauriApi from '../utils/tauriApi'
+const { file: fileApi, settings: settingsApi } = tauriApi
 import { splitPath, buildFullPath } from '../utils/pathUtils'
 import './EditorStatusBar.scss'
 

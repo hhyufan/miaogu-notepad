@@ -3,7 +3,8 @@ import { Modal, Menu, Button, InputNumber, Select, Switch, Slider, Card, Typogra
 import { UploadOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useTheme } from '../hooks/redux';
 import { useI18n } from '../hooks/useI18n';
-import { settingsApi, fileApi } from '../utils/tauriApi';
+import tauriApi from '../utils/tauriApi';
+const { settings: settingsApi, file: fileApi } = tauriApi;
 import './SettingsModal.scss';
 
 const { Title, Text } = Typography;

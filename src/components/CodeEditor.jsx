@@ -5,7 +5,8 @@ import * as monaco from 'monaco-editor';
 import { shikiToMonaco } from '@shikijs/monaco';
 import { createHighlighter } from 'shiki';
 import { useEditor, useTheme } from '../hooks/redux';
-import { fileApi } from '../utils/tauriApi';
+import tauriApi from '../utils/tauriApi';
+const { file: fileApi } = tauriApi;
 // 内联主题配置，只保留使用的One主题
 const themes = {
   'One': ['one-dark-pro', 'one-light']

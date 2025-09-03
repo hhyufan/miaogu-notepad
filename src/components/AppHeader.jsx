@@ -22,7 +22,7 @@ const { Title, Text } = Typography;
 
 // 辅助函数
 const getFileNameFromPath = (path, t) => {
-    return path.split(/[\/\\]/).pop() || t('untitled');
+    return path.split(/[\/\\]/).pop() || t('common.untitled');
 };
 
 const AppHeader = ({ fileManager }) => {
@@ -192,7 +192,7 @@ const AppHeader = ({ fileManager }) => {
         if (currentFile?.path) {
             return getFileNameFromPath(currentFile.path, t);
         }
-        return t('untitled');
+        return t('common.untitled');
     };
 
     // 提取重复的文件重命名逻辑

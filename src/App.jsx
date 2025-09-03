@@ -5,14 +5,15 @@ import { Provider, useSelector } from 'react-redux';
 import { store } from './store';
 import { useTheme } from './hooks/redux';
 import { useI18n } from './hooks/useI18n';
-import { settingsApi, appApi } from './utils/tauriApi';
+import tauriApi from './utils/tauriApi';
+const { settings: settingsApi, app: appApi } = tauriApi;
 import { useSessionRestore } from './hooks/useSessionRestore';
 import AppHeader from './components/AppHeader';
 import TabBar from './components/TabBar';
 import CodeEditor from './components/CodeEditor';
 import EditorStatusBar from './components/EditorStatusBar';
 
-import { useFileManager } from './hooks/useFileManager';
+import { useFileManager } from './hooks/useFileManager.jsx';
 import './App.scss';
 
 const { Content } = Layout;
