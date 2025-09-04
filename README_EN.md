@@ -4,7 +4,7 @@
 
 ![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB?logo=tauri) ![React](https://img.shields.io/badge/React-18.3.1-61DAFB?logo=react) ![Monaco Editor](https://img.shields.io/badge/Monaco_Editor-0.52.2-007ACC?logo=visualstudiocode) ![Vite](https://img.shields.io/badge/Vite-6.2.4-646CFF?logo=vite)![Ant Design](https://img.shields.io/badge/Ant_Design-5.10.0-0170FE?logo=antdesign)
 
-**Miaogu Notepad** is an lightweight code-highlighted notepad built with Tauri + React + Monaco Editor. It combines the performance advantages of desktop applications with the flexibility of modern web technologies, providing a clean and smooth text editing experience.
+**Miaogu Notepad** is an lightweight notepad built with Tauri + React + Monaco Editor. It combines the performance advantages of desktop applications with the flexibility of modern web technologies, integrating **AI Smart Completion Engine** to provide a clean, smooth, and intelligent code editing experience.
 
 > ⚡**Tauri Lightweight Advantage**: Based on Rust + System WebView architecture, packaged as a **single exe file**, size **< 17MB**
 >
@@ -17,12 +17,21 @@
 
 ## 🚀 Core Features
 
+### 🤖 AI Smart Completion
+- **Real-time Code Completion**: Context-aware intelligent code suggestions supporting multiple programming languages
+- **Inline Completion Display**: Code completion results displayed directly in the editor as gray text
+- **Smart Retry Mechanism**: Automatically handles network exceptions to ensure stable completion service
+- **Low-tolerance Filtering**: Intelligently filters invalid completions, providing high-quality code suggestions
+- **Configurable API**: Support for custom AI completion service endpoints and parameters
+
+### 💻 Editor Features
 - **Code Highlighting**: Professional-grade syntax highlighting based on Monaco Editor, supporting multiple programming languages
-- **Smart Completion**: Context-aware code completion and suggestions
 - **Multi-tab Support**: Edit multiple files simultaneously with convenient tab management
 - **File Management**: Complete file operation support (new, open, save, rename, etc.)
 - **Window Always on Top**: Pin/unpin window, convenient for office work
 - **Open With**: Support setting this project as default opener / open files from terminal
+
+### 🎨 Interface Experience
 - **Theme Switching**: Built-in light/dark themes, adapting to different usage scenarios
 - **Single File Deployment**: Packaged as a single exe file, no installation required, download and use
 - **Ultra Lightweight**: Application size only **< 17MB**, 90%+ size reduction compared to Electron apps
@@ -145,13 +154,13 @@ npm run tauri:build
 
 ### Editing Features
 
-- Syntax highlighting (supports JavaScript, TypeScript, HTML, CSS, JSON, Markdown, etc.)
+- AI Smart Completion
+- Syntax highlighting (supports mainstream programming languages.)
 - Code folding
 - Auto indentation
 - Bracket matching
 - Multi-cursor editing
 - Find and replace (`Ctrl+F`, `Ctrl+H`)
-
 ### Interface Features
 
 - Multi-tab management
@@ -163,9 +172,18 @@ npm run tauri:build
 
 Application settings are persistently stored via Tauri Store plugin, including:
 
+- **AI Completion Settings**: API endpoint configuration, completion toggle, retry parameters, etc.
 - **Theme Settings**: Light/dark mode switching
 - **Editor Configuration**: Font size, theme, auto-save, etc.
 - **Session Management**: Automatically restore last opened files
+
+### AI Completion Configuration
+
+Configurable in the settings panel:
+- **API Endpoint**: Custom AI completion service address
+- **Enable Status**: Turn AI completion feature on/off
+- **Request Timeout**: Set API request timeout duration
+- **Retry Count**: Automatic retry count for network exceptions
 
 ## 🤝 Contributing
 
