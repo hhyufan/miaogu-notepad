@@ -122,6 +122,17 @@
         }
       }
     },
+    "ai": {
+      "title": "AI Completion",
+      "enable": "Enable AI Completion",
+      "baseUrl": "Base URL",
+      "baseUrlPlaceholder": "e.g., https://api.openai.com",
+      "apiKey": "API Key",
+      "apiKeyPlaceholder": "sk-...",
+      "model": "Model",
+      "modelPlaceholder": "e.g., gpt-4o-mini, gpt-4.1, qwen-turbo, etc.",
+      "basicSettings": "Basic Settings"
+    },
     "language": {
       "title": "Language",
       "settings": "Language Settings",
@@ -134,7 +145,10 @@
     "saveError": "Failed to save settings",
     "resetSuccess": "Settings reset successfully",
     "backgroundSuccess": "Background image set successfully",
-    "backgroundError": "Failed to select background image"
+    "backgroundError": "Failed to select background image",
+    "aiSettingsUpdated": "AI settings updated",
+    "aiRequestFailed": "AI request failed",
+    "aiNotConfigured": "AI completion not configured"
   },
   "fileConflict": {
     "fileConflictMessage": "File {{fileName}} has been modified by an external program",

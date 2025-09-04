@@ -40,10 +40,60 @@
   pointer-events: none;
 }
 
+// Monaco Editor 内联建议样式
+.monaco-editor {
+  // 确保内联建议可见
+  .inline-completion-text-to-insert {
+    opacity: 0.6 !important;
+    color: #888 !important;
+    font-style: italic !important;
+  }
+  
+  // 幽灵文本样式
+  .ghost-text {
+    opacity: 0.6 !important;
+    color: #888 !important;
+    font-style: italic !important;
+  }
+  
+  // 内联建议装饰器
+  .inline-completion-text {
+    opacity: 0.6 !important;
+    color: #888 !important;
+    font-style: italic !important;
+  }
+  
+  // 确保内联建议不被隐藏
+  .suggest-widget {
+    z-index: 1000 !important;
+  }
+}
+
 // 暗色主题适配
 [data-theme="dark"] {
   .editor-empty-overlay {
     background: rgba(0, 0, 0, 0.8);
     color: var(--text-color-secondary-dark);
+  }
+  
+  // 暗色主题下的内联建议样式
+  .monaco-editor {
+    .inline-completion-text-to-insert {
+      opacity: 0.6 !important;
+      color: #aaa !important;
+      font-style: italic !important;
+    }
+    
+    .ghost-text {
+      opacity: 0.6 !important;
+      color: #aaa !important;
+      font-style: italic !important;
+    }
+    
+    .inline-completion-text {
+      opacity: 0.6 !important;
+      color: #aaa !important;
+      font-style: italic !important;
+    }
   }
 }

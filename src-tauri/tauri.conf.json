@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "miaogu-notepad",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "identifier": "com.hhyufan.miaogu-notepad",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -24,7 +24,7 @@
         "center": true,
         "decorations": false,
         "transparent": true,
-         "devtools": true
+        "devtools": true
       }
     ],
     "security": {
@@ -69,57 +69,79 @@
     ],
     "fileAssociations": [
       {
-        "ext": ["txt"],
+        "ext": [
+          "txt"
+        ],
         "name": "Text File",
         "description": "Plain text file"
       },
       {
-        "ext": ["md"],
+        "ext": [
+          "md"
+        ],
         "name": "Markdown File",
         "description": "Markdown document"
       },
       {
-        "ext": ["js"],
+        "ext": [
+          "js"
+        ],
         "name": "JavaScript File",
         "description": "JavaScript source file"
       },
       {
-        "ext": ["json"],
+        "ext": [
+          "json"
+        ],
         "name": "JSON File",
         "description": "JSON data file"
       },
       {
-        "ext": ["html"],
+        "ext": [
+          "html"
+        ],
         "name": "HTML File",
         "description": "HTML document"
       },
       {
-        "ext": ["css"],
+        "ext": [
+          "css"
+        ],
         "name": "CSS File",
         "description": "CSS stylesheet"
       },
       {
-        "ext": ["py"],
+        "ext": [
+          "py"
+        ],
         "name": "Python File",
         "description": "Python source file"
       },
       {
-        "ext": ["xml"],
+        "ext": [
+          "xml"
+        ],
         "name": "XML File",
         "description": "XML document"
       },
       {
-        "ext": ["log"],
+        "ext": [
+          "log"
+        ],
         "name": "Log File",
         "description": "Log file"
       },
       {
-        "ext": ["cfg"],
+        "ext": [
+          "cfg"
+        ],
         "name": "Configuration File",
         "description": "Configuration file"
       },
       {
-        "ext": ["ini"],
+        "ext": [
+          "ini"
+        ],
         "name": "INI File",
         "description": "INI configuration file"
       }

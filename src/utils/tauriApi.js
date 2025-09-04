@@ -11,21 +11,26 @@ let useLocalStorage = false;
 // 初始化 store
 const initStore = async () => {
   if (storeInitialized) return store;
-  
+
   try {
+
     if (typeof window !== 'undefined' && window.__TAURI_INTERNALS__ !== undefined) {
-      store = new Store('settings.json');
+
+      // 由于 Tauri Store API 存在兼容性问题，暂时使用 localStorage
+      useLocalStorage = true;
       storeInitialized = true;
     } else {
+
       // 在非 Tauri 环境中使用 localStorage 作为备用
       useLocalStorage = true;
       storeInitialized = true;
     }
   } catch (error) {
+    console.error('Store初始化失败，回退到localStorage:', error);
     useLocalStorage = true;
     storeInitialized = true;
   }
-  
+
   return store;
 };
 
@@ -39,15 +44,24 @@ const localStorageStore = {
       return null;
     }
   },
-  
+
   async set(key, value) {
     try {
-      localStorage.setItem(`miaogu-notepad-${key}`, JSON.stringify(value));
+      const storageKey = `miaogu-notepad-${key}`;
+      const serializedValue = JSON.stringify(value);
+
+      localStorage.setItem(storageKey, serializedValue);
+
     } catch (error) {
-      throw error;
+      console.error(`localStorage设置失败: ${key}`, error);
+      // 检查是否是存储空间不足
+      if (error.name === 'QuotaExceededError') {
+        throw new Error('存储空间不足，请清理浏览器缓存');
+      }
+      throw new Error(`localStorage设置失败: ${error.message}`);
     }
   },
-  
+
   async delete(key) {
     try {
       localStorage.removeItem(`miaogu-notepad-${key}`);
@@ -55,7 +69,7 @@ const localStorageStore = {
       throw error;
     }
   },
-  
+
   async clear() {
     try {
       const keys = Object.keys(localStorage).filter(key => key.startsWith('miaogu-notepad-'));
@@ -64,7 +78,7 @@ const localStorageStore = {
       throw error;
     }
   },
-  
+
   async entries() {
     try {
       const entries = {};
@@ -83,7 +97,7 @@ const localStorageStore = {
       return {};
     }
   },
-  
+
   async save() {
     // localStorage 自动保存，无需额外操作
   }
@@ -115,12 +129,12 @@ export const fileApi = {
       if (defaultName && !defaultName.includes('.')) {
         finalDefaultName = `${defaultName}.txt`;
       }
-      
+
       // 根据是否是新文件来决定标题
-      const title = isNewFile 
+      const title = isNewFile
         ? (t ? t('dialog.fileDialog.saveAs') : 'Save As')
         : (t ? t('dialog.fileDialog.saveFile') : 'Save File');
-      
+
       return await save({
         defaultPath: finalDefaultName,
         title: title,
@@ -145,7 +159,7 @@ export const fileApi = {
           extensions: ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg']
         }]
       });
-      
+
       if (selected && !Array.isArray(selected)) {
         // 读取二进制文件内容并获取base64
         const base64 = await this.readBinaryFile(selected);
@@ -157,10 +171,10 @@ export const fileApi = {
         else if (ext === 'bmp') mimeType = 'image/bmp';
         else if (ext === 'webp') mimeType = 'image/webp';
         else if (ext === 'svg') mimeType = 'image/svg+xml';
-        
+
         return `data:${mimeType};base64,${base64}`;
       }
-      
+
       return null;
     } catch (error) {
       throw error;
@@ -257,9 +271,9 @@ export const fileApi = {
 
   async updateFileLineEnding(filePath, lineEnding) {
     try {
-      return await invoke('update_file_line_ending', { 
-        filePath: filePath, 
-        lineEnding: lineEnding 
+      return await invoke('update_file_line_ending', {
+        filePath: filePath,
+        lineEnding: lineEnding
       });
     } catch (error) {
       throw error;
@@ -380,14 +394,25 @@ export const settingsApi = {
   // 设置值
   async set(key, value) {
     try {
+
       await initStore();
       const currentStore = useLocalStorage ? localStorageStore : store;
+
+
       if (!currentStore) {
-        return;
+        console.error('存储实例为空');
+        throw new Error('存储实例初始化失败');
       }
+
       await currentStore.set(key, value);
-      await currentStore.save();
+
+
+      if (currentStore.save) {
+        await currentStore.save();
+
+      }
     } catch (error) {
+      console.error(`设置 ${key} 失败:`, error);
       throw error;
     }
   },
@@ -459,10 +484,10 @@ export const appApi = {
         // 在开发环境中，从URL参数或localStorage获取模拟的文件路径
         const urlParams = new URLSearchParams(window.location.search);
         const fileParam = urlParams.get('file');
-        
+
         // 检查localStorage中是否有调试用的文件路径
         const debugFilePath = localStorage.getItem('miaogu-notepad-debug-file');
-        
+
         if (fileParam) {
           return [fileParam];
         } else if (debugFilePath) {

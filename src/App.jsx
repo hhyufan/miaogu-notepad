@@ -212,7 +212,7 @@ const MainApp = () => {
 
         // 如果没有命令行参数或打开失败，且没有其他打开的文件，则创建新文件
         if (fileManager.openedFiles.length === 0) {
-          const initialContent = '// Monaco Editor is working!\nconsole.log("Hello World");';
+          const initialContent = '// Monaco Editor is working!\nconsole.log("Hello World");'
           fileManager.createFile('untitled.js', initialContent);
         }
       }

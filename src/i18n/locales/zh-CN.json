@@ -113,6 +113,17 @@
         }
       }
     },
+    "ai": {
+      "title": "AI 补全",
+      "enable": "启用 AI 补全",
+      "baseUrl": "Base URL",
+      "baseUrlPlaceholder": "例如：https://api.openai.com",
+      "apiKey": "API Key",
+      "apiKeyPlaceholder": "sk-...",
+      "model": "模型名称",
+      "modelPlaceholder": "例如：gpt-4o-mini, gpt-4.1, qwen-turbo 等",
+      "basicSettings": "基础设置"
+    },
     "language": {
       "title": "语言",
       "settings": "语言设置",
@@ -125,7 +136,10 @@
     "saveError": "设置保存失败",
     "resetSuccess": "设置已重置",
     "backgroundSuccess": "背景图片设置成功",
-    "backgroundError": "选择背景图片失败"
+    "backgroundError": "选择背景图片失败",
+    "aiSettingsUpdated": "AI 设置已更新",
+    "aiRequestFailed": "AI 请求失败",
+    "aiNotConfigured": "AI 补全未配置"
   },
   "fileConflict": {
     "fileConflictMessage": "文件 {{fileName}} 已被外部程序修改",

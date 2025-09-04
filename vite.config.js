@@ -11,6 +11,16 @@ export default defineConfig(async () => ({
     global: 'globalThis',
   },
   
+  build: {
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: false,
+        drop_debugger: false,
+      },
+    },
+  },
+  
   optimizeDeps: {
     include: ['monaco-editor'],
   },

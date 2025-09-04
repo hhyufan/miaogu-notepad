@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Modal, Menu, Button, InputNumber, Select, Switch, Slider, Card, Typography, Space, App } from 'antd';
+import { Modal, Menu, Button, InputNumber, Select, Switch, Slider, Card, Typography, Space, App, Input } from 'antd';
 import { UploadOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useTheme } from '../hooks/redux';
 import { useI18n } from '../hooks/useI18n';
@@ -51,19 +51,50 @@ const SettingsModal = ({ visible, onClose }) => {
     backgroundImage,
     backgroundEnabled,
     backgroundTransparency,
+    aiEnabled: false,
+    aiBaseUrl: '',
+    aiApiKey: '',
+    aiModel: '',
   });
 
-  // 同步Redux状态到本地状态
+  // 同步Redux状态到本地状态（保留 AI 相关字段）
   useEffect(() => {
-    setLocalSettings({
+    setLocalSettings(prev => ({
+      ...prev,
       fontSize,
       fontFamily,
       lineHeight,
       backgroundImage,
       backgroundEnabled,
       backgroundTransparency,
-    });
+    }));
   }, [fontSize, fontFamily, lineHeight, backgroundImage, backgroundEnabled, backgroundTransparency]);
+
+  // 初次加载时读取 AI 设置
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const [enabled, baseUrl, apiKey, model] = await Promise.all([
+          settingsApi.get('ai.enabled'),
+          settingsApi.get('ai.baseUrl'),
+          settingsApi.get('ai.apiKey'),
+          settingsApi.get('ai.model'),
+        ]);
+        if (!mounted) return;
+        setLocalSettings(prev => ({
+          ...prev,
+          aiEnabled: Boolean(enabled ?? prev.aiEnabled),
+          aiBaseUrl: String(baseUrl ?? prev.aiBaseUrl ?? ''),
+          aiApiKey: String(apiKey ?? prev.aiApiKey ?? ''),
+          aiModel: String(model ?? prev.aiModel ?? ''),
+        }));
+      } catch (e) {
+        // ignore
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   // 监听主题变化，更新--editor-background变量
   useEffect(() => {
@@ -128,31 +159,41 @@ const SettingsModal = ({ visible, onClose }) => {
   // 保存设置
   const saveSettings = useCallback(async () => {
     try {
-      // 更新Redux状态
+      // 保存字体设置
       setFontSize(localSettings.fontSize);
       setFontFamily(localSettings.fontFamily);
       setLineHeight(localSettings.lineHeight);
+
+      // 保存背景设置
       setBackgroundImage(localSettings.backgroundImage);
       setBackgroundEnabled(localSettings.backgroundEnabled);
-      setBackgroundTransparency('dark', localSettings.backgroundTransparency.dark);
-      setBackgroundTransparency('light', localSettings.backgroundTransparency.light);
+      setBackgroundTransparency(localSettings.backgroundTransparency);
 
-      // 保存到Tauri存储
-      if (window['__TAURI__']) {
-        await settingsApi.set('fontSize', localSettings.fontSize);
-        await settingsApi.set('fontFamily', localSettings.fontFamily);
-        await settingsApi.set('lineHeight', localSettings.lineHeight);
-        await settingsApi.set('backgroundImage', localSettings.backgroundImage);
-        await settingsApi.set('backgroundEnabled', localSettings.backgroundEnabled);
-        await settingsApi.set('backgroundTransparency', localSettings.backgroundTransparency);
-      }
+      // 保存到持久化存储
+      await settingsApi.set('fontSize', localSettings.fontSize);
+      await settingsApi.set('fontFamily', localSettings.fontFamily);
+      await settingsApi.set('lineHeight', localSettings.lineHeight);
+
+      await settingsApi.set('backgroundImage', localSettings.backgroundImage);
+      await settingsApi.set('backgroundEnabled', localSettings.backgroundEnabled);
+      await settingsApi.set('backgroundTransparency', localSettings.backgroundTransparency);
+
+      // 保存 AI 设置
+      await settingsApi.set('ai.enabled', !!localSettings.aiEnabled);
+      await settingsApi.set('ai.baseUrl', localSettings.aiBaseUrl || '');
+      await settingsApi.set('ai.apiKey', localSettings.aiApiKey || '');
+      await settingsApi.set('ai.model', localSettings.aiModel || '');
+
+      // 通知其他组件（如 CodeEditor）AI 设置已更新
+      window.dispatchEvent(new Event('ai-settings-changed'));
 
       message.success(t('settings.saveSuccess'));
     } catch (error) {
-      // 静默处理设置保存错误
-      message.error(t('settings.saveError'));
+      console.error('设置保存失败:', error);
+      console.error('错误详情:', error.message, error.stack);
+      message.error(`${t('settings.saveError')}: ${error.message || '未知错误'}`);
     }
-  }, [localSettings, setFontSize, setFontFamily, setLineHeight, setBackgroundImage, setBackgroundEnabled, setBackgroundTransparency]);
+  }, [localSettings, setFontSize, setFontFamily, setLineHeight, setBackgroundImage, setBackgroundEnabled, setBackgroundTransparency, t]);
 
   // 重置设置
   const handleReset = useCallback(() => {
@@ -167,6 +208,10 @@ const SettingsModal = ({ visible, onClose }) => {
         dark: 80,
         light: 80
       },
+      aiEnabled: false,
+      aiBaseUrl: '',
+      aiApiKey: '',
+      aiModel: '',
     });
     message.success(t('settings.resetSuccess'));
   }, [resetTheme]);
@@ -373,6 +418,53 @@ const SettingsModal = ({ visible, onClose }) => {
 
 
 
+  // 渲染 AI 设置
+  const renderAISettings = () => (
+    <div className="settings-section">
+      <Title level={4}>{t('settings.ai.title')}</Title>
+      <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        <Card size="small" title={t('settings.ai.basicSettings')}>
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <div className="setting-item">
+              <Text>{t('settings.ai.enable')}</Text>
+              <Switch
+                checked={localSettings.aiEnabled}
+                onChange={(checked) => updateLocalSetting('aiEnabled', checked)}
+              />
+            </div>
+            <div className="setting-item">
+              <Text>{t('settings.ai.baseUrl')}</Text>
+              <Input
+                value={localSettings.aiBaseUrl}
+                onChange={(e) => updateLocalSetting('aiBaseUrl', e.target.value)}
+                placeholder={t('settings.ai.baseUrlPlaceholder')}
+                disabled={!localSettings.aiEnabled}
+              />
+            </div>
+            <div className="setting-item">
+              <Text>{t('settings.ai.apiKey')}</Text>
+              <Input.Password
+                value={localSettings.aiApiKey}
+                onChange={(e) => updateLocalSetting('aiApiKey', e.target.value)}
+                placeholder={t('settings.ai.apiKeyPlaceholder')}
+                disabled={!localSettings.aiEnabled}
+              />
+            </div>
+            <div className="setting-item">
+              <Text>{t('settings.ai.model')}</Text>
+              <Input
+                value={localSettings.aiModel}
+                onChange={(e) => updateLocalSetting('aiModel', e.target.value)}
+                placeholder={t('settings.ai.modelPlaceholder')}
+                disabled={!localSettings.aiEnabled}
+              />
+            </div>
+          </Space>
+        </Card>
+      </Space>
+    </div>
+  );
+
   // 渲染内容
   const renderContent = () => {
     switch (activeKey) {
@@ -382,6 +474,8 @@ const SettingsModal = ({ visible, onClose }) => {
         return renderEditorSettings();
       case 'appearance':
         return renderAppearanceSettings();
+      case 'ai':
+        return renderAISettings();
       default:
         return null;
     }
@@ -420,7 +514,8 @@ const SettingsModal = ({ visible, onClose }) => {
             items={[
               { key: 'general', label: t('settings.general.title') },
               { key: 'editor', label: t('settings.editor.title') },
-              { key: 'appearance', label: t('settings.appearance.title') }
+              { key: 'appearance', label: t('settings.appearance.title') },
+              { key: 'ai', label: t('settings.ai.title') },
             ]}
             onClick={({ key }) => setActiveKey(key)}
             className="settings-menu-list"
