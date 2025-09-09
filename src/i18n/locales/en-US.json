@@ -245,5 +245,21 @@
     "zoomIn": "Ctrl+Plus",
     "zoomOut": "Ctrl+Minus",
     "resetZoom": "Ctrl+0"
+  },
+  "treeEditor": {
+    "tooltip": {
+      "addRootNode": "Add Root Node",
+      "expandAll": "Expand All",
+      "collapseAll": "Collapse All",
+      "addChildNode": "Add Child Node",
+      "deleteNode": "Delete Node"
+    },
+    "placeholder": {
+      "inputNodeContent": "Enter node content...",
+      "newNode": "[New Node]"
+    },
+    "empty": {
+      "noContent": "No content yet, click the + button above to add nodes"
+    }
   }
 }

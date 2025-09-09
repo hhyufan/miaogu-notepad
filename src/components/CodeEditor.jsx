@@ -148,7 +148,7 @@ function CodeEditor({ isDarkMode, fileManager }) {
   }, [currentFile]);
 
   // 获取文件扩展名
-  useCallback((fileName) => {
+  const getLanguageFromExtension = useCallback((fileName) => {
     if (!fileName) return '';
     return fileName.split('.').pop()?.toLowerCase() || '';
   }, []);
@@ -400,6 +400,23 @@ function CodeEditor({ isDarkMode, fileManager }) {
     };
   }, [highlighterReady]);
 
+  // 监听文件变化，更新编辑器内容
+  useEffect(() => {
+    if (!editorRef.current || isInternalChange.current) return;
+
+    if (currentFile && currentFile.content !== undefined) {
+      // 更新编辑器内容
+      editorRef.current.setValue(currentFile.content);
+      // 更新语言
+      const language = getFileLanguage(currentFile.name);
+      monaco.editor.setModelLanguage(editorRef.current.getModel(), language);
+    } else {
+      // 没有文件时显示默认内容
+      editorRef.current.setValue('// Monaco Editor is working!\nconsole.log("Hello World");');
+      monaco.editor.setModelLanguage(editorRef.current.getModel(), 'javascript');
+    }
+  }, [currentFile, getFileLanguage]);
+
   // 监听内容变化 - 单独的useEffect避免编辑器重建
   useEffect(() => {
     if (!editorRef.current) return;
@@ -447,8 +464,8 @@ function CodeEditor({ isDarkMode, fileManager }) {
         // 再次检查光标位置是否发生变化
         const currentPosition = editorRef.current?.getPosition();
         if (!currentPosition ||
-            currentPosition.lineNumber !== newPosition.lineNumber ||
-            currentPosition.column !== newPosition.column) {
+          currentPosition.lineNumber !== newPosition.lineNumber ||
+          currentPosition.column !== newPosition.column) {
 
           return;
         }
@@ -456,26 +473,26 @@ function CodeEditor({ isDarkMode, fileManager }) {
         // 检查是否有活跃的补全
         if (!isCompletionActiveRef.current && aiSettings.enabled) {
           // 检查API请求节流限制
-            const now = Date.now();
+          const now = Date.now();
 
-            // 智能重置：如果距离上次请求超过10秒，立即重置计数器
-            if (apiRequestCountRef.current > 0 && now - lastRequestTimeRef.current > 10000) {
-              apiRequestCountRef.current = 0;
-              firstRequestTimeRef.current = 0;
+          // 智能重置：如果距离上次请求超过10秒，立即重置计数器
+          if (apiRequestCountRef.current > 0 && now - lastRequestTimeRef.current > 10000) {
+            apiRequestCountRef.current = 0;
+            firstRequestTimeRef.current = 0;
 
-              // 清除旧的重置定时器
-              if (apiRequestResetTimerRef.current) {
-                clearTimeout(apiRequestResetTimerRef.current);
-                apiRequestResetTimerRef.current = null;
-              }
+            // 清除旧的重置定时器
+            if (apiRequestResetTimerRef.current) {
+              clearTimeout(apiRequestResetTimerRef.current);
+              apiRequestResetTimerRef.current = null;
             }
+          }
 
-            if (apiRequestCountRef.current >= MAX_REQUESTS_PER_MINUTE) {
-              return;
-            }
+          if (apiRequestCountRef.current >= MAX_REQUESTS_PER_MINUTE) {
+            return;
+          }
 
 
-            await triggerAICompletion();
+          await triggerAICompletion();
         }
       }, DEBOUNCE_DELAY);
     });
@@ -533,8 +550,8 @@ function CodeEditor({ isDarkMode, fileManager }) {
 
               // 检查重试建议是否仍然有效（位置匹配且时间不超过30秒）
               if (retrySuggestion.position.lineNumber === currentPos.lineNumber &&
-                  retrySuggestion.position.column === currentPos.column &&
-                  Date.now() - retrySuggestion.timestamp < 30000) {
+                retrySuggestion.position.column === currentPos.column &&
+                Date.now() - retrySuggestion.timestamp < 30000) {
 
 
 
@@ -565,26 +582,26 @@ function CodeEditor({ isDarkMode, fileManager }) {
               return { items: [] };
             }
             // API请求节流检查
-              const now = Date.now();
+            const now = Date.now();
 
-              // 智能重置：如果距离上次请求超过10秒，立即重置计数器
-              if (apiRequestCountRef.current > 0 && now - lastRequestTimeRef.current > 10000) {
-                apiRequestCountRef.current = 0;
-                firstRequestTimeRef.current = 0;
+            // 智能重置：如果距离上次请求超过10秒，立即重置计数器
+            if (apiRequestCountRef.current > 0 && now - lastRequestTimeRef.current > 10000) {
+              apiRequestCountRef.current = 0;
+              firstRequestTimeRef.current = 0;
 
-                // 清除旧的重置定时器
-                if (apiRequestResetTimerRef.current) {
-                  clearTimeout(apiRequestResetTimerRef.current);
-                  apiRequestResetTimerRef.current = null;
-                }
+              // 清除旧的重置定时器
+              if (apiRequestResetTimerRef.current) {
+                clearTimeout(apiRequestResetTimerRef.current);
+                apiRequestResetTimerRef.current = null;
               }
+            }
 
-              if (apiRequestCountRef.current >= MAX_REQUESTS_PER_MINUTE) {
+            if (apiRequestCountRef.current >= MAX_REQUESTS_PER_MINUTE) {
 
 
-                isCompletionActiveRef.current = false;
-                return { items: [] };
-              }
+              isCompletionActiveRef.current = false;
+              return { items: [] };
+            }
 
             // 增加API请求计数
             apiRequestCountRef.current++;

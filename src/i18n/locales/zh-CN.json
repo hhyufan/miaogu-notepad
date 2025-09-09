@@ -236,5 +236,21 @@
     "zoomIn": "Ctrl+Plus",
     "zoomOut": "Ctrl+Minus",
     "resetZoom": "Ctrl+0"
+  },
+  "treeEditor": {
+    "tooltip": {
+      "addRootNode": "添加根节点",
+      "expandAll": "展开所有",
+      "collapseAll": "收起所有",
+      "addChildNode": "添加子节点",
+      "deleteNode": "删除节点"
+    },
+    "placeholder": {
+      "inputNodeContent": "输入节点内容...",
+      "newNode": "[新节点]"
+    },
+    "empty": {
+      "noContent": "暂无内容，点击上方 + 按钮添加节点"
+    }
   }
 }

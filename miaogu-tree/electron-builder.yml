@@ -1,0 +1,80 @@
+appId: top.miaogu.md.editor
+productName: mgtree-editor
+directories:
+  buildResources: build
+files:
+  - '!**/.vscode/*'
+  - '!**/.idea/*'
+  - '!**/node_modules/.cache/*'
+  - '!**/node_modules/@types/*'
+  - '!**/node_modules/typescript/*'
+  - '!**/node_modules/eslint*/*'
+  - '!**/node_modules/prettier/*'
+  - '!**/node_modules/@electron-toolkit/eslint*/*'
+  - '!**/node_modules/vite/*'
+  - '!**/node_modules/@vitejs/*'
+  - '!src/*'
+  - '!electron.vite.config.{js,ts,mjs,cjs}'
+  - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
+  - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
+  - '!**/*.{md,txt,log}'
+  - '!**/test/*'
+  - '!**/tests/*'
+  - '!**/__tests__/*'
+  - '!**/*.test.{js,ts,jsx,tsx}'
+  - '!**/*.spec.{js,ts,jsx,tsx}'
+  - '!**/coverage/*'
+  - '!**/.nyc_output/*'
+  - '!**/docs/*'
+  - '!**/examples/*'
+  - '!**/demo/*'
+  - '!**/*.map'
+asar: true
+asarUnpack:
+  - 'resources/**'
+compression: maximum
+win:
+  executableName: mgtree-editor
+  icon: resources/icon.png
+nsis:
+  artifactName: ${name}-${version}-setup.${ext}
+  shortcutName: ${productName}
+  uninstallDisplayName: ${productName}
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  allowToChangeInstallationDirectory: true
+  oneClick: false
+  perMachine: false
+  allowElevation: true
+  # installerIcon: resources/icon.ico
+  # uninstallerIcon: resources/icon.ico
+  # installerHeaderIcon: resources/icon.ico
+  deleteAppDataOnUninstall: false
+  runAfterFinish: true
+  menuCategory: "Development Tools"
+  # license: "LICENSE"
+mac:
+  entitlementsInherit: build/entitlements.mac.plist
+  icon: resources/icon.icns
+  extendInfo:
+    - NSCameraUsageDescription: Application requests access to the device's camera.
+    - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
+    - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
+    - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
+  notarize: false
+dmg:
+  artifactName: ${name}-${version}.${ext}
+linux:
+  icon: resources/icon.png
+  target:
+    - AppImage
+    - snap
+    - deb
+  maintainer: electronjs.org
+  category: Utility
+appImage:
+  artifactName: ${name}-${version}.${ext}
+npmRebuild: false
+publish:
+  provider: generic
+  url: https://example.com/auto-updates

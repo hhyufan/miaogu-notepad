@@ -11,6 +11,7 @@ import { useSessionRestore } from './hooks/useSessionRestore';
 import AppHeader from './components/AppHeader';
 import TabBar from './components/TabBar';
 import CodeEditor from './components/CodeEditor';
+import TreeEditor from './components/TreeEditor';
 import EditorStatusBar from './components/EditorStatusBar';
 
 import { useFileManager } from './hooks/useFileManager.jsx';
@@ -21,6 +22,33 @@ const { Content } = Layout;
 // 内部组件，用于访问文件上下文
 const AppContent = ({ isDarkMode, toggleTheme, fileManager }) => {
   const { t } = useI18n();
+  const [isTreeMode, setIsTreeMode] = useState(false);
+  const { currentFile } = fileManager;
+
+  // 检查当前文件是否为.mgtree文件
+  const isMgtreeFile = currentFile && currentFile.name && currentFile.name.endsWith('.mgtree');
+
+  // 键盘事件监听 - CTRL + / 切换编辑器（仅对.mgtree文件有效）
+  useEffect(() => {
+    const handleKeyDown = async (event) => {
+      if (event.ctrlKey && event.key === '/' && isMgtreeFile) {
+        event.preventDefault();
+        setIsTreeMode(prev => !prev);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isMgtreeFile]);
+
+  // 当文件切换时，重置为Monaco编辑器模式
+  useEffect(() => {
+    if (!isMgtreeFile) {
+      setIsTreeMode(false);
+    }
+  }, [isMgtreeFile]);
 
   return (
     <>
@@ -35,10 +63,26 @@ const AppContent = ({ isDarkMode, toggleTheme, fileManager }) => {
       </div>
       <div className="content-container">
         <div className="code-editor-container">
-          <CodeEditor
-            isDarkMode={isDarkMode}
-            fileManager={fileManager}
-          />
+          <div
+            className="monaco-editor-wrapper"
+            style={{ display: isMgtreeFile && isTreeMode ? 'none' : 'block' }}
+          >
+            <CodeEditor
+              isDarkMode={isDarkMode}
+              fileManager={fileManager}
+            />
+          </div>
+          {isMgtreeFile && (
+            <div
+              className="tree-editor-wrapper"
+              style={{ display: isTreeMode ? 'block' : 'none' }}
+            >
+              <TreeEditor
+                isDarkMode={isDarkMode}
+                fileManager={fileManager}
+              />
+            </div>
+          )}
         </div>
       </div>
     </>

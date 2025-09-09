@@ -233,7 +233,13 @@ export const useFileManager = () => {
 
     // 获取当前文件对象 - 优化缓存逻辑
     const currentFile = useMemo(() => {
-        return openedFilesMap.get(currentFilePath) || {
+        const fileFromMap = openedFilesMap.get(currentFilePath);
+        if (fileFromMap) {
+            return fileFromMap;
+        }
+
+        // 对于临时文件，使用editorCode作为内容
+        return {
             path: '',
             name: defaultFileName,
             isTemporary: true,
@@ -316,11 +322,16 @@ export const useFileManager = () => {
             }
 
             // 检查文件是否已经打开
-            if (openedFilesMap.has(filePath)) {
+            if (openedFilesMap.has(filePath) && !options.forceReload) {
                 setCurrentFilePath(filePath)
                 const file = openedFilesMap.get(filePath)
                 throttledEditorUpdate(file.content)
                 return
+            }
+
+            // 如果文件已打开但需要强制重新加载，先移除旧的文件记录
+            if (openedFilesMap.has(filePath) && options.forceReload) {
+                setOpenedFiles(prev => prev.filter(f => f.path !== filePath))
             }
 
             // 在打开新文件前，检查并关闭空的当前临时文件

@@ -265,6 +265,16 @@ body {
   height: calc(100vh - var(--header-height) - var(--tab-bar-height));
   background-color: transparent !important;
   border: none !important;
+  position: relative;
+}
+
+.monaco-editor-wrapper,
+.tree-editor-wrapper {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 // Monaco Editor 样式
