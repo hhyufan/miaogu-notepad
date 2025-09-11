@@ -24,6 +24,9 @@ import {
   SunOutlined,
   CodeOutlined,
   CameraOutlined,
+  ZoomInOutlined,
+  ZoomOutOutlined,
+  OneToOneOutlined,
 } from "@ant-design/icons";
 import "./TreeEditor.scss";
 
@@ -165,7 +168,7 @@ const treeToText = (nodes, level = 0) => {
 
 const TreeEditor = ({ fileManager, isDarkMode }) => {
   const { t } = useTranslation();
-  const { backgroundEnabled, backgroundImage } = useSelector((state) => state.theme);
+  const { backgroundEnabled, backgroundImage, fontSize } = useSelector((state) => state.theme);
   const hasBackground = backgroundEnabled && backgroundImage;
   // 本地状态
   const [treeData, setTreeData] = useState([]);
@@ -176,6 +179,7 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
   const [isInternalOperation, setIsInternalOperation] = useState(false);
   const [hoveredNode, setHoveredNode] = useState(null);
   const [isComposing, setIsComposing] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(1); // 缩放级别，1为默认大小
   const inputRef = useRef(null);
 
   const { currentFile, updateCode } = fileManager;
@@ -222,6 +226,30 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
       }
     }
   }, [currentFile?.content, isInternalOperation]);
+
+  // 鼠标滚轮缩放事件监听
+  useEffect(() => {
+    const handleWheel = (e) => {
+      // 只有按住Ctrl键时才进行缩放
+      if (e.ctrlKey) {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? -0.1 : 0.1; // 向下滚动缩小，向上滚动放大
+        setZoomLevel(prev => {
+          const newZoom = prev + delta;
+          // 限制缩放范围在0.5到3之间
+          return Math.max(0.5, Math.min(3, newZoom));
+        });
+      }
+    };
+
+    const treeContainer = document.querySelector('.tree-container');
+    if (treeContainer) {
+      treeContainer.addEventListener('wheel', handleWheel, { passive: false });
+      return () => {
+        treeContainer.removeEventListener('wheel', handleWheel);
+      };
+    }
+  }, []);
 
   // 使用非受控组件方式，避免受控组件与输入法的冲突
   const handleInputChange = (e) => {
@@ -319,8 +347,6 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
 
       // 实时保存到文件系统
       await saveToFileSystem(newTreeData);
-
-      message.success("节点更新成功");
     } catch (error) {
       console.error("保存编辑失败:", error);
       message.error("保存编辑失败");
@@ -488,6 +514,7 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
               )}
               <Input
                 ref={inputRef}
+                className="tree-node-input"
                 defaultValue={editValue}
                 onChange={handleInputChange}
                 onPressEnter={saveEdit}
@@ -501,14 +528,6 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
                 autoFocus
                 size="small"
                 placeholder={t('treeEditor.placeholder.inputNodeContent')}
-                style={{
-                  border: "none",
-                  background: "transparent",
-                  boxShadow: "none",
-                  padding: "0",
-                  fontSize: "inherit",
-                  fontFamily: "inherit",
-                }}
               />
             </div>
           ),
@@ -636,10 +655,16 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
     setExpandedSections([]);
   };
 
+  // 限制字体大小：16以下固定为16，18以上固定为18
+  const limitedFontSize = fontSize < 16 ? 16 : fontSize > 18 ? 18 : fontSize;
+
   return (
     <Card
       className={`tree-viewer-card ${isDarkMode ? 'dark' : 'light'} ${hasBackground ? 'with-background' : ''}`}
       data-theme={isDarkMode ? 'dark' : 'light'}
+      style={{
+        '--tree-font-size': `${limitedFontSize}px`
+      }}
     >
       <div className="tree-header">
         <Space>
@@ -668,10 +693,39 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
               onClick={collapseAll}
             />
           </Tooltip>
+          <Tooltip title={t('treeEditor.tooltip.zoomIn')}>
+            <Button
+              type="text"
+              size="small"
+              icon={<ZoomInOutlined />}
+              onClick={() => setZoomLevel(prev => Math.min(3, prev + 0.2))}
+            />
+          </Tooltip>
+          <Tooltip title={t('treeEditor.tooltip.zoomOut')}>
+            <Button
+              type="text"
+              size="small"
+              icon={<ZoomOutOutlined />}
+              onClick={() => setZoomLevel(prev => Math.max(0.5, prev - 0.2))}
+            />
+          </Tooltip>
+          <Tooltip title={t('treeEditor.tooltip.resetZoom')}>
+            <Button
+              type="text"
+              size="small"
+              icon={<OneToOneOutlined />}
+              onClick={() => setZoomLevel(1)}
+            />
+          </Tooltip>
         </Space>
       </div>
 
-      <div className="tree-container">
+      <div 
+        className="tree-container"
+        style={{
+          zoom: zoomLevel
+        }}
+      >
         {treeNodes.length > 0 ? (
           <Tree
             className="editable-tree"
@@ -691,8 +745,8 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
+                  width={`${limitedFontSize}px`}
+                  height={`${limitedFontSize}px`}
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"

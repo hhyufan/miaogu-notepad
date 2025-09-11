@@ -34,7 +34,8 @@ import {
   setMatchBrackets,
   setAutoIndent,
   setFormatOnPaste,
-  setFormatOnType
+  setFormatOnType,
+
 } from '../store/slices/editorSlice';
 
 /**
@@ -169,6 +170,7 @@ export const useSessionRestore = () => {
       if (typeof editorSettings.formatOnType === 'boolean') {
         dispatch(setFormatOnType(editorSettings.formatOnType));
       }
+
     } catch (error) {
       // Silently handle editor settings restore errors
     }

@@ -1,6 +1,7 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { setTheme, setFontSize, setFontFamily, setLineHeight, setBackgroundImage, setBackgroundEnabled, setBackgroundTransparency, resetTheme } from '../store/slices/themeSlice';
 
+
 // 类型化的 hooks
 export const useAppDispatch = () => useDispatch();
 export const useAppSelector = useSelector;
@@ -31,6 +32,7 @@ export const useEditor = () => {
   
   return {
     ...editor,
+
     dispatch
   };
 };

@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Modal, Menu, Button, InputNumber, Select, Switch, Slider, Card, Typography, Space, App, Input } from 'antd';
 import { UploadOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
-import { useTheme } from '../hooks/redux';
+import { useTheme, useEditor } from '../hooks/redux';
 import { useI18n } from '../hooks/useI18n';
 import tauriApi from '../utils/tauriApi';
 const { settings: settingsApi, file: fileApi } = tauriApi;
@@ -41,6 +41,7 @@ const SettingsModal = ({ visible, onClose }) => {
     setBackgroundTransparency,
     resetTheme,
   } = useTheme();
+
   const { t, changeLanguage, currentLanguage, supportedLanguages } = useI18n();
 
   const [activeKey, setActiveKey] = useState('general');
@@ -51,6 +52,7 @@ const SettingsModal = ({ visible, onClose }) => {
     backgroundImage,
     backgroundEnabled,
     backgroundTransparency,
+
     aiEnabled: false,
     aiBaseUrl: '',
     aiApiKey: '',
@@ -67,6 +69,7 @@ const SettingsModal = ({ visible, onClose }) => {
       backgroundImage,
       backgroundEnabled,
       backgroundTransparency,
+
     }));
   }, [fontSize, fontFamily, lineHeight, backgroundImage, backgroundEnabled, backgroundTransparency]);
 
@@ -169,6 +172,8 @@ const SettingsModal = ({ visible, onClose }) => {
       setBackgroundEnabled(localSettings.backgroundEnabled);
       setBackgroundTransparency(localSettings.backgroundTransparency);
 
+      // 保存编辑器设置
+
       // 保存到持久化存储
       await settingsApi.set('fontSize', localSettings.fontSize);
       await settingsApi.set('fontFamily', localSettings.fontFamily);
@@ -177,6 +182,8 @@ const SettingsModal = ({ visible, onClose }) => {
       await settingsApi.set('backgroundImage', localSettings.backgroundImage);
       await settingsApi.set('backgroundEnabled', localSettings.backgroundEnabled);
       await settingsApi.set('backgroundTransparency', localSettings.backgroundTransparency);
+
+
 
       // 保存 AI 设置
       await settingsApi.set('ai.enabled', !!localSettings.aiEnabled);
@@ -337,7 +344,6 @@ const SettingsModal = ({ visible, onClose }) => {
             </div>
           </Space>
         </Card>
-
 
       </Space>
     </div>

@@ -98,6 +98,7 @@
         "family": "字体系列",
         "lineHeight": "行高"
       }
+
     },
     "appearance": {
       "title": "外观",
@@ -243,7 +244,10 @@
       "expandAll": "展开所有",
       "collapseAll": "收起所有",
       "addChildNode": "添加子节点",
-      "deleteNode": "删除节点"
+      "deleteNode": "删除节点",
+      "zoomIn": "放大",
+      "zoomOut": "缩小",
+      "resetZoom": "重置缩放"
     },
     "placeholder": {
       "inputNodeContent": "输入节点内容...",

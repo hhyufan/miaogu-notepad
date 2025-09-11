@@ -27,6 +27,7 @@ const initialState = {
   autoIndent: 'advanced',
   formatOnPaste: true,
   formatOnType: false,
+
 };
 
 const editorSlice = createSlice({
@@ -84,6 +85,7 @@ const editorSlice = createSlice({
     setFormatOnType: (state, action) => {
       state.formatOnType = action.payload;
     },
+
   },
 });
 
@@ -105,6 +107,7 @@ export const {
   setAutoIndent,
   setFormatOnPaste,
   setFormatOnType,
+
 } = editorSlice.actions;
 
 export default editorSlice.reducer;

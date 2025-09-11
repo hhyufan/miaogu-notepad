@@ -628,6 +628,9 @@ export const useFileManager = () => {
             // 检查并处理可能的路径冲突
             handlePathConflict(targetPath)
 
+            // 触发文件保存事件，通知其他组件文件已保存
+            window.dispatchEvent(new CustomEvent('file-saved', { detail: { path: targetPath } }));
+
             return { success: true, path: targetPath }
         } catch (error) {
             handleError('fileSaveFailed', error)

@@ -107,6 +107,7 @@
         "family": "Font Family",
         "lineHeight": "Line Height"
       }
+
     },
     "appearance": {
       "title": "Appearance",
@@ -252,7 +253,10 @@
       "expandAll": "Expand All",
       "collapseAll": "Collapse All",
       "addChildNode": "Add Child Node",
-      "deleteNode": "Delete Node"
+      "deleteNode": "Delete Node",
+      "zoomIn": "Zoom In",
+      "zoomOut": "Zoom Out",
+      "resetZoom": "Reset Zoom"
     },
     "placeholder": {
       "inputNodeContent": "Enter node content...",

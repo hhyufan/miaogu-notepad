@@ -15,7 +15,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 16px;
+  padding: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1);
   overflow: hidden;
 }
 
@@ -23,26 +23,27 @@
 .current-file {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
+  gap: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.5);
+  padding: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.5) calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1);
   background: var(--background-secondary);
-  border-radius: 8px;
-  margin-bottom: 16px;
-  font-size: 14px;
+  border-radius: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.5);
+  margin-bottom: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1);
+  font-size: var(--tree-font-size, var(--editor-font-size, 14px));
   color: var(--text-secondary);
 }
 
 /* TreeViewer Card 样式 */
 .tree-viewer-card {
-  margin: 16px 0;
-  border-radius: 12px;
+  margin: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1) 0;
+  border-radius: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.75);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   transition: all 0.3s ease;
   border: 1px solid #f0f0f0;
   background-color: var(--background-primary);
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 120px); /* 减去header和margin的高度 */
+  height: calc(100vh - 120px);
+  /* 减去header和margin的高度 */
 
   &.with-background {
     background: transparent !important;
@@ -64,7 +65,7 @@
     display: flex;
     flex-direction: column;
     flex: 1;
-    padding: 16px;
+    padding: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1);
   }
 
   &.with-background .ant-tree {
@@ -83,17 +84,17 @@
 .tree-viewer-card.loading,
 .tree-viewer-card.error {
   text-align: center;
-  padding: 24px;
+  padding: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1.5);
 }
 
 .tree-loading {
   color: #1890ff;
-  font-size: 14px;
+  font-size: var(--tree-font-size, var(--editor-font-size, 14px));
 }
 
 .tree-error {
   color: #ff4d4f;
-  font-size: 14px;
+  font-size: var(--tree-font-size, var(--editor-font-size, 14px));
 }
 
 /* 树形组件头部 */
@@ -110,14 +111,14 @@
   font-weight: 600;
   margin: 0 !important;
   padding: 0;
-  font-size: 16px;
+  font-size: var(--tree-font-size, var(--editor-font-size, 16px));
   line-height: 1;
 }
 
 .tree-header .ant-space {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.25);
 }
 
 .tree-header .ant-space .ant-space-item {
@@ -126,16 +127,16 @@
 }
 
 .tree-header .ant-btn {
-  height: 24px;
-  width: 24px;
-  min-width: 24px;
+  height: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1.5);
+  width: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1.5);
+  min-width: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1.5);
   padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   border: none;
   box-shadow: none;
-  font-size: 12px;
+  font-size: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.75);
   background: transparent;
 }
 
@@ -147,8 +148,8 @@
 .editor-header {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 16px 16px 0 16px;
+  gap: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1);
+  padding: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1) calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1) 0 calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1);
 }
 
 .current-file {
@@ -161,7 +162,8 @@
   flex: 1;
   overflow-y: auto;
   padding: 8px 0;
-  min-height: 0; /* 允许flex子元素收缩 */
+  min-height: 0;
+  /* 允许flex子元素收缩 */
 }
 
 /* 自定义滚动条 */
@@ -187,12 +189,12 @@
 .tree-node-content {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  border-radius: 8px;
+  gap: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.5);
+  padding: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.375) calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.75);
+  border-radius: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.5);
   transition: all 0.05s ease;
   cursor: pointer;
-  min-height: 32px;
+  min-height: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 2);
   position: relative;
   width: 100%;
 }
@@ -208,15 +210,15 @@
 
 /* 节点图标 */
 .tree-node-icon {
-  font-size: 14px;
+  font-size: calc(var(--tree-font-size, var(--editor-font-size, 14px)) * 0.9);
   color: #8c8c8c;
   flex-shrink: 0;
 }
 
 /* 树节点图标 */
 .tree-icon {
-  font-size: 14px;
-  margin-right: 6px;
+  font-size: calc(var(--tree-font-size, var(--editor-font-size, 14px)) * 0.9);
+  margin-right: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.375);
 }
 
 .tree-icon.folder-icon {
@@ -229,7 +231,7 @@
 
 /* 代码指示器 */
 .code-indicator {
-  font-size: 14px;
+  font-size: calc(var(--tree-font-size, var(--editor-font-size, 14px)) * 0.9);
   opacity: 0.9;
   animation: pulse 2s infinite;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
@@ -255,7 +257,7 @@
 /* 树节点文本 */
 .tree-node-text {
   flex: 1;
-  font-size: var(--editor-font-size, 14px);
+  font-size: var(--tree-font-size, var(--editor-font-size, 14px));
   line-height: 1.5;
   color: #262626;
   word-break: break-word;
@@ -309,6 +311,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  font-size: var(--tree-font-size, var(--editor-font-size, 14px));
 }
 
 /* 跳转信息 */
@@ -324,23 +327,23 @@
 /* 节点操作按钮 */
 .node-actions {
   display: flex;
-  gap: 4px;
-  margin-left: 8px;
+  gap: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.25);
+  margin-left: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.5);
   opacity: 0;
   transition: opacity 0.05s ease;
 }
 
 .node-actions .ant-btn {
-  height: 20px;
-  width: 20px;
-  min-width: 20px;
+  height: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1.25);
+  width: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1.25);
+  min-width: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1.25);
   padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   border: none;
   box-shadow: none;
-  font-size: 12px;
+  font-size: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.75);
   background: transparent;
 }
 
@@ -352,32 +355,33 @@
 .tree-node-editing {
   background-color: transparent;
   border: none;
-  border-radius: 4px;
-  padding: 6px 12px;
+  border-radius: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.25);
+  padding: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.375) calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.75);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.5);
   width: 100%;
-  min-height: 32px;
-  transition: all 0.2s ease;
+
+  min-height: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 2);
+  font-size: var(--tree-font-size, var(--editor-font-size, 14px));
 }
 
 .tree-node-editing .ant-input {
   border: none !important;
   background: transparent !important;
   box-shadow: none !important;
-  min-width: 20px;
+  min-width: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1.25);
   font: inherit !important;
-  margin: 0 !important;
   color: var(--text-primary) !important;
   width: 100%;
-  min-height: 32px;
-  padding: 2px 0px;
-  border-radius: 8px;
+  margin-left: 3px !important;
+  min-height: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 2);
+  padding: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.125) 0px;
+  border-radius: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.5);
   white-space: nowrap;
   outline: none;
   font-family: inherit;
-  font-size: var(--editor-font-size, 14px);
+  font-size: var(--tree-font-size, var(--editor-font-size, 14px));
   font-weight: 500;
   letter-spacing: normal;
   line-height: 1.5;
@@ -425,9 +429,9 @@
 /* 可编辑树样式 */
 .editable-tree {
   background: var(--background-card);
-  border-radius: 6px;
-  padding: 16px;
-  min-height: 400px;
+  border-radius: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.375);
+  padding: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1);
+  min-height: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 25);
   flex: 1;
   overflow-y: auto;
 }
@@ -444,13 +448,13 @@
 /* 空状态样式 */
 .empty-tree {
   text-align: center;
-  padding: 60px 20px;
+  padding: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 3.75) calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1.25);
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: var(--tree-font-size, var(--editor-font-size, 14px));
 }
 
 .empty-tree .anticon {
-  font-size: 48px;
+  font-size: calc(var(--tree-font-size, var(--editor-font-size, 14px)) * 3.4);
   color: var(--text-muted);
   margin-bottom: 16px;
   display: block;
@@ -471,15 +475,15 @@
   padding: 2px 0;
   display: flex;
   align-items: center;
-  min-height: 24px;
+  min-height: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1.5);
 }
 
 .tree-container .ant-tree .ant-tree-switcher {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 24px;
-  width: 24px;
+  height: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1.5);
+  width: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1.5);
   align-self: center;
   vertical-align: middle;
   margin-right: -4px;
@@ -510,9 +514,9 @@
   padding: 0;
   border-radius: 6px;
   transition: all 0.2s ease;
-  line-height: 32px;
+  line-height: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 2);
   height: auto;
-  min-height: 32px;
+  min-height: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 2);
   display: flex;
   align-items: center;
 }
@@ -605,8 +609,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
+  width: var(--tree-font-size, var(--editor-font-size, 16px));
+  height: var(--tree-font-size, var(--editor-font-size, 16px));
   transition: transform 0.2s ease-in-out;
 }
 
@@ -647,17 +651,48 @@
   background: var(--text-muted);
 }
 
-/* 输入框样式 */
-.tree-node-input {
-  background-color: var(--background-card);
-  border-color: var(--accent-primary);
-  color: var(--text-primary);
-}
+/* 输入框样式 - 与node-title保持一致 */
+ .tree-node-input {
+   cursor: text !important;
+   padding: 0 !important;
+   margin: 0 !important;
+   border-radius: 3px !important;
+   transition: all 0.2s ease !important;
+   color: var(--text-primary) !important;
+   font-size: var(--tree-font-size, var(--editor-font-size, 14px)) !important;
+   line-height: 1.5715 !important;
+   height: auto !important;
+   min-height: auto !important;
+   background: transparent !important;
+   border: none !important;
+   box-shadow: none !important;
+   font-family: inherit !important;
 
-.tree-node-input:focus {
-  border-color: var(--accent-primary);
-  box-shadow: 0 0 0 2px var(--accent-primary);
-}
+   .ant-input {
+     padding: 2px 4px !important;
+     margin: 0 !important;
+     border: none !important;
+     box-shadow: none !important;
+     background: transparent !important;
+     font-size: inherit !important;
+     line-height: inherit !important;
+     color: inherit !important;
+     height: auto !important;
+     min-height: auto !important;
+   }
+
+   &:focus {
+     border: none !important;
+     box-shadow: none !important;
+     outline: none !important;
+   }
+
+   &:focus .ant-input {
+     border: none !important;
+     box-shadow: none !important;
+     outline: none !important;
+   }
+ }
 
 /* 按钮样式 */
 .node-actions .ant-btn {
@@ -693,7 +728,7 @@
 /* 模态框样式 */
 .ant-modal-body label {
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.25);
   font-weight: 500;
   color: #333;
 }
@@ -705,17 +740,17 @@
 /* 响应式设计 */
 @media (max-width: 768px) {
   .tree-editor {
-    padding: 8px;
+    padding: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.5);
   }
 
   .editor-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 8px;
+    gap: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.5);
   }
 
   .ant-card-extra {
-    margin-top: 8px;
+    margin-top: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.5);
   }
 
   .ant-card-extra .ant-space {
