@@ -303,7 +303,10 @@
     "zoomOut": "缩小",
     "resetZoom": "重置缩放",
     "knowledgeMap": "知识点脉络",
-    "newNode": "[新节点]"
+    "newNode": "[新节点]",
+    "loadFailed": "无法加载内容",
+    "pathNotExists": "指定路径不存在",
+    "loadError": "加载失败"
   },
   "treeEditor": {
     "tooltip": {

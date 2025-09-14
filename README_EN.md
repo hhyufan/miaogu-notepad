@@ -17,6 +17,25 @@
 
 ## 🚀 Core Features
 
+### 🌳 Tree Editor
+- **Visual Editing**: Brand new tree structure editor supporting node CRUD operations
+- **Drag & Drop**: Support node drag-and-drop reordering for intuitive tree structure adjustment
+- **Collapse/Expand**: Support node collapse/expand for managing complex hierarchical structures
+- **Real-time Sync**: Editor and preview mode sync in real-time, WYSIWYG
+- **mgtree Syntax**: Built-in dedicated tree diagram syntax supporting knowledge context visualization
+
+### 📝 Markdown Real-time Rendering
+- **Live Preview**: Support complete Markdown syntax rendering including headers, lists, links, images, etc.
+- **Code Highlighting**: Integrated Prism.js supporting syntax highlighting for multiple programming languages
+- **Zoom Function**: Support Ctrl+scroll wheel to zoom preview content for better reading experience
+- **Responsive Layout**: Adaptive to different screen sizes maintaining optimal display
+
+### 📊 Mermaid Chart Support
+- **Flowcharts**: Support flowchart and graph syntax
+- **Sequence Diagrams**: Support sequenceDiagram sequence diagram drawing
+- **Gantt Charts**: Support gantt chart project management
+- **Theme Adaptation**: Chart themes automatically adapt to application light/dark mode
+
 ### 🤖 AI Smart Completion
 - **Real-time Code Completion**: Context-aware intelligent code suggestions supporting multiple programming languages
 - **Inline Completion Display**: Code completion results displayed directly in the editor as gray text
@@ -28,11 +47,15 @@
 - **Code Highlighting**: Professional-grade syntax highlighting based on Monaco Editor, supporting multiple programming languages
 - **Multi-tab Support**: Edit multiple files simultaneously with convenient tab management
 - **File Management**: Complete file operation support (new, open, save, rename, etc.)
+- **Preview Mode**: Support seamless switching between editor and preview modes
 - **Window Always on Top**: Pin/unpin window, convenient for office work
 - **Open With**: Support setting this project as default opener / open files from terminal
+- **Quick Insert**: Quick insert predefined text templates via Ctrl + G shortcut
 
 ### 🎨 Interface Experience
 - **Theme Switching**: Built-in light/dark themes, adapting to different usage scenarios
+- **View Transition**: Smooth interface transition animations using modern Web APIs
+- **Internationalization**: Complete Chinese/English interface switching support
 - **Single File Deployment**: Packaged as a single exe file, no installation required, download and use
 - **Ultra Lightweight**: Application size only **< 17MB**, 90%+ size reduction compared to Electron apps
 - **Zero Dependency Runtime**: No need to pre-install Node.js, .NET Framework, or other runtime environments
@@ -144,7 +167,83 @@ npm run tauri:build
 
 ## 🎯 Main Features
 
-### File Operations
+### 🌳 Tree Structure Editing
+
+#### Three Ways to Define Tree Syntax in Markdown
+
+Miaogu Notepad supports defining and using tree structures in Markdown documents through three methods:
+
+**1. Inline Tree Diagram (```tree code block)**
+```markdown
+```tree
+Root Node
+  Child Node 1
+    Sub-child Node 1 >java[1]
+    Sub-child Node 2 >python[1]
+  Child Node 2 >javascript[2]
+  Child Node 3
+    Deep Node >java[2]
+```
+```
+
+**2. External File Reference (@tree() syntax)**
+```markdown
+```tree
+@tree(algorithm-tree)
+```
+```
+This method automatically finds and renders the content of `trees/algorithm-tree.mgtree` file.
+
+**3. Auto Association (H1 title auto-matching)**
+When an H1 title exists in the Markdown document, the system automatically finds the mgtree file with the same name:
+```markdown
+# Data Structures and Algorithms
+```
+The system will automatically find and render the `trees/Data Structures and Algorithms.mgtree` file.
+
+#### Jump Node Feature Details
+
+**Jump Nodes** are the core feature of tree diagrams, allowing direct jumps from tree nodes to corresponding code blocks in Markdown documents:
+
+##### Four Jump Syntaxes
+
+**1. Explicit Index Jump**
+```
+Node Name >java[2]
+```
+Jump to the 2nd java code block in the document
+
+**2. Incremental Jump**
+```
+Basic Syntax >java[1]
+Advanced Usage >java++
+Advanced Features >java++
+```
+Auto-increment index: 1 → 2 → 3
+
+**3. Jump Addition**
+```
+Basic Concepts >python[1]
+Practical Projects >python+=3
+```
+Jump from index 1 to index 4
+
+**4. Same Index Reuse**
+```
+Theoretical Foundation >javascript[1]
+Related Concepts >javascript
+```
+Reuse the previous index value
+
+##### Jump Feature Characteristics
+
+- **Precise Positioning**: Jump precisely to corresponding code blocks based on language type and index
+- **Visual Feedback**: Target code block highlights for 3 seconds after jumping
+- **Smooth Scrolling**: Uses smooth scroll animation to enhance user experience
+- **Error Prompts**: Shows friendly error messages when target code block doesn't exist
+- **Multi-language Support**: Supports all programming languages supported by Prism.js
+
+### 📝 File Operations
 
 - New file (`Ctrl+N`)
 - Open file (`Ctrl+O`)
@@ -152,29 +251,34 @@ npm run tauri:build
 - Save as (`Ctrl+Shift+S`)
 - File rename (double-click tab title)
 
-### Editing Features
+### ✨ Editing Features
 
-- AI Smart Completion
-- Syntax highlighting (supports mainstream programming languages.)
-- Code folding
-- Auto indentation
-- Bracket matching
-- Multi-cursor editing
-- Find and replace (`Ctrl+F`, `Ctrl+H`)
-### Interface Features
+- **AI Inline Completion**: Intelligent code suggestions
+- **Ghost Text** (`Ctrl+G`): Quick insert templates
+- **Syntax Highlighting**: Support for mainstream programming languages
+- **Code Folding**: Structured code management
+- **Auto Indentation**: Smart formatting
+- **Bracket Matching**: Pair highlighting
+- **Multi-cursor Editing**: Batch editing operations
+- **Find and Replace** (`Ctrl+F`, `Ctrl+H`): Powerful search functionality
+### 🎨 Interface Features
 
-- Multi-tab management
-- Light/dark theme switching
-- Responsive layout
-- Status bar information display (line/column numbers, file type, encoding, etc.)
+- **Multi-tab Management**: Efficient file switching
+- **Light/Dark Theme Switching**: Eye protection mode support
+- **Responsive Layout**: Adaptive to various screen sizes
+- **Status Bar Information**: Real-time display of line/column numbers, file type, encoding, etc.
+- **View Transition Animation**: Smooth interface transition effects
+- **Internationalization Interface**: Seamless Chinese/English switching
 
 ## 🔧 Configuration
 
 Application settings are persistently stored via Tauri Store plugin, including:
 
 - **AI Completion Settings**: API endpoint configuration, completion toggle, retry parameters, etc.
-- **Theme Settings**: Light/dark mode switching
+- **Theme Settings**: Light/dark mode switching, interface language selection
 - **Editor Configuration**: Font size, theme, auto-save, etc.
+- **Preview Settings**: Markdown rendering options, zoom ratio, etc.
+- **Tree Editor**: Node styles, jump behavior configuration
 - **Session Management**: Automatically restore last opened files
 
 ### AI Completion Configuration
@@ -184,6 +288,20 @@ Configurable in the settings panel:
 - **Enable Status**: Turn AI completion feature on/off
 - **Request Timeout**: Set API request timeout duration
 - **Retry Count**: Automatic retry count for network exceptions
+
+### Ghost Text Configuration
+
+- **Template Management**: Customize frequently used text templates
+- **Shortcut Settings**: Configure trigger shortcuts (default Ctrl+G)
+- **Context Awareness**: Enable/disable smart prompts
+- **Template Categories**: Manage templates by language or usage
+
+### Tree Editor Configuration
+
+- **Jump Behavior**: Configure click jump node behavior
+- **Node Styles**: Customize tree node display styles
+- **Collapse State**: Set default node collapse behavior
+- **Drag Settings**: Enable/disable node drag functionality
 
 ## 🤝 Contributing
 

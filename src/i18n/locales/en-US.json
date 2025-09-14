@@ -311,7 +311,15 @@
     "zoomOut": "Zoom Out",
     "resetZoom": "Reset Zoom",
     "knowledgeMap": "Knowledge Map",
-    "newNode": "[New Node]"
+    "newNode": "[New Node]",
+    "jumpToCode": "Jump to Code",
+    "addChild": "Add Child Node",
+    "addSibling": "Add Sibling Node",
+    "editNode": "Edit Node",
+    "confirmDelete": "Confirm to delete this node?",
+    "loadFailed": "Unable to load content",
+    "pathNotExists": "Specified path does not exist",
+    "loadError": "Load failed"
   },
   "treeEditor": {
     "tooltip": {

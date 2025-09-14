@@ -373,6 +373,101 @@
 }
 
 /* 错误状态样式 */
+/* 树形加载错误提示样式 - 与代码块和引用块保持一致的毛玻璃效果 */
+.tree-error-container {
+  margin: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.5) 0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.tree-error-content {
+  /* 毛玻璃背景效果 - 与代码块保持一致 */
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.75);
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.875);
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.tree-error-line {
+  margin: 0;
+  padding: 0;
+  opacity: 0.8;
+}
+
+.tree-error-line:last-child {
+  opacity: 0.5;
+}
+
+/* 深色主题适配 - 与代码块保持一致 */
+.tree-error-container.dark .tree-error-content {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* 亮色主题适配 - 与代码块保持一致 */
+.tree-error-container.light .tree-error-content {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  color: rgba(64, 64, 64, 0.85);
+}
+
+/* 树形加载错误提示样式 - 与代码块和引用块保持一致的毛玻璃效果 */
+.tree-load-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  text-align: center;
+  color: var(--text-secondary);
+  /* 毛玻璃背景效果 - 与代码块保持一致 */
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  margin: 1rem 0;
+  min-height: 80px;
+  position: relative;
+  backdrop-filter: blur(10px);
+
+  .error-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.85rem;
+    line-height: 1.3;
+  }
+
+  .error-line {
+    margin: 0;
+    padding: 0;
+  }
+}
+
+/* 深色主题适配 - 与代码块保持一致 */
+[data-theme="dark"] .tree-load-error {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  color: #bfbfbf;
+}
+
+/* 亮色主题适配 - 与代码块保持一致 */
+[data-theme="light"] .tree-load-error {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  color: #666666;
+}
+
 .tree-viewer-error {
   display: flex;
   flex-direction: column;

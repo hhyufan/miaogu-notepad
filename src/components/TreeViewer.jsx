@@ -443,9 +443,11 @@ const TreeViewer = ({ treeFilePath, treeContent, className = '', onJumpToCode, c
 
   if (error) {
     return (
-      <div className={`tree-viewer ${className} ${isDarkMode ? 'dark' : ''}`}>
-        <div className="tree-viewer-error">
-          <div>加载失败: {error}</div>
+      <div className={`tree-error-container ${isDarkMode ? 'dark' : 'light'}`}>
+        <div className="tree-error-content">
+          <div className="tree-error-line">{t('tree.loadFailed')}</div>
+          <div className="tree-error-line">{t('tree.pathNotExists')}</div>
+          <div className="tree-error-line">...</div>
         </div>
       </div>
     );
