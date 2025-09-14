@@ -94,10 +94,7 @@ body {
   --scrollbar-thumb-hover-color: rgba(255, 255, 255, 0.5);
   --scrollbar-thumb-active-color: rgba(255, 255, 255, 0.6);
 
-  /* 表格样式覆盖 */
-  table th {
-    background-color: #333;
-  }
+  /* 表格样式覆盖已移除，由MarkdownViewer组件内联样式控制 */
 }
 
 body {
@@ -199,6 +196,37 @@ body {
   background-color: transparent !important;
 }
 
+/* MarkdownViewer 透明背景 */
+.markdown-viewer-container {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+.markdown-viewer-container .theme-toggle-btn,
+.markdown-viewer-container .ant-btn,
+.theme-toggle {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+}
+
+/* 表格元素例外，允许显示背景色和边框 - 移除!important以允许内联样式覆盖 */
+.markdown-viewer-container table,
+.markdown-viewer-container thead,
+.markdown-viewer-container tbody {
+  background: initial;
+  background-color: initial;
+  border: initial !important;
+}
+
+/* 表格单元格样式由MarkdownViewer组件内联样式控制，不在此处覆盖 */
+
+/* 确保行内代码保持背景颜色，但排除TreeEditor和TreeViewer */
+.markdown-viewer-container code:not(.inline-code) {
+  background: initial !important;
+  background-color: initial !important;
+}
+
 .monaco-editor .minimap-decorations-layer,
 .monaco-editor .minimap,
 .monaco-editor-background,
@@ -224,7 +252,7 @@ body {
   position: absolute;
   top: 60px;
   right: 24px;
-  z-index: 10;
+  z-index: 100;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -233,6 +261,8 @@ body {
 
 .theme-toggle-btn {
   transition: transform 0.3s ease;
+  pointer-events: auto;
+  cursor: pointer;
 
   .anticon {
     font-size: 18px;
@@ -246,6 +276,62 @@ body {
   .anticon-moon {
     color: #597ef7;
     animation: Rise 0.3s ease;
+  }
+}
+
+/* 编辑器模式切换按钮样式 */
+.editor-mode-btn {
+  transition: all 0.3s ease;
+  
+  /* mgtree模式 - 紫色主题 */
+  &.mgtree-mode {
+    .anticon {
+      color: #722ed1;
+      animation: Rise 0.3s ease;
+    }
+    
+    &:hover {
+      background-color: rgba(114, 46, 209, 0.1);
+      transform: scale(1.05);
+    }
+    
+    &:active {
+      transform: scale(0.95);
+    }
+  }
+  
+  /* 代码模式 - 绿色主题 */
+  &.code-mode {
+    .anticon {
+      color: #52c41a;
+      animation: Rise 0.3s ease;
+    }
+    
+    &:hover {
+      background-color: rgba(82, 196, 26, 0.1);
+      transform: scale(1.05);
+    }
+    
+    &:active {
+      transform: scale(0.95);
+    }
+  }
+  
+  /* 预览模式 - 紫色主题 */
+  &.preview-mode {
+    .anticon {
+      color: #722ed1;
+      animation: Rise 0.3s ease;
+    }
+    
+    &:hover {
+      background-color: rgba(114, 46, 209, 0.1);
+      transform: scale(1.05);
+    }
+    
+    &:active {
+      transform: scale(0.95);
+    }
   }
 }
 
@@ -484,6 +570,48 @@ body {
   --scrollbar-thumb-hover-bg: #a8a8a8;
 }
 
+/* 全局禁用TreeEditor中的hover样式 */
+[data-theme='dark'] .tree-viewer-card *:hover,
+[data-theme='dark'] .tree-viewer-card .ant-tree *:hover,
+[data-theme='dark'] .tree-viewer-card .ant-tree-node-content-wrapper:hover,
+[data-theme='dark'] .tree-viewer-card .ant-tree-treenode:hover,
+[data-theme='dark'] .tree-viewer-card .ant-tree-treenode:hover .ant-tree-node-content-wrapper {
+  background-color: transparent !important;
+  background: transparent !important;
+}
+
+.tree-viewer-card *:hover,
+.tree-viewer-card .ant-tree *:hover,
+.tree-viewer-card .ant-tree-node-content-wrapper:hover,
+.tree-viewer-card .ant-tree-treenode:hover,
+.tree-viewer-card .ant-tree-treenode:hover .ant-tree-node-content-wrapper {
+  background-color: transparent !important;
+  background: transparent !important;
+}
+
+/* 强制保持跳转节点的渐变文字效果，禁用所有hover变化 */
+.tree-viewer-card .tree-node-text.has-code:hover,
+[data-theme='dark'] .tree-viewer-card .tree-node-text.has-code:hover {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+/* 强制禁用跳转节点的所有hover效果 */
+.tree-viewer-card .tree-node-content.tree-node-clickable:hover,
+[data-theme='dark'] .tree-viewer-card .tree-node-content.tree-node-clickable:hover {
+  background: transparent !important;
+  background-color: transparent !important;
+  transform: none !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+  transition: none !important;
+}
+
 /* 主项目样式 - 严格参照主项目App.scss */
 .app-layout {
   background-image: var(--editor-background-image) !important;
@@ -531,14 +659,15 @@ body {
 }
 
 .theme-toggle {
-  position: absolute;
-  top: 24px;
+  position: fixed;
+  top: 100px;
   right: 24px;
-  z-index: 10;
+  z-index: 9999;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
+  pointer-events: auto;
 }
 
 .code-runner-container {
@@ -593,3 +722,32 @@ body {
 }
 
 /* 控制台动画已改为JavaScript控制，移除CSS动画关键帧 */
+
+/* 代码块毛玻璃背景效果 */
+pre[class*="language-"] {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+  border-radius: 12px !important;
+  position: relative !important;
+}
+
+/* 暗色主题下的效果 */
+[data-theme="dark"] pre[class*="language-"] {
+  background: rgba(0, 0, 0, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* 内联代码的效果 */
+:not(pre)>code[class*="language-"] {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 6px !important;
+}
+
+/* 暗色主题下的内联代码效果 */
+[data-theme="dark"] :not(pre)>code[class*="language-"] {
+  background: rgba(0, 0, 0, 0.25) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}

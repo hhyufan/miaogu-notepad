@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { Layout, Button, ConfigProvider, theme, App as AntdApp, Spin } from 'antd';
-import { MoonFilled, SunOutlined } from '@ant-design/icons';
+import { MoonFilled, SunOutlined, CodeOutlined, EyeOutlined, PartitionOutlined } from '@ant-design/icons';
 import { Provider, useSelector } from 'react-redux';
 import { store } from './store';
 import { useTheme } from './hooks/redux';
@@ -15,25 +15,91 @@ import TreeEditor from './components/TreeEditor';
 import EditorStatusBar from './components/EditorStatusBar';
 
 import { useFileManager } from './hooks/useFileManager.jsx';
+import { withThemeTransition, withEditorModeTransition } from './utils/viewTransition';
 import './App.scss';
 
 const { Content } = Layout;
+
+// 编辑器模式枚举
+const EDITOR_MODES = {
+  MONACO: 'monaco',
+  MARKDOWN: 'markdown',
+  MGTREE: 'mgtree'
+};
 
 // 内部组件，用于访问文件上下文
 const AppContent = ({ isDarkMode, toggleTheme, fileManager }) => {
   const { t } = useI18n();
   const [isTreeMode, setIsTreeMode] = useState(false);
+  const [editorMode, setEditorMode] = useState(EDITOR_MODES.MONACO);
   const { currentFile } = fileManager;
 
   // 检查当前文件是否为.mgtree文件
   const isMgtreeFile = currentFile && currentFile.name && currentFile.name.endsWith('.mgtree');
 
-  // 键盘事件监听 - CTRL + / 切换编辑器（仅对.mgtree文件有效）
+  // 检查当前文件是否为Markdown文件
+  const isMarkdownFile = currentFile && currentFile.name &&
+    ['md', 'markdown'].some(ext => currentFile.name.toLowerCase().endsWith('.' + ext));
+
+  // 切换编辑器模式的函数
+  const toggleEditorMode = useCallback(async () => {
+    await withEditorModeTransition(() => {
+      if (isMgtreeFile) {
+        // mgtree文件：Monaco <-> MGTree
+        if (editorMode === EDITOR_MODES.MONACO) {
+          setEditorMode(EDITOR_MODES.MGTREE);
+          setIsTreeMode(true);
+        } else {
+          setEditorMode(EDITOR_MODES.MONACO);
+          setIsTreeMode(false);
+        }
+      } else if (isMarkdownFile) {
+        // Markdown文件：Monaco <-> Markdown预览
+        if (editorMode === EDITOR_MODES.MONACO) {
+          setEditorMode(EDITOR_MODES.MARKDOWN);
+        } else {
+          setEditorMode(EDITOR_MODES.MONACO);
+        }
+      }
+    });
+  }, [editorMode, isMgtreeFile, isMarkdownFile]);
+
+  // 获取编辑器模式图标
+  const getEditorModeIcon = () => {
+    if (isMgtreeFile) {
+      return editorMode === EDITOR_MODES.MGTREE ? <CodeOutlined /> : <PartitionOutlined />;
+    } else if (isMarkdownFile) {
+      return editorMode === EDITOR_MODES.MARKDOWN ? <CodeOutlined /> : <EyeOutlined />;
+    }
+    return <CodeOutlined />;
+  };
+
+  // 获取编辑器模式按钮的CSS类名
+  const getEditorModeClassName = () => {
+    if (isMgtreeFile) {
+      return editorMode === EDITOR_MODES.MGTREE ? 'code-mode' : 'mgtree-mode';
+    } else if (isMarkdownFile) {
+      return editorMode === EDITOR_MODES.MARKDOWN ? 'code-mode' : 'preview-mode';
+    }
+    return 'code-mode';
+  };
+
+  // 获取编辑器模式提示文本
+  const getEditorModeTitle = () => {
+    if (isMgtreeFile) {
+      return editorMode === EDITOR_MODES.MGTREE ? '切换到代码编辑器' : '切换到树形编辑器';
+    } else if (isMarkdownFile) {
+      return editorMode === EDITOR_MODES.MARKDOWN ? '切换到代码编辑器' : '切换到预览模式';
+    }
+    return '编辑器模式';
+  };
+
+  // 键盘事件监听 - CTRL + / 切换编辑器
   useEffect(() => {
     const handleKeyDown = async (event) => {
-      if (event.ctrlKey && event.key === '/' && isMgtreeFile) {
+      if (event.ctrlKey && event.key === '/') {
         event.preventDefault();
-        setIsTreeMode(prev => !prev);
+        toggleEditorMode();
       }
     };
 
@@ -41,14 +107,14 @@ const AppContent = ({ isDarkMode, toggleTheme, fileManager }) => {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isMgtreeFile]);
+  }, [toggleEditorMode]);
 
-  // 当文件切换时，重置为Monaco编辑器模式
+  // 当文件切换时，根据文件类型设置编辑器模式
   useEffect(() => {
-    if (!isMgtreeFile) {
-      setIsTreeMode(false);
-    }
-  }, [isMgtreeFile]);
+    // 其他文件重置为Monaco编辑器模式
+    setEditorMode(EDITOR_MODES.MONACO);
+    setIsTreeMode(false);
+  }, [isMgtreeFile, isMarkdownFile, fileManager.currentFile?.path]); // 添加文件路径依赖，确保文件切换时触发
 
   return (
     <>
@@ -60,16 +126,26 @@ const AppContent = ({ isDarkMode, toggleTheme, fileManager }) => {
           title={isDarkMode ? t('app.theme.light') : t('app.theme.dark')}
           className="theme-toggle-btn"
         />
+        {(isMgtreeFile || isMarkdownFile) && (
+          <Button
+            type="text"
+            icon={getEditorModeIcon()}
+            onClick={toggleEditorMode}
+            title={getEditorModeTitle()}
+            className={`theme-toggle-btn editor-mode-btn ${getEditorModeClassName()}`}
+          />
+        )}
       </div>
       <div className="content-container">
         <div className="code-editor-container">
           <div
             className="monaco-editor-wrapper"
-            style={{ display: isMgtreeFile && isTreeMode ? 'none' : 'block' }}
+            style={{ display: (isMgtreeFile && isTreeMode) ? 'none' : 'block' }}
           >
             <CodeEditor
               isDarkMode={isDarkMode}
               fileManager={fileManager}
+              showMarkdownPreview={isMarkdownFile && editorMode === EDITOR_MODES.MARKDOWN}
             />
           </div>
           {isMgtreeFile && (
@@ -106,9 +182,12 @@ const MainApp = () => {
   const fileManager = useFileManager();
 
   // 主题切换函数
-  const toggleTheme = useCallback(() => {
+  const toggleTheme = useCallback(async () => {
     const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
+
+    await withThemeTransition(() => {
+      setTheme(newTheme);
+    });
 
     // 保存到Tauri设置
     if (window.__TAURI__) {
@@ -256,7 +335,7 @@ const MainApp = () => {
 
         // 如果没有命令行参数或打开失败，且没有其他打开的文件，则创建新文件
         if (fileManager.openedFiles.length === 0) {
-          const initialContent = '// Monaco Editor is working!\nconsole.log("Hello World");'
+          const initialContent = ''
           fileManager.createFile('untitled.js', initialContent);
         }
       }

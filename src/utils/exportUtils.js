@@ -152,7 +152,6 @@ export const exportWithHtml2Canvas = async (element, options = {}) => {
 
       return { success: true, message: '导出成功' };
     } catch (error) {
-      console.error('保存PNG文件失败:', error);
       throw error;
     } finally {
       // 恢复跳跃节点原始样式
@@ -178,7 +177,6 @@ export const exportWithHtml2Canvas = async (element, options = {}) => {
       });
     }
   } catch (error) {
-    console.error('Export failed:', error);
     return { success: false, message: `导出失败: ${error.message}` };
   }
 };

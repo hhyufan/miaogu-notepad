@@ -35,11 +35,11 @@
 /* TreeViewer Card 样式 */
 .tree-viewer-card {
   margin: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1) 0;
-  border-radius: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.75);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border-radius: 0;
+  box-shadow: none;
   transition: all 0.3s ease;
-  border: 1px solid #f0f0f0;
-  background-color: var(--background-primary);
+  border: none !important;
+  background: transparent !important;
   display: flex;
   flex-direction: column;
   height: calc(100vh - 120px);
@@ -289,7 +289,18 @@
   border-radius: 6px;
   padding: 4px 8px;
   transform: translateY(0);
-  transition: all 0.3s ease;
+  transition: none !important;
+  /* Removed all hover effects to prevent text disappearing */
+}
+
+/* 强制禁用跳转节点的所有hover效果 */
+.tree-node-content.tree-node-clickable:hover {
+  background: transparent !important;
+  background-color: transparent !important;
+  transform: none !important;
+  box-shadow: none !important;
+  color: #1890ff !important;
+  opacity: 1 !important;
 }
 
 .tree-node-content.tree-node-clickable .node-title.has-code {
@@ -298,6 +309,15 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
   font-weight: 600;
+}
+
+/* 强制禁用渐变文字的hover效果 */
+.tree-node-content.tree-node-clickable .node-title.has-code:hover {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  opacity: 1 !important;
 }
 
 /* 节点标题样式 */
@@ -765,6 +785,17 @@
   color: var(--text-primary);
 }
 
+/* 深色主题下的跳转节点样式 */
+.tree-viewer-card.dark .tree-node-content.tree-node-clickable {
+  color: #69c0ff;
+  
+  &:hover {
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #69c0ff !important;
+  }
+}
+
 .tree-viewer-card.dark .tree-container {
   background: var(--background-secondary);
 }
@@ -805,6 +836,30 @@
 .tree-viewer-card.light .tree-header {
   background-color: var(--background-primary);
   border-bottom-color: var(--border-color);
+}
+
+/* 行内代码样式 - 无背景色 */
+.tree-editor .inline-code,
+.tree-viewer-card .inline-code {
+  background-color: transparent !important;
+  color: var(--code-text, #374151) !important;
+  padding: 3px 6px;
+  margin: 0 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Fira Mono', Consolas, Menlo, Courier, monospace;
+  font-weight: 500;
+  border: 1px solid var(--code-border, #93c5fd);
+}
+
+/* 暗色主题下的行内代码样式 */
+.tree-editor[data-theme="dark"] .inline-code,
+.tree-viewer-card.dark .inline-code,
+[data-theme="dark"] .tree-editor .inline-code,
+[data-theme="dark"] .tree-viewer-card .inline-code {
+  background-color: transparent !important;
+  color: #d1d5db !important;
+  border-color: #2563eb;
 }
 
 /* 打印样式 */

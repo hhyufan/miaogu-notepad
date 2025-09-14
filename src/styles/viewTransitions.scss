@@ -1,0 +1,184 @@
+/**
+ * View Transition API 样式定义
+ * 为不同的UI过渡提供流畅的动画效果
+ */
+
+/* 基础过渡样式 */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.3s;
+  animation-timing-function: ease-in-out;
+}
+
+/* 主题切换过渡 */
+[data-transition="theme-change"] {
+  ::view-transition-old(root) {
+    animation-name: theme-fade-out;
+  }
+  
+  ::view-transition-new(root) {
+    animation-name: theme-fade-in;
+  }
+}
+
+@keyframes theme-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes theme-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 编辑器模式切换过渡 */
+[data-transition="editor-mode-change"] {
+  ::view-transition-old(editor-content),
+  ::view-transition-new(editor-content) {
+    animation-duration: 0.4s;
+  }
+  
+  ::view-transition-old(editor-content) {
+    animation-name: editor-slide-out;
+  }
+  
+  ::view-transition-new(editor-content) {
+    animation-name: editor-slide-in;
+  }
+}
+
+@keyframes editor-slide-out {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+}
+
+@keyframes editor-slide-in {
+  from {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* 文件切换过渡 */
+[data-transition="file-change"] {
+  ::view-transition-old(file-content),
+  ::view-transition-new(file-content) {
+    animation-duration: 0.25s;
+  }
+  
+  ::view-transition-old(file-content) {
+    animation-name: file-fade-out;
+  }
+  
+  ::view-transition-new(file-content) {
+    animation-name: file-fade-in;
+  }
+}
+
+@keyframes file-fade-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+}
+
+@keyframes file-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(1.02);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 为特定元素添加view-transition-name */
+.monaco-editor-wrapper {
+  view-transition-name: editor-content;
+}
+
+.tree-editor-wrapper {
+  view-transition-name: editor-content;
+}
+
+.markdown-viewer {
+  view-transition-name: editor-content;
+}
+
+.code-editor-container {
+  view-transition-name: file-content;
+}
+
+/* 按钮点击效果 */
+.theme-toggle-btn {
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: scale(1.05);
+  }
+  
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.editor-mode-btn {
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: scale(1.05);
+  }
+  
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+/* 减少动画对于偏好减少动画的用户 */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 0.1s !important;
+  }
+  
+  .theme-toggle-btn,
+  .editor-mode-btn {
+    transition: none !important;
+    
+    &:hover,
+    &:active {
+      transform: none !important;
+    }
+  }
+}
+
+/* 高对比度模式支持 */
+@media (prefers-contrast: high) {
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 0.15s !important;
+  }
+}

@@ -1,0 +1,521 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSelector } from 'react-redux';
+import { Button, Card, Space, Spin, Tooltip, Tree, Typography } from 'antd';
+import { convertFileSrc } from '@tauri-apps/api/core';
+import {
+  CodeOutlined,
+  ExpandAltOutlined,
+  FileTextOutlined,
+  FolderOpenOutlined,
+  FolderOutlined,
+  ShrinkOutlined
+} from '@ant-design/icons';
+// 移除useTheme导入，改用直接读取data-theme属性
+import './TreeViewer.scss';
+
+const { Text, Title } = Typography;
+
+// 解析树状文本为树形数据结构
+const parseTreeText = (text) => {
+  const lines = text.split('\n').filter(line => line.trim());
+  const root = { key: 'root', title: 'Root', children: [], level: -1 };
+  const stack = [root];
+  let keyCounter = 0;
+
+  // 跟踪每种语言的最后一个跳转索引
+  const lastJumpIndex = {};
+
+  lines.forEach((line, _) => {
+    const trimmedLine = line.trim();
+    if (!trimmedLine) return;
+
+    // 计算缩进级别（每2个空格或1个tab为一级）
+    const leadingSpaces = line.length - line.trimStart().length;
+    const level = Math.floor(leadingSpaces / 2);
+
+    // 检查是否包含跳转信息
+    const cleanLine = trimmedLine.replace(/[\r\n]/g, '');
+
+    // 支持多种跳转语法：
+    // 1. >java[1] - 指定索引
+    // 2. >java++ - 递增（上一个+1）
+    // 3. >java - 同上一个索引
+    // 4. >java+=n - 跳跃增加（上一个+n）
+    const jumpMatchExplicit = cleanLine.match(/>([a-zA-Z]+)\[(\d+)]/);
+    const jumpMatchIncrement = cleanLine.match(/>([a-zA-Z]+)\+\+/);
+    const jumpMatchJump = cleanLine.match(/>([a-zA-Z]+)\+=(\d+)/);
+    const jumpMatchSame = cleanLine.match(/>([a-zA-Z]+)(?!\[|\+)/);
+
+    let isClickable = false;
+    let jumpLanguage = null;
+    let jumpIndex = null;
+
+    if (jumpMatchExplicit) {
+      // 显式指定索引：>java[1]
+      isClickable = true;
+      jumpLanguage = jumpMatchExplicit[1];
+      jumpIndex = parseInt(jumpMatchExplicit[2]);
+      lastJumpIndex[jumpLanguage] = jumpIndex;
+    } else if (jumpMatchIncrement) {
+      // 递增语法：>java++
+      isClickable = true;
+      jumpLanguage = jumpMatchIncrement[1];
+      jumpIndex = (lastJumpIndex[jumpLanguage] || 0) + 1;
+      lastJumpIndex[jumpLanguage] = jumpIndex;
+    } else if (jumpMatchJump) {
+      // 跳跃增加语法：>java+=n
+      isClickable = true;
+      jumpLanguage = jumpMatchJump[1];
+      const jumpAmount = parseInt(jumpMatchJump[2]);
+      jumpIndex = (lastJumpIndex[jumpLanguage] || 0) + jumpAmount;
+      lastJumpIndex[jumpLanguage] = jumpIndex;
+    } else if (jumpMatchSame) {
+      // 同上一个索引：>java
+      isClickable = true;
+      jumpLanguage = jumpMatchSame[1];
+      jumpIndex = lastJumpIndex[jumpLanguage] || 1;
+    }
+
+    // 清理标题，移除跳转信息
+    let cleanTitle = cleanLine;
+    if (isClickable) {
+      cleanTitle = cleanTitle
+        .replace(/\s*>([a-zA-Z]+)\[(\d+)]\s*$/, '')
+        .replace(/\s*>([a-zA-Z]+)\+\+\s*$/, '')
+        .replace(/\s*>([a-zA-Z]+)\+=(\d+)\s*$/, '')
+        .replace(/\s*>([a-zA-Z]+)(?!\[|\+)\s*$/, '')
+        .trim();
+    }
+
+    const node = {
+      key: `node-${keyCounter++}`,
+      title: cleanTitle,
+      level: level,
+      isClickable: isClickable,
+      jumpLanguage: jumpLanguage,
+      jumpIndex: jumpIndex,
+      children: []
+    };
+
+    // 找到正确的父节点
+    while (stack.length > 1 && stack[stack.length - 1].level >= level) {
+      stack.pop();
+    }
+
+    const parent = stack[stack.length - 1];
+    parent.children.push(node);
+    stack.push(node);
+  });
+
+  return root.children;
+};
+
+// 渲染树节点
+const renderTreeNode = (node, onJumpToCode, isDarkMode, expandedKeys, onToggleExpand) => {
+  const isClickable = node.isClickable;
+  const hasChildren = node.children && node.children.length > 0;
+  const isExpanded = expandedKeys.includes(node.key);
+
+  const handleNodeClick = (e) => {
+    if (isClickable && onJumpToCode) {
+      // 跳转节点：执行跳转功能
+      e.stopPropagation();
+      onJumpToCode(node.jumpLanguage, node.jumpIndex);
+    } else if (hasChildren && !isClickable && onToggleExpand) {
+      // 非跳转的目录节点：执行展开折叠功能
+      e.stopPropagation();
+      onToggleExpand(node.key, isExpanded);
+    }
+  };
+
+  return {
+    key: node.key,
+    title: (
+      <div
+        className={`tree-node-content ${isClickable ? 'tree-node-clickable' : ''}`}
+        onClick={handleNodeClick}
+      >
+        <Space size="small">
+          {hasChildren ? (
+            isExpanded ? (
+              <FolderOpenOutlined
+                className="tree-icon folder-icon"
+                style={isClickable ? {
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text'
+                } : {}}
+              />
+            ) : (
+              <FolderOutlined
+                className="tree-icon folder-icon"
+                style={isClickable ? {
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text'
+                } : {}}
+              />
+            )
+          ) : (
+            isClickable ? (
+              <CodeOutlined
+                className="tree-icon file-icon code-indicator"
+                style={{
+                  color: '#1890ff'
+                }}
+              />
+            ) : (
+              <FileTextOutlined className="tree-icon file-icon" />
+            )
+          )}
+          <Text className={`tree-node-text ${isClickable ? 'has-code' : ''}`}>
+            {(() => {
+              const text = node.title;
+              const codeRegex = /`([^`]+)`/g;
+
+              // 如果文本中没有反引号，直接返回原始文本
+              if (!codeRegex.test(text)) {
+                return text;
+              }
+
+              // 重置正则表达式
+              codeRegex.lastIndex = 0;
+
+              const parts = [];
+              let lastIndex = 0;
+              let match;
+
+              while ((match = codeRegex.exec(text)) !== null) {
+                // 添加代码块前的普通文本
+                if (match.index > lastIndex) {
+                  parts.push(text.slice(lastIndex, match.index));
+                }
+
+                // 添加代码块
+                parts.push(
+                  <code key={match.index} className="inline-code">
+                    {match[1]}
+                  </code>
+                );
+
+                lastIndex = match.index + match[0].length;
+              }
+
+              // 添加剩余的普通文本
+              if (lastIndex < text.length) {
+                parts.push(text.slice(lastIndex));
+              }
+
+              return parts;
+            })()}
+          </Text>
+        </Space>
+      </div>
+    ),
+    children: hasChildren ? node.children.map(child => renderTreeNode(child, onJumpToCode, isDarkMode, expandedKeys, onToggleExpand)) : undefined
+  };
+};
+
+const TreeViewer = ({ treeFilePath, treeContent, className = '', onJumpToCode, currentFileName, currentFolder, fontSize = 16 }) => {
+
+  const [treeData, setTreeData] = useState([]);
+  const [expandedKeys, setExpandedKeys] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [currentFileKey, setCurrentFileKey] = useState(null);
+  // 直接从document.documentElement读取主题，与editor保持一致
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    return document.documentElement.getAttribute('data-theme') === 'dark';
+  });
+
+  // 监听主题变化
+  useEffect(() => {
+    // 获取当前主题
+    const getCurrentTheme = () => {
+      const theme = document.documentElement.getAttribute('data-theme');
+      return theme === 'dark';
+    };
+
+    setIsDarkMode(getCurrentTheme());
+
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'data-theme') {
+          setIsDarkMode(getCurrentTheme());
+        }
+      });
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme']
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  // 从Redux store获取背景设置
+   const { backgroundEnabled, backgroundImage } = useSelector((state) => state.theme);
+   const hasBackground = backgroundEnabled && backgroundImage;
+
+  // 生成localStorage的key
+  const getStorageKey = useCallback((fileName) => {
+    return `treeViewer_expanded_${fileName || 'default'}`;
+  }, []);
+
+  // 保存展开状态到localStorage
+  const saveExpandedState = useCallback((keys, fileName) => {
+    if (!fileName) return;
+    try {
+      const storageKey = getStorageKey(fileName);
+      localStorage.setItem(storageKey, JSON.stringify(keys));
+    } catch (error) {
+      console.warn('保存树状图展开状态失败:', error);
+    }
+  }, [getStorageKey]);
+
+  // 从localStorage恢复展开状态
+  const loadExpandedState = useCallback((fileName) => {
+    if (!fileName) return [];
+    try {
+      const storageKey = getStorageKey(fileName);
+      const saved = localStorage.getItem(storageKey);
+      return saved ? JSON.parse(saved) : [];
+    } catch (error) {
+      console.warn('恢复树状图展开状态失败:', error);
+      return [];
+    }
+  }, [getStorageKey]);
+
+  // 处理树状数据
+  const processTreeData = useCallback((text, fileName) => {
+    try {
+      const parsedData = parseTreeText(text);
+      setTreeData(parsedData);
+
+      // 检查是否是文件切换（排除初始化情况）
+      const isFileChanged = currentFileKey !== null && currentFileKey !== fileName;
+
+      if (isFileChanged) {
+        // 文件切换时重置为全折叠状态
+        setExpandedKeys([]);
+        setCurrentFileKey(fileName);
+        // 保存重置状态
+        saveExpandedState([], fileName);
+      } else {
+        // 初始化或同一文件时恢复之前的展开状态
+        const savedKeys = loadExpandedState(fileName);
+        setExpandedKeys(savedKeys);
+        setCurrentFileKey(fileName);
+      }
+    } catch (err) {
+      console.error('TreeViewer: 解析树状数据失败:', err);
+      setError(err.message);
+    }
+  }, [currentFileKey, loadExpandedState, saveExpandedState]);
+
+  // 加载树状文件内容或处理直接传入的内容
+  useEffect(() => {
+
+    if (treeContent) {
+      // 直接使用传入的内容
+      console.log('TreeViewer: Using provided treeContent, length:', treeContent.length);
+      console.log('TreeViewer: Content preview:', treeContent.substring(0, 200));
+      setLoading(false);
+      setError(null);
+      processTreeData(treeContent, currentFileName);
+      return;
+    }
+
+    if (!treeFilePath) {
+      return;
+    }
+
+    const loadTreeFile = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        // 构建完整的文件路径，使用file协议访问本地文件
+        let fullPath;
+        if (treeFilePath.startsWith('http')) {
+          fullPath = treeFilePath;
+        } else {
+          // 构建本地文件路径
+          const separator = navigator.platform.includes('Win') ? '\\' : '/';
+          const localPath = `${currentFolder}${separator}trees${separator}${treeFilePath}`;
+
+          try {
+            // 尝试使用Tauri的convertFileSrc转换路径
+            fullPath = convertFileSrc(localPath);
+          } catch (error) {
+            // 如果Tauri转换失败，回退到file://协议
+            fullPath = `file:///${localPath.replace(/\\\\/g, '/')}`;
+          }
+        }
+
+        const response = await fetch(fullPath);
+
+        if (!response.ok) {
+          throw new Error(`无法加载文件: ${response.status}`);
+        }
+
+        const text = await response.text();
+        processTreeData(text, currentFileName);
+
+      } catch (err) {
+        console.error('TreeViewer: 加载树状文件失败:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadTreeFile().then();
+  }, [treeFilePath, treeContent, processTreeData, currentFileName]);
+
+  // 展开/折叠处理
+  const onExpand = (expandedKeysValue) => {
+    setExpandedKeys(expandedKeysValue);
+    // 自动保存展开状态
+    saveExpandedState(expandedKeysValue, currentFileName);
+  };
+
+  // 切换单个节点的展开状态
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const onToggleExpand = (nodeKey, isCurrentlyExpanded) => {
+    let newKeys;
+    if (isCurrentlyExpanded) {
+      newKeys = expandedKeys.filter(key => key !== nodeKey);
+      setExpandedKeys(newKeys);
+    } else {
+      newKeys = [...expandedKeys, nodeKey];
+      setExpandedKeys(newKeys);
+    }
+    // 自动保存展开状态
+    saveExpandedState(newKeys, currentFileName);
+  };
+
+  // 渲染树形数据
+  const renderedTreeData = useMemo(() => {
+    return treeData.map(node => renderTreeNode(node, onJumpToCode, isDarkMode, expandedKeys, onToggleExpand));
+  }, [treeData, onJumpToCode, isDarkMode, expandedKeys, onToggleExpand]);
+
+  // 全部展开
+  const expandAll = () => {
+    const allKeys = [];
+    const collectAllKeys = (nodes) => {
+      nodes.forEach(node => {
+        if (node.children && node.children.length > 0) {
+          allKeys.push(node.key);
+          collectAllKeys(node.children);
+        }
+      });
+    };
+    collectAllKeys(treeData);
+    setExpandedKeys(allKeys);
+    // 自动保存展开状态
+    saveExpandedState(allKeys, currentFileName);
+  };
+
+  // 全部折叠
+  const collapseAll = () => {
+    setExpandedKeys([]);
+    // 自动保存展开状态
+    saveExpandedState([], currentFileName);
+  };
+
+  // 取消加载状态显示
+  // if (loading) {
+  //   return (
+  //     <div className={`tree-viewer ${className} ${isDarkMode ? 'dark' : ''}`}>
+  //       <div className="tree-viewer-loading">
+  //         <Spin size="large" />
+  //         <div>加载中...</div>
+  //       </div>
+  //     </div>
+  //   );
+  // }
+
+  if (error) {
+    return (
+      <div className={`tree-viewer ${className} ${isDarkMode ? 'dark' : ''}`}>
+        <div className="tree-viewer-error">
+          <div>加载失败: {error}</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Card
+      className={`tree-viewer-card ${isDarkMode ? 'dark' : 'light'} ${hasBackground ? 'with-background' : ''}`}
+      data-theme={isDarkMode ? 'dark' : 'light'}
+      style={{
+        '--tree-font-size': `${fontSize || 16}px`
+      }}
+    >
+      <div className="tree-header">
+        <Space>
+           <Tooltip title="全部展开">
+             <Button
+               type="text"
+               size="small"
+               icon={<ExpandAltOutlined />}
+               onClick={expandAll}
+             />
+           </Tooltip>
+           <Tooltip title="全部折叠">
+             <Button
+               type="text"
+               size="small"
+               icon={<ShrinkOutlined />}
+               onClick={collapseAll}
+             />
+           </Tooltip>
+         </Space>
+      </div>
+      {/* 树形内容区域 */}
+      <div className="tree-container">
+        {treeData.length > 0 ? (
+          <Tree
+             treeData={renderedTreeData}
+             expandedKeys={expandedKeys}
+             onExpand={onExpand}
+             showLine={true}
+             showIcon={false}
+             switcherIcon={({ expanded }) => (
+               <div
+                 className={`custom-switcher ${expanded ? "expanded" : "collapsed"}`}
+                 tabIndex={-1}
+               >
+                 <svg
+                   xmlns="http://www.w3.org/2000/svg"
+                   width={`${fontSize || 16}px`}
+                   height={`${fontSize || 16}px`}
+                   viewBox="0 0 24 24"
+                   fill="none"
+                   stroke="currentColor"
+                   strokeWidth="2"
+                   strokeLinecap="round"
+                   strokeLinejoin="round"
+                 >
+                   <polyline points="9 18 15 12 9 6"></polyline>
+                 </svg>
+               </div>
+             )}
+           />
+        ) : (
+          <div className="tree-viewer-empty">
+            <FileTextOutlined style={{ fontSize: '48px', opacity: 0.3 }} />
+            <div>暂无数据</div>
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+};
+
+export default TreeViewer;

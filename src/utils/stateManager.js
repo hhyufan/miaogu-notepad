@@ -7,11 +7,6 @@ const { settings: settingsApi } = tauriApi;
 class StateManager {
   constructor() {
     this.isTauri = window.__TAURI__ !== undefined;
-    console.log('StateManager初始化:', {
-      hasTauriApi: !!window.__TAURI__,
-      hasSettingsApi: !!settingsApi,
-      isTauri: this.isTauri
-    });
   }
 
   // 保存状态到Tauri settings
@@ -97,57 +92,57 @@ class StateManager {
 
   // 保存展开状态
   async saveExpandedSections(expandedSections) {
-    console.log('保存展开状态:', expandedSections, 'isTauri:', this.isTauri);
+
     return await this.saveState('expandedSections', expandedSections);
   }
 
   // 恢复展开状态
   async loadExpandedSections() {
-    console.log('加载展开状态, isTauri:', this.isTauri);
+
     const result = await this.loadState('expandedSections', []);
-    console.log('加载到的展开状态:', result);
+
     return result;
   }
 
   // 保存当前文件
   async saveCurrentFile(currentFile) {
-    console.log('保存当前文件:', currentFile, 'isTauri:', this.isTauri);
+
     return await this.saveState('currentFile', currentFile);
   }
 
   // 恢复当前文件
   async loadCurrentFile() {
-    console.log('加载当前文件, isTauri:', this.isTauri);
+
     const result = await this.loadState('currentFile', null);
-    console.log('加载到的当前文件:', result);
+
     return result;
   }
 
   // 保存树形数据
   async saveTreeData(treeData) {
-    console.log('保存树形数据:', treeData, 'isTauri:', this.isTauri);
+
     return await this.saveState('treeData', treeData);
   }
 
   // 恢复树形数据
   async loadTreeData() {
-    console.log('加载树形数据, isTauri:', this.isTauri);
+
     const result = await this.loadState('treeData', []);
-    console.log('加载到的树形数据:', result);
+
     return result;
   }
 
   // 保存选中的键
   async saveSelectedKeys(selectedKeys) {
-    console.log('保存选中键:', selectedKeys, 'isTauri:', this.isTauri);
+
     return await this.saveState('selectedKeys', selectedKeys);
   }
 
   // 恢复选中的键
   async loadSelectedKeys() {
-    console.log('加载选中键, isTauri:', this.isTauri);
+
     const result = await this.loadState('selectedKeys', []);
-    console.log('加载到的选中键:', result);
+
     return result;
   }
 }

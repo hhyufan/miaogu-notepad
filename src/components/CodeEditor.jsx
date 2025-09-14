@@ -6,6 +6,7 @@ import { shikiToMonaco } from '@shikijs/monaco';
 import { createHighlighter } from 'shiki';
 import { useEditor, useTheme } from '../hooks/redux';
 import tauriApi from '../utils/tauriApi';
+import MarkdownViewer from './MarkdownViewer';
 const { file: fileApi, settings: settingsApi } = tauriApi;
 // 内联主题配置，只保留使用的One主题
 const themes = {
@@ -14,11 +15,15 @@ const themes = {
 import extensionToLanguage from '../configs/file-extensions.json';
 import './CodeEditor.scss';
 
-function CodeEditor({ isDarkMode, fileManager }) {
+function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
   const editorRef = useRef(null);
   const containerRef = useRef(null);
   const isInternalChange = useRef(false); // 防止循环更新
   const [highlighterReady, setHighlighterReady] = useState(false);
+  const [internalShowMarkdownPreview, setInternalShowMarkdownPreview] = useState(false);
+
+  // 使用外部传入的showMarkdownPreview或内部状态
+  const actualShowMarkdownPreview = showMarkdownPreview || internalShowMarkdownPreview;
   const { fontSize, fontFamily, lineHeight } = useTheme();
   const { wordWrap, scrollBeyondLastLine, tabSize, insertSpaces, minimap, lineNumbers, folding, matchBrackets, autoIndent, formatOnPaste, formatOnType, renderWhitespace, cursorBlinking, cursorStyle, glyphMargin, showFoldingControls } = useEditor();
   const { currentFile, updateCode: updateContent } = fileManager;
@@ -48,6 +53,56 @@ function CodeEditor({ isDarkMode, fileManager }) {
   const firstRequestTimeRef = useRef(0); // 记录第一次请求的时间
   const DEBOUNCE_DELAY = 2000; // 2秒防抖
   const MAX_REQUESTS_PER_MINUTE = 6; // 10秒内最多6次请求
+
+  // 判断是否为Markdown文件（直接从AppHeader DOM获取显示的文件名）
+  const isMarkdownFile = useCallback(() => {
+    // 从AppHeader的DOM元素获取实际显示的文件名
+    let displayFileName = '';
+
+    try {
+      const element = document.querySelector('h4.ant-typography');
+      if (element && element.textContent && element.textContent.trim()) {
+        displayFileName = element.textContent.trim();
+        console.log(`成功从AppHeader获取文件名: ${displayFileName}`);
+      }
+    } catch (error) {
+      console.log('无法从DOM获取文件名', error);
+      return false;
+    }
+
+    if (!displayFileName) {
+      console.log('isMarkdownFile: 未获取到文件名');
+      return false;
+    }
+
+    const extension = displayFileName.toLowerCase().split('.').pop();
+    const isMarkdown = ['md', 'markdown', 'mgtree'].includes(extension);
+    console.log('isMarkdownFile 检测:', {
+      displayFileName,
+      extension,
+      isMarkdown
+    });
+    return isMarkdown;
+  }, []);
+
+  // 切换Markdown预览
+  const handleToggleMarkdownPreview = useCallback(() => {
+    if (!currentFile) {
+      message.warning('请先打开一个文件');
+      return;
+    }
+
+    if (!isMarkdownFile()) {
+      message.warning('只有Markdown文件支持预览功能');
+      return;
+    }
+    setInternalShowMarkdownPreview(prev => !prev);
+  }, [isMarkdownFile, currentFile]);
+
+  // 关闭Markdown预览
+  const handleCloseMarkdownPreview = useCallback(() => {
+    setInternalShowMarkdownPreview(false);
+  }, []);
   const REQUEST_RESET_INTERVAL = 10000; // 10秒重置计数器
 
   // 重试建议存储
@@ -129,11 +184,11 @@ function CodeEditor({ isDarkMode, fileManager }) {
     // 检查选中文本的左右是否存在幽灵文本，如果存在则追加而不是新建
     let leftGhost = null;
     let rightGhost = null;
-    
+
     // 查找左侧相邻的幽灵文本（选中文本开始位置的左侧）
     for (const [id, ghostData] of ghostTextsRef.current) {
       const ghostPos = ghostData.originalPosition;
-      
+
       // 检查是否在选中文本的左侧且相邻（考虑换行情况）
       if (ghostPos.lineNumber === range.startLineNumber) {
         // 同行情况：幽灵文本结束位置紧邻选中文本开始位置
@@ -152,11 +207,11 @@ function CodeEditor({ isDarkMode, fileManager }) {
         }
       }
     }
-    
+
     // 查找右侧相邻的幽灵文本（选中文本结束位置的右侧）
     for (const [id, ghostData] of ghostTextsRef.current) {
       const ghostPos = ghostData.originalPosition;
-      
+
       // 检查是否在选中文本的右侧且相邻（考虑换行情况）
       if (ghostPos.lineNumber === range.endLineNumber) {
         // 同行情况：幽灵文本开始位置紧邻选中文本结束位置
@@ -174,58 +229,58 @@ function CodeEditor({ isDarkMode, fileManager }) {
         }
       }
     }
-    
+
     // 如果找到相邻的幽灵文本，进行合并而不是新建
     if (leftGhost || rightGhost) {
       let mergedText = '';
       let mergedPosition = null;
       let ghostsToRemove = [];
-      
+
       if (leftGhost && rightGhost) {
         // 左右都有幽灵文本：左幽灵文本 + 选中文本 + 右幽灵文本
         // 检查是否需要在连接处添加换行符
         let leftText = leftGhost.ghostData.originalText;
         let rightText = rightGhost.ghostData.originalText;
-        
+
         // 如果左幽灵文本和选中文本之间跨行，需要添加换行符
         if (leftGhost.ghostData.originalPosition.lineNumber < range.startLineNumber) {
           leftText = leftText + '\n';
         }
-        
+
         // 如果选中文本和右幽灵文本之间跨行，需要添加换行符
         if (range.endLineNumber < rightGhost.ghostData.originalPosition.lineNumber) {
           text = text + '\n';
         }
-        
+
         mergedText = leftText + text + rightText;
         mergedPosition = leftGhost.ghostData.originalPosition;
         ghostsToRemove = [leftGhost.id, rightGhost.id];
       } else if (leftGhost) {
         // 只有左侧幽灵文本：左幽灵文本 + 选中文本
         let leftText = leftGhost.ghostData.originalText;
-        
+
         // 如果左幽灵文本和选中文本之间跨行，需要添加换行符
         if (leftGhost.ghostData.originalPosition.lineNumber < range.startLineNumber) {
           leftText = leftText + '\n';
         }
-        
+
         mergedText = leftText + text;
         mergedPosition = leftGhost.ghostData.originalPosition;
         ghostsToRemove = [leftGhost.id];
       } else if (rightGhost) {
         // 只有右侧幽灵文本：选中文本 + 右幽灵文本
         let rightText = rightGhost.ghostData.originalText;
-        
+
         // 如果选中文本和右幽灵文本之间跨行，需要添加换行符
         if (range.endLineNumber < rightGhost.ghostData.originalPosition.lineNumber) {
           text = text + '\n';
         }
-        
+
         mergedText = text + rightText;
         mergedPosition = { lineNumber: range.startLineNumber, column: range.startColumn };
         ghostsToRemove = [rightGhost.id];
       }
-      
+
       // 清除要合并的幽灵文本
       for (const ghostId of ghostsToRemove) {
         const ghostData = ghostTextsRef.current.get(ghostId);
@@ -237,14 +292,14 @@ function CodeEditor({ isDarkMode, fileManager }) {
           ghostTextsRef.current.delete(ghostId);
         }
       }
-      
+
       // 删除选中的文本
       editorRef.current.executeEdits('ghost-text-creation', [{
         range: range,
         text: '',
         forceMoveMarkers: true
       }]);
-      
+
       // 使用合并后的文本和位置创建新的幽灵文本
       text = mergedText;
       range = new monaco.Range(
@@ -356,22 +411,22 @@ function CodeEditor({ isDarkMode, fileManager }) {
         for (const ghost of relevantGhosts) {
           // 计算与当前位置的匹配度
           let score = 0;
-          
+
           // 位置匹配度：优先显示当前光标位置对应的幽灵文本
           if (ghost.originalPos.lineNumber === position.lineNumber &&
-              ghost.originalPos.column <= position.column) {
+            ghost.originalPos.column <= position.column) {
             score += 100; // 同行且位置合适的幽灵文本优先级最高
           } else if (ghost.originalPos.lineNumber < position.lineNumber) {
             score += 50; // 前面行的幽灵文本次优先级
           }
-          
+
           // 用户输入匹配度
           const inputLength = ghost.userInput.length;
           const originalLength = ghost.ghostData.originalText.length;
           if (inputLength > 0) {
             score += (inputLength / originalLength) * 10;
           }
-          
+
           if (score > bestScore) {
             bestScore = score;
             bestGhost = ghost;
@@ -529,7 +584,7 @@ function CodeEditor({ isDarkMode, fileManager }) {
     if (!editorRef.current || !ghostTextsRef.current.has(ghostId)) return;
 
     const ghostData = ghostTextsRef.current.get(ghostId);
-    
+
     // 清理该幽灵文本的提供器
     if (ghostData.providerDisposable) {
       ghostData.providerDisposable.dispose();
@@ -717,7 +772,7 @@ function CodeEditor({ isDarkMode, fileManager }) {
               if (updatedPosition) {
                 // 获取从幽灵文本起始位置到当前位置的所有文本
                 let completedInput = '';
-                
+
                 if (updatedPosition.lineNumber === originalPos.lineNumber) {
                   // 同一行的情况
                   const lineContent = model.getLineContent(originalPos.lineNumber);
@@ -736,7 +791,7 @@ function CodeEditor({ isDarkMode, fileManager }) {
                     }
                   }
                 }
-                
+
                 // 如果完全匹配幽灵文本，只清除当前这个幽灵文本
                 if (completedInput === ghostData.originalText) {
                   clearSpecificGhostText(ghostId);
@@ -856,20 +911,29 @@ function CodeEditor({ isDarkMode, fileManager }) {
 
   // 手动触发AI补全的函数 - 只在光标停留2秒不动时调用
   const triggerAICompletion = useCallback(async () => {
+    console.log('triggerAICompletion called', {
+      hasEditor: !!editorRef.current,
+      aiSettings: aiSettings,
+      isCompletionActive: isCompletionActiveRef.current
+    });
+
     if (!editorRef.current || !aiSettings.enabled || !aiSettings.baseUrl || !aiSettings.apiKey || !aiSettings.model) {
+      console.log('AI completion skipped - missing requirements');
       return;
     }
 
     // 额外检查：确保当前没有活跃的补全
     if (isCompletionActiveRef.current) {
+      console.log('AI completion skipped - already active');
       return;
     }
 
     try {
+      console.log('Triggering AI completion...');
       // 触发内联补全
-      await editorRef.current.trigger('auto-completion', 'editor.action.inlineSuggest.trigger', {});
+      await editorRef.current.trigger(null, 'editor.action.inlineSuggest.trigger', {});
     } catch (error) {
-      // AI补全触发失败（静默）
+      console.error('AI completion trigger failed:', error);
     }
   }, [aiSettings]);
   // 处理执行文件
@@ -1063,13 +1127,12 @@ function CodeEditor({ isDarkMode, fileManager }) {
           },
           suggestOnTriggerCharacters: true
         });
-        // 添加内联建议接受监听器（智能清除幽灵文本）
+        // 添加内联建议接受监听器（只在AI建议被接受时清除）
         inlineSuggestDisposableRef.current = editorRef.current.onDidChangeModelContent((e) => {
           // 检查是否是由内联建议接受导致的变化
           if (e.changes && e.changes.length > 0) {
             const change = e.changes[0];
-            let shouldClearGhostTexts = false;
-            
+
             // 检查是否有AI建议需要清除
             if (inlineAcceptRef.current && change.text) {
               const pending = inlineAcceptRef.current;
@@ -1077,62 +1140,16 @@ function CodeEditor({ isDarkMode, fileManager }) {
               if (change.text === pending.insertText || pending.insertText.startsWith(change.text)) {
                 // 清除待接受的建议
                 inlineAcceptRef.current = null;
-                shouldClearGhostTexts = true;
-              }
-            }
-            
-            // 检查用户是否完全输入了某个幽灵文本
-            if (!shouldClearGhostTexts && ghostTextsRef.current.size > 0) {
-              const model = editorRef.current?.getModel();
-              if (model) {
-                // 获取当前光标位置
-                const currentPosition = editorRef.current.getPosition();
-                
-                // 检查是否有幽灵文本被完全输入
-                for (const [ghostId, ghostData] of ghostTextsRef.current) {
-                  const originalPos = ghostData.originalPosition;
-                  
-                  // 检查当前光标是否在幽灵文本区域之后
-                  const isAfterGhost = currentPosition.lineNumber > originalPos.lineNumber ||
-                    (currentPosition.lineNumber === originalPos.lineNumber && currentPosition.column > originalPos.column);
-                  
-                  if (isAfterGhost) {
-                    // 获取从幽灵文本原始位置到当前光标位置的所有文本
-                    let userInput = '';
-                    
-                    if (currentPosition.lineNumber === originalPos.lineNumber) {
-                      // 同一行的情况
-                      const lineText = model.getLineContent(originalPos.lineNumber);
-                      userInput = lineText.substring(originalPos.column - 1, currentPosition.column - 1);
-                    } else {
-                      // 跨行的情况
-                      for (let lineNum = originalPos.lineNumber; lineNum <= currentPosition.lineNumber; lineNum++) {
-                        const lineText = model.getLineContent(lineNum);
-                        if (lineNum === originalPos.lineNumber) {
-                          userInput += lineText.substring(originalPos.column - 1);
-                          if (lineNum < currentPosition.lineNumber) userInput += '\n';
-                        } else if (lineNum === currentPosition.lineNumber) {
-                          userInput += lineText.substring(0, currentPosition.column - 1);
-                        } else {
-                          userInput += lineText + '\n';
-                        }
-                      }
-                    }
-                    
-                    // 检查用户输入是否完全匹配幽灵文本
-                    if (userInput === ghostData.originalText) {
-                      shouldClearGhostTexts = true;
-                      break;
-                    }
-                  }
+
+                // AI补全被接受时，清除所有幽灵文本
+                if (ghostTextsRef.current.size > 0) {
+                  clearAllGhostTexts();
                 }
               }
             }
-            
-            // 只有在Tab键接受建议或完全输入幽灵文本时才清除
-            if (shouldClearGhostTexts) {
-              clearAllGhostTexts();
-            }
+
+            // 移除自动清除逻辑 - 不再在用户输入时自动清除幽灵文本
+            // 只在保存文件或建议被完全应用时清除
           }
         });
 
@@ -1159,10 +1176,10 @@ function CodeEditor({ isDarkMode, fileManager }) {
                     forceMoveMarkers: true
                   }]);
                   inlineAcceptRef.current = null;
-                  
+
                   // 补全后删除所有幽灵文本
                   clearAllGhostTexts();
-                  
+
                   e.preventDefault();
                   e.stopPropagation();
 
@@ -1199,7 +1216,7 @@ function CodeEditor({ isDarkMode, fileManager }) {
                       text: acceptText,
                       forceMoveMarkers: true
                     }]);
-                    
+
                     // 更新待接受建议
                     const remainingText = insertText.substring(acceptText.length);
                     if (remainingText) {
@@ -1214,7 +1231,7 @@ function CodeEditor({ isDarkMode, fileManager }) {
                       // 完全接受后删除所有幽灵文本
                       clearAllGhostTexts();
                     }
-                    
+
                     e.preventDefault();
                     e.stopPropagation();
                   } catch (error) {
@@ -1244,10 +1261,10 @@ function CodeEditor({ isDarkMode, fileManager }) {
                     forceMoveMarkers: true
                   }]);
                   inlineAcceptRef.current = null;
-                  
+
                   // 补全后删除所有幽灵文本
                   clearAllGhostTexts();
-                  
+
                   e.preventDefault();
                   e.stopPropagation();
                 } catch (error) {
@@ -1289,6 +1306,12 @@ function CodeEditor({ isDarkMode, fileManager }) {
               setTimeout(() => {
                 ctrlLPressedRef.current = false;
               }, 1000);
+            }
+            // Ctrl+/：切换Markdown预览
+            else if (e.keyCode === monaco.KeyCode.Slash && (e.ctrlKey || e.metaKey)) {
+              handleToggleMarkdownPreview();
+              e.preventDefault();
+              e.stopPropagation();
             }
             // Backspace键使用默认行为
           });
@@ -1424,40 +1447,30 @@ function CodeEditor({ isDarkMode, fileManager }) {
     wasModifiedRef.current = currentFile.isModified;
   }, [currentFile?.isModified, clearAllGhostTexts]);
 
-  // 监听光标位置变化，实现3秒未移动自动触发补全
+  // 监听光标位置变化，立即触发AI补全（无防抖）
   useEffect(() => {
     if (!editorRef.current) return;
 
     const disposables = [];
 
-    // 监听光标位置变化 - 立即检查幽灵文本，2秒后触发AI补全
-    const cursorDisposable = editorRef.current.onDidChangeCursorPosition((e) => {
+    // 监听光标位置变化 - 立即检查幽灵文本并触发AI补全
+    const cursorDisposable = editorRef.current.onDidChangeCursorPosition(async (e) => {
       const newPosition = {
         lineNumber: e.position.lineNumber,
         column: e.position.column
       };
-
-      // 清除之前的定时器
-      if (cursorTimerRef.current) {
-        clearTimeout(cursorTimerRef.current);
-        cursorTimerRef.current = null;
-      }
 
       // 更新光标位置
       cursorPositionRef.current = newPosition;
 
       // 立即检查光标后面是否有幽灵文本并触发显示
       if (ghostTextsRef.current.size > 0) {
-        // 检查当前光标位置是否有幽灵文本
         for (const [id, ghostData] of ghostTextsRef.current) {
           const originalPos = ghostData.originalPosition;
-          
-          // 检查光标是否在幽灵文本位置或之前
           const isAtGhostPosition = newPosition.lineNumber === originalPos.lineNumber &&
             newPosition.column <= originalPos.column;
-          
+
           if (isAtGhostPosition) {
-            // 立即触发内联建议显示
             setTimeout(() => {
               editorRef.current?.trigger('ghost', 'editor.action.inlineSuggest.trigger', {});
             }, 10);
@@ -1466,42 +1479,14 @@ function CodeEditor({ isDarkMode, fileManager }) {
         }
       }
 
-      // 设置2秒防抖定时器 - 只有光标真正停留2秒不动才触发
-      cursorTimerRef.current = setTimeout(async () => {
-        // 再次检查光标位置是否发生变化
-        const currentPosition = editorRef.current?.getPosition();
-        if (!currentPosition ||
-          currentPosition.lineNumber !== newPosition.lineNumber ||
-          currentPosition.column !== newPosition.column) {
+      // 立即显示现有的内联补全建议（如果有的话）
+      // 光标移动时只显示已有建议，不触发新的AI补全请求
+      setTimeout(() => {
+        editorRef.current?.trigger('cursor-move', 'editor.action.inlineSuggest.trigger', {});
+      }, 50);
 
-          return;
-        }
-
-        // 检查是否有活跃的补全
-        if (!isCompletionActiveRef.current && aiSettings.enabled) {
-          // 检查API请求节流限制
-          const now = Date.now();
-
-          // 智能重置：如果距离上次请求超过10秒，立即重置计数器
-          if (apiRequestCountRef.current > 0 && now - lastRequestTimeRef.current > 10000) {
-            apiRequestCountRef.current = 0;
-            firstRequestTimeRef.current = 0;
-
-            // 清除旧的重置定时器
-            if (apiRequestResetTimerRef.current) {
-              clearTimeout(apiRequestResetTimerRef.current);
-              apiRequestResetTimerRef.current = null;
-            }
-          }
-
-          if (apiRequestCountRef.current >= MAX_REQUESTS_PER_MINUTE) {
-            return;
-          }
-
-
-          await triggerAICompletion();
-        }
-      }, DEBOUNCE_DELAY);
+      // 注意：光标移动时不再触发新的AI补全请求，避免补全建议闪烁消失
+      // AI补全只在用户输入时触发，保持补全建议的稳定性
     });
 
     // 监听内联补全显示/隐藏状态
@@ -1546,6 +1531,7 @@ function CodeEditor({ isDarkMode, fileManager }) {
     const disposables = allLangs.map(langId =>
       monaco.languages.registerInlineCompletionsProvider(langId, {
         provideInlineCompletions: async (model, position, context, token) => {
+          console.log('provideInlineCompletions called', { position, context });
           try {
             // 标记补全开始
             isCompletionActiveRef.current = true;
@@ -1586,11 +1572,11 @@ function CodeEditor({ isDarkMode, fileManager }) {
             // 优化：检查当前位置是否已存在以此光标为开头的幽灵文本
             const hasGhostTextAtCursor = Array.from(ghostTextsRef.current.values()).some(ghostData => {
               const ghostPos = ghostData.originalPosition || ghostData.currentPosition;
-              return ghostPos && 
-                     ghostPos.lineNumber === position.lineNumber && 
-                     ghostPos.column === position.column;
+              return ghostPos &&
+                ghostPos.lineNumber === position.lineNumber &&
+                ghostPos.column === position.column;
             });
-            
+
             if (hasGhostTextAtCursor) {
               // 当前位置已有幽灵文本，跳过API调用以优化访问次数
               isCompletionActiveRef.current = false;
@@ -2231,7 +2217,12 @@ Filter: ${filterName}
         monaco.editor.setModelLanguage(model, language);
       }
     }
-  }, [currentFile, getFileLanguage]);
+
+    // 重置Markdown预览状态 - 只有当文件不是Markdown时才关闭预览
+    if (currentFile && !isMarkdownFile() && internalShowMarkdownPreview) {
+      setInternalShowMarkdownPreview(false);
+    }
+  }, [currentFile, getFileLanguage, showMarkdownPreview]);
 
   // 更新编辑器主题
   useEffect(() => {
@@ -2308,6 +2299,36 @@ Filter: ${filterName}
           />
         </div>
       )}
+
+      {/* Markdown预览模式 */}
+      {actualShowMarkdownPreview && currentFile && isMarkdownFile() && (
+        <div className="markdown-preview-overlay" style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'transparent',
+          zIndex: 1000
+        }}>
+          <MarkdownViewer
+            content={currentFile.content || ''}
+            onClose={handleCloseMarkdownPreview}
+            fileName={currentFile?.name}
+            currentFolder={(() => {
+              console.log('CodeEditor - currentFile.path:', currentFile?.path);
+              if (!currentFile?.path) return '';
+              // 处理Windows和Unix路径分隔符
+              const pathSeparator = currentFile.path.includes('\\') ? '\\' : '/';
+              const pathParts = currentFile.path.split(pathSeparator);
+              const folderPath = pathParts.slice(0, -1).join(pathSeparator);
+              console.log('CodeEditor - extracted currentFolder:', folderPath);
+              return folderPath;
+            })()}
+          />
+        </div>
+      )}
+
       <div
         ref={containerRef}
         className="code-editor"
@@ -2316,7 +2337,8 @@ Filter: ${filterName}
           height: '100%',
           minHeight: '400px',
           opacity: currentFile ? 1 : 0.3,
-          border: 'none'
+          border: 'none',
+          display: actualShowMarkdownPreview ? 'none' : 'block'
         }}
       />
     </div>

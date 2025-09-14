@@ -1,0 +1,571 @@
+/* TreeViewer 组件样式 - 完全基于 TreeEditor 设计 */
+@use './AppHeader.scss';
+
+.tree-viewer {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: var(--background-primary);
+  color: var(--text-primary);
+  overflow: hidden;
+}
+
+/* 编辑器内容区域 */
+.editor-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1);
+  overflow: hidden;
+}
+
+/* 当前文件信息 */
+.current-file {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.5);
+  padding: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.5) calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1);
+  background: var(--background-secondary);
+  border-radius: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.5);
+  margin-bottom: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1);
+  font-size: var(--tree-font-size, var(--editor-font-size, 14px));
+  color: var(--text-secondary);
+}
+
+/* TreeViewer Card 样式 */
+.tree-viewer-card {
+  margin: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1) 0;
+  border-radius: 0;
+  box-shadow: none;
+  transition: all 0.3s ease;
+  border: none;
+  background: transparent !important;
+  display: flex;
+  flex-direction: column;
+  /* 自适应高度设置 */
+  height: auto !important;
+  min-height: auto !important;
+  max-height: none !important;
+
+  /* 覆盖 Ant Design Card 的默认背景 */
+  &.ant-card {
+    background: transparent !important;
+  }
+
+  .ant-card {
+    background: transparent !important;
+  }
+
+  /* 亮色主题 */
+  &.light {
+    background: transparent !important;
+    border: none;
+    box-shadow: none;
+  }
+
+  &.light.with-background {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  // 移除通用的with-background样式，避免覆盖主题特定样式
+
+  &.with-background .tree-container {
+    background: transparent !important;
+  }
+
+  &.with-background .tree-header {
+    background: transparent !important;
+  }
+
+  &.with-background .ant-card-body {
+    background: transparent !important;
+  }
+
+  .ant-card-body {
+    display: flex;
+    flex-direction: column;
+    /* 移除flex: 1，改为自适应高度 */
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+    padding: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1);
+  }
+
+  &.with-background .ant-tree {
+    background: transparent !important;
+  }
+
+  &.with-background .ant-tree-node-content-wrapper {
+    background: transparent !important;
+  }
+
+  /* 深色主题 */
+  &.dark {
+    background: transparent !important;
+    border: none;
+    box-shadow: none;
+  }
+
+  &.dark.with-background {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  /* 深色主题下覆盖 Ant Design Card 的默认背景 */
+  &.dark.ant-card {
+    background: transparent !important;
+  }
+
+  &.dark .ant-card {
+    background: transparent !important;
+  }
+
+  /* 深色主题下的树形组件样式 */
+  &.dark .ant-tree {
+    color: rgba(255, 255, 255, 0.85);
+
+    .ant-tree-node-content-wrapper {
+      color: rgba(255, 255, 255, 0.85);
+
+      &:hover:not(.tree-node-clickable) {
+        background-color: rgba(255, 255, 255, 0.08);
+        color: rgba(255, 255, 255, 0.85);
+      }
+
+      &.ant-tree-node-selected {
+        background-color: rgba(24, 144, 255, 0.2);
+        color: #1890ff;
+      }
+    }
+  }
+
+  /* 深色主题下的头部按钮样式 */
+  &.dark .tree-header .ant-btn {
+    color: rgba(255, 255, 255, 0.65);
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.88);
+    }
+  }
+
+  /* 深色主题下的图标样式 */
+  &.dark .custom-switcher {
+    color: rgba(255, 255, 255, 0.45);
+  }
+
+  /* 深色主题下的空状态文字 */
+  &.dark .ant-empty-description {
+    color: rgba(255, 255, 255, 0.65);
+  }
+}
+
+.tree-viewer-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.tree-viewer-card.loading,
+.tree-viewer-card.error {
+  text-align: center;
+  padding: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1.5);
+}
+
+.tree-loading {
+  color: #1890ff;
+  font-size: var(--tree-font-size, var(--editor-font-size, 14px));
+}
+
+.tree-error {
+  color: #ff4d4f;
+  font-size: var(--tree-font-size, var(--editor-font-size, 14px));
+}
+
+/* 树形组件头部 */
+.tree-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 0;
+  padding: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1);
+}
+
+.tree-header h4 {
+  color: #1890ff;
+  font-weight: 600;
+  margin: 0 !important;
+  padding: 0;
+  font-size: var(--tree-font-size, var(--editor-font-size, 16px));
+  line-height: 1;
+}
+
+.tree-header .ant-space {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.25);
+}
+
+.tree-header .ant-space .ant-space-item {
+  display: flex;
+  align-items: center;
+}
+
+.tree-header .ant-btn {
+  height: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1.5);
+  width: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1.5);
+  min-width: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1.5);
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  box-shadow: none;
+  font-size: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.75);
+  background: transparent;
+  color: rgba(0, 0, 0, 0.65);
+}
+
+.tree-header .ant-btn:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+  color: rgba(0, 0, 0, 0.88);
+}
+
+/* 树形容器 */
+.tree-container {
+  /* 自适应高度，根据展开的节点数量调整 */
+  min-height: 50px;
+  max-height: none;
+  overflow-y: visible;
+  padding: 8px 0;
+  
+  /* 自定义滚动条样式 */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+    
+    &:hover {
+      background: #a8a8a8;
+    }
+  }
+  
+  /* 深色主题滚动条 */
+  .dark & {
+    &::-webkit-scrollbar-track {
+      background: #2a2a2a;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: #4a4a4a;
+      
+      &:hover {
+        background: #6a6a6a;
+      }
+    }
+  }
+  }
+
+/* 自定义展开/折叠图标 */
+.custom-switcher {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1);
+  height: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1);
+  transition: transform 0.2s ease;
+  cursor: pointer;
+  color: rgba(0, 0, 0, 0.45);
+
+  &.expanded {
+    transform: rotate(90deg);
+  }
+
+  &.collapsed {
+    transform: rotate(0deg);
+  }
+
+  svg {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+/* Ant Design Tree 组件自定义样式 */
+.ant-tree {
+  background: transparent;
+  color: #262626;
+  font-size: var(--tree-font-size, var(--editor-font-size, 14px));
+
+  .ant-tree-node-content-wrapper {
+    padding: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.25) calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.5);
+    border-radius: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.25);
+    transition: all 0.2s ease;
+    cursor: pointer;
+    background: transparent;
+    color: #262626;
+    line-height: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1.2);
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.04);
+      color: #262626;
+    }
+
+    &.ant-tree-node-selected {
+      background-color: #e6f7ff;
+      color: #1890ff;
+    }
+  }
+
+  .ant-tree-switcher {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1.5);
+    height: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1.5);
+  }
+
+  .ant-tree-indent-unit {
+    width: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1.5);
+  }
+}
+
+/* 空状态样式 */
+.tree-viewer-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--text-tertiary);
+  font-size: var(--tree-font-size, var(--editor-font-size, 14px));
+
+  .anticon {
+    margin-bottom: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.5);
+    opacity: 0.3;
+  }
+}
+
+/* 加载状态样式 */
+.tree-viewer-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--primary-color);
+  font-size: var(--tree-font-size, var(--editor-font-size, 14px));
+
+  .ant-spin {
+    margin-bottom: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.5);
+  }
+}
+
+/* 错误状态样式 */
+.tree-viewer-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--error-color);
+  font-size: var(--tree-font-size, var(--editor-font-size, 14px));
+}
+
+/* 深色主题适配 */
+.tree-viewer-card.dark {
+  .custom-switcher {
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .ant-tree {
+    .ant-tree-node-content-wrapper {
+      color: rgba(255, 255, 255, 0.95);
+
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.12);
+        color: rgba(255, 255, 255, 1);
+      }
+
+      &.ant-tree-node-selected {
+        background-color: rgba(24, 144, 255, 0.3);
+        color: #69c0ff;
+      }
+    }
+  }
+
+  .tree-viewer-empty {
+    color: rgba(255, 255, 255, 0.65);
+  }
+
+  .tree-header .ant-btn {
+    color: rgba(255, 255, 255, 0.85);
+    
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.12);
+      color: rgba(255, 255, 255, 1);
+    }
+  }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .tree-viewer-card {
+    margin: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.5) 0;
+    border-radius: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.5);
+  }
+
+  .tree-header {
+    padding: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.75);
+  }
+
+  .ant-card-body {
+    padding: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.75);
+  }
+}
+
+/* 动画效果 */
+.tree-viewer-card {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 焦点样式 */
+.ant-tree:focus {
+  outline: none;
+}
+
+.ant-tree-node-content-wrapper:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* 选中状态增强 */
+.ant-tree-node-content-wrapper.ant-tree-node-selected {
+  font-weight: 500;
+}
+
+/* 跳转节点样式 */
+.tree-node-content {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.5);
+  padding: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.25) calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.5);
+  border-radius: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 0.375);
+  transition: all 0.2s ease;
+  cursor: default;
+}
+
+.tree-node-content.tree-node-clickable {
+  cursor: pointer;
+  color: #1890ff;
+  transition: none !important;
+  /* Removed all hover effects to prevent text disappearing */
+}
+
+/* 强制禁用跳转节点的所有hover效果 */
+.tree-node-content.tree-node-clickable:hover {
+  background: transparent !important;
+  background-color: transparent !important;
+  transform: none !important;
+  box-shadow: none !important;
+  color: #1890ff !important;
+  opacity: 1 !important;
+}
+
+.tree-node-text.has-code {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 600;
+}
+
+/* 强制禁用渐变文字的hover效果 */
+.tree-node-text.has-code:hover {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  opacity: 1 !important;
+}
+
+/* 完全取消跳转节点的hover效果，避免文字消失问题 */
+
+/* 深色主题下的跳转节点样式 */
+.tree-viewer-card.dark .tree-node-content.tree-node-clickable {
+  color: #69c0ff;
+  
+  &:hover {
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #69c0ff !important;
+  }
+}
+
+/* 行内代码样式 - 与Markdown保持一致 */
+.tree-viewer .inline-code,
+.tree-viewer-card .inline-code {
+  background-color: var(--code-bg, #e6f3ff) !important;
+  color: var(--code-text, #374151) !important;
+  padding: 3px 6px;
+  margin: 0 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Fira Mono', Consolas, Menlo, Courier, monospace;
+  font-weight: 500;
+  border: 1px solid var(--code-border, #93c5fd);
+}
+
+/* 暗色主题下的行内代码样式 */
+.tree-viewer[data-theme="dark"] .inline-code,
+.tree-viewer-card.dark .inline-code,
+[data-theme="dark"] .tree-viewer .inline-code,
+[data-theme="dark"] .tree-viewer-card .inline-code {
+  background-color: #201f1b !important;
+  color: #d1d5db !important;
+  border-color: #2563eb;
+}
+
+/* 打印样式 */
+@media print {
+  .tree-viewer {
+    height: auto;
+    overflow: visible;
+  }
+
+  .tree-container {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .tree-viewer-card {
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
+
+  .tree-header .ant-btn {
+    display: none;
+  }
+}

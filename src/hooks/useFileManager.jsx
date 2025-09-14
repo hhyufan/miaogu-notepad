@@ -4,6 +4,7 @@ import tauriApi from '../utils/tauriApi';
 const { file: fileApi } = tauriApi;
 import { useI18n } from './useI18n'
 import { listen } from '@tauri-apps/api/event'
+import { withFileTransition } from '../utils/viewTransition'
 
 // 高性能工具函数
 const debounce = (func, wait) => {
@@ -128,7 +129,7 @@ export const useFileManager = () => {
     const [currentFilePath, setCurrentFilePath] = useState('')
     const [openedFiles, setOpenedFiles] = useState([]) // 结构：{ path: string, name: string, isTemporary: boolean, isModified: boolean, content: string, originalContent: string }[]
     const [editorCode, setEditorCode] = useState('')
-    const [defaultFileName, setDefaultFileName] = useState(() => t('common.untitled'))
+    const [defaultFileName, setDefaultFileName] = useState(() => t('common.untitled') + '.js')
     const defaultFileNameRef = useRef(defaultFileName)
     const [fileWatchers, setFileWatchers] = useState(new Map())
 
@@ -238,10 +239,18 @@ export const useFileManager = () => {
             return fileFromMap;
         }
 
-        // 对于临时文件，使用editorCode作为内容
+        // 对于临时文件，尝试从currentFilePath中提取文件名
+        let fileName = defaultFileName;
+        if (currentFilePath && currentFilePath.startsWith('temp://')) {
+            const tempFileName = currentFilePath.split('temp://')[1];
+            if (tempFileName && tempFileName.includes('-')) {
+                fileName = tempFileName.split('-')[0]; // 移除时间戳部分
+            }
+        }
+
         return {
-            path: '',
-            name: defaultFileName,
+            path: currentFilePath || '',
+            name: fileName,
             isTemporary: true,
             isModified: false,
             content: editorCode,
@@ -252,7 +261,13 @@ export const useFileManager = () => {
     }, [openedFilesMap, currentFilePath, defaultFileName, editorCode])
 
     // 获取当前文件内容
-    const currentCode = useMemo(() => currentFile.content, [currentFile.content])
+    const currentCode = useMemo(() => {
+        // 对于临时文件，使用editorCode确保内容同步
+        if (currentFile.isTemporary) {
+            return editorCode;
+        }
+        return currentFile.content;
+    }, [currentFile.content, currentFile.isTemporary, editorCode])
 
     // 检查并处理文件路径冲突
     const handlePathConflict = useCallback((filePath) => {
@@ -662,13 +677,18 @@ export const useFileManager = () => {
             }
         }
 
-        if (!target) return
+        if (!target) {
+            return;
+        }
 
-        setCurrentFilePath(targetPath)
-        setEditorCode(target.content)
+        // 使用View Transition包装文件切换操作
+        withFileTransition(() => {
+            setCurrentFilePath(targetPath)
+            setEditorCode(target.content)
 
-        // 使用节流的编辑器内容更新
-        throttledEditorUpdate(target.content)
+            // 使用节流的编辑器内容更新
+            throttledEditorUpdate(target.content)
+        })
     }, [openedFilesMap, openedFiles, throttledEditorUpdate])
 
     // 检查未保存的临时文件和已修改文件
@@ -998,7 +1018,7 @@ export const useFileManager = () => {
         }
     }, [currentFilePath, editorCode, throttledEditorUpdate])
 
-    // 切换到文件（用于面包屑点击）
+    // 切换到文件（用于面板点击）
     const switchToFile = useCallback(async (filePath) => {
         try {
             // 检查文件是否已经打开

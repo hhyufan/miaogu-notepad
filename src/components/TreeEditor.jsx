@@ -577,13 +577,51 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
               ) : (
                 <FileTextOutlined className="tree-icon file-icon" />
               )}
-              <span
-                className={`node-title ${node.hasJump ? "has-code" : ""
+              <Text
+                className={`tree-node-text ${node.hasJump ? "has-code" : ""
                   }`}
                 onClick={() => startEditNode(node)}
               >
-                {node.title || t('treeEditor.placeholder.newNode')}
-              </span>
+                {(() => {
+                  const text = node.title || t('treeEditor.placeholder.newNode');
+                  const codeRegex = /`([^`]+)`/g;
+
+                  // 如果文本中没有反引号，直接返回原始文本
+                  if (!codeRegex.test(text)) {
+                    return text;
+                  }
+
+                  // 重置正则表达式
+                  codeRegex.lastIndex = 0;
+
+                  const parts = [];
+                  let lastIndex = 0;
+                  let match;
+
+                  while ((match = codeRegex.exec(text)) !== null) {
+                    // 添加代码块前的普通文本
+                    if (match.index > lastIndex) {
+                      parts.push(text.slice(lastIndex, match.index));
+                    }
+
+                    // 添加代码块
+                    parts.push(
+                      <code key={match.index} className="inline-code">
+                        {match[1]}
+                      </code>
+                    );
+
+                    lastIndex = match.index + match[0].length;
+                  }
+
+                  // 添加剩余的普通文本
+                  if (lastIndex < text.length) {
+                    parts.push(text.slice(lastIndex));
+                  }
+
+                  return parts;
+                })()}
+              </Text>
             </Space>
             <Space className="node-actions" tabIndex={-1}>
               <Tooltip title={t('treeEditor.tooltip.addChildNode')} tabIndex={-1}>
