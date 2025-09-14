@@ -198,7 +198,7 @@ const SettingsModal = ({ visible, onClose }) => {
     } catch (error) {
       console.error('设置保存失败:', error);
       console.error('错误详情:', error.message, error.stack);
-      message.error(`${t('settings.saveError')}: ${error.message || '未知错误'}`);
+      message.error(`${t('settings.saveError')}: ${error.message || t('common.unknownError')}`);
     }
   }, [localSettings, setFontSize, setFontFamily, setLineHeight, setBackgroundImage, setBackgroundEnabled, setBackgroundTransparency, t]);
 
@@ -246,13 +246,13 @@ const SettingsModal = ({ visible, onClose }) => {
       reader.onload = (e) => {
         const dataUrl = e.target.result;
         updateLocalSetting('backgroundImage', dataUrl);
-        message.success('背景图片上传成功');
+        message.success(t('settings.backgroundUploadSuccess'));
       };
       reader.readAsDataURL(file);
       return false; // 阻止默认上传行为
     } catch (error) {
       // 静默处理背景图片上传错误
-      message.error('上传背景图片失败');
+      message.error(t('settings.backgroundUploadError'));
       return false;
     }
   }, [updateLocalSetting]);

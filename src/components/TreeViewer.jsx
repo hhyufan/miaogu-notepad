@@ -11,6 +11,7 @@ import {
   ShrinkOutlined
 } from '@ant-design/icons';
 // 移除useTheme导入，改用直接读取data-theme属性
+import { useI18n } from '../hooks/useI18n';
 import './TreeViewer.scss';
 
 const { Text, Title } = Typography;
@@ -219,6 +220,7 @@ const renderTreeNode = (node, onJumpToCode, isDarkMode, expandedKeys, onToggleEx
 };
 
 const TreeViewer = ({ treeFilePath, treeContent, className = '', onJumpToCode, currentFileName, currentFolder, fontSize = 16 }) => {
+  const { t } = useI18n();
 
   const [treeData, setTreeData] = useState([]);
   const [expandedKeys, setExpandedKeys] = useState([]);
@@ -321,8 +323,8 @@ const TreeViewer = ({ treeFilePath, treeContent, className = '', onJumpToCode, c
 
     if (treeContent) {
       // 直接使用传入的内容
-      console.log('TreeViewer: Using provided treeContent, length:', treeContent.length);
-      console.log('TreeViewer: Content preview:', treeContent.substring(0, 200));
+
+
       setLoading(false);
       setError(null);
       processTreeData(treeContent, currentFileName);
@@ -459,7 +461,7 @@ const TreeViewer = ({ treeFilePath, treeContent, className = '', onJumpToCode, c
     >
       <div className="tree-header">
         <Space>
-           <Tooltip title="全部展开">
+           <Tooltip title={t('tree.expandAll')}>
              <Button
                type="text"
                size="small"
@@ -467,7 +469,7 @@ const TreeViewer = ({ treeFilePath, treeContent, className = '', onJumpToCode, c
                onClick={expandAll}
              />
            </Tooltip>
-           <Tooltip title="全部折叠">
+           <Tooltip title={t('tree.collapseAll')}>
              <Button
                type="text"
                size="small"
@@ -510,7 +512,7 @@ const TreeViewer = ({ treeFilePath, treeContent, className = '', onJumpToCode, c
         ) : (
           <div className="tree-viewer-empty">
             <FileTextOutlined style={{ fontSize: '48px', opacity: 0.3 }} />
-            <div>暂无数据</div>
+            <div>{t('common.noData')}</div>
           </div>
         )}
       </div>

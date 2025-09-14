@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Empty, message } from 'antd';
+import { useTranslation } from 'react-i18next';
 import '../monaco-worker';
 import * as monaco from 'monaco-editor';
 import { shikiToMonaco } from '@shikijs/monaco';
@@ -16,6 +17,7 @@ import extensionToLanguage from '../configs/file-extensions.json';
 import './CodeEditor.scss';
 
 function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
+  const { t } = useTranslation();
   const editorRef = useRef(null);
   const containerRef = useRef(null);
   const isInternalChange = useRef(false); // 防止循环更新
@@ -88,16 +90,16 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
   // 切换Markdown预览
   const handleToggleMarkdownPreview = useCallback(() => {
     if (!currentFile) {
-      message.warning('请先打开一个文件');
+      message.warning(t('message.warning.openFileFirst')).then();
       return;
     }
 
     if (!isMarkdownFile()) {
-      message.warning('只有Markdown文件支持预览功能');
+      message.warning(t('message.warning.markdownOnly')).then();
       return;
     }
     setInternalShowMarkdownPreview(prev => !prev);
-  }, [isMarkdownFile, currentFile]);
+  }, [isMarkdownFile, currentFile, t]);
 
   // 关闭Markdown预览
   const handleCloseMarkdownPreview = useCallback(() => {
@@ -564,11 +566,9 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
       }
 
       // 检查文本内容是否为空（但允许空白字符如换行符、空格等）
-      if (!text) {
-        return false;
-      }
+      return text;
 
-      return true;
+
     };
 
     if (shouldCreateGhost()) {
@@ -681,7 +681,7 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
   // 补充当前行的幽灵文本
   const acceptCurrentLineGhostText = useCallback(() => {
     if (!editorRef.current || ghostTextsRef.current.size === 0) {
-      message.warning('没有可用的幽灵文本', 1);
+      message.warning(t('message.warning.noGhostTextAvailable'), 1).then();
       return;
     }
 
@@ -802,17 +802,17 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
             // 当前行幽灵文本已补充（静默）
             return;
           } else {
-            message.info('当前行已完整输入', 1);
+            message.info(t('message.info.currentLineCompleted'), 1).then();
             return;
           }
         } else {
-          message.info('已超出幽灵文本范围', 1);
+          message.info(t('message.info.beyondGhostTextRange'), 1).then();
           return;
         }
       }
     }
 
-    message.warning('当前位置没有可补充的幽灵文本', 1);
+    message.warning(t('message.warning.noGhostTextAtCurrentPosition'), 1).then();
   }, []);
 
   // 处理文本变化时的幽灵文本智能匹配
@@ -939,7 +939,7 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
   // 处理执行文件
   const handleExecuteFile = useCallback(async () => {
     if (!currentFile?.path) {
-      message.warning('请先保存文件');
+      message.warning(t('message.warning.saveFileFirst'));
       return;
     }
 
@@ -947,14 +947,14 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
       const result = await fileApi.executeFile(currentFile.path);
       // AI补全成功（静默）
     } catch (error) {
-      message.error(`执行失败: ${error}`);
+      message.error(t('message.error.executionFailed', { error }));
     }
-  }, [currentFile]);
+  }, [currentFile, t]);
 
   // 处理在终端中打开
   const handleOpenInTerminal = useCallback(async () => {
     if (!currentFile?.path) {
-      message.warning('请先保存文件');
+      message.warning(t('message.warning.saveFileFirst'));
       return;
     }
 
@@ -962,14 +962,14 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
       const result = await fileApi.openInTerminal(currentFile.path);
       // AI补全成功（静默）
     } catch (error) {
-      message.error(`打开终端失败: ${error}`);
+      message.error(t('message.error.openTerminalFailed', { error }));
     }
-  }, [currentFile]);
+  }, [currentFile, t]);
 
   // 处理在资源管理器中显示
   const handleShowInExplorer = useCallback(async () => {
     if (!currentFile?.path) {
-      message.warning('请先保存文件');
+      message.warning(t('message.warning.saveFileFirst'));
       return;
     }
 
@@ -977,9 +977,9 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
       const result = await fileApi.showInExplorer(currentFile.path);
       // AI补全成功（静默）
     } catch (error) {
-      message.error(`打开资源管理器失败: ${error}`);
+      message.error(t('message.error.openExplorerFailed', { error }));
     }
-  }, [currentFile]);
+  }, [currentFile, t]);
 
   // 获取文件扩展名
   const getLanguageFromExtension = useCallback((fileName) => {

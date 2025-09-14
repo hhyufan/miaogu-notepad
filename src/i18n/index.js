@@ -41,4 +41,11 @@ i18n
     ns: ['translation']
   });
 
+// 导出getI18n函数供工具函数使用
+export const getI18n = () => {
+  return {
+    t: i18n.t.bind(i18n)
+  };
+};
+
 export default i18n;

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Spin, Alert, Skeleton } from 'antd';
 import mermaid from 'mermaid';
+import { useI18n } from '../hooks/useI18n';
 import './MermaidRenderer.css';
 
 // 初始化 Mermaid
@@ -46,6 +47,7 @@ mermaid.initialize({
 });
 
 const MermaidRenderer = ({ code, isDarkMode = false }) => {
+  const { t } = useI18n();
   const elementRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -103,7 +105,7 @@ const MermaidRenderer = ({ code, isDarkMode = false }) => {
     return (
       <div className="mermaid-container">
         <Alert
-          message="图表渲染失败"
+          message={t('mermaid.renderFailed')}
           description={error}
           type="error"
           showIcon

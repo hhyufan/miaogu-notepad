@@ -5,6 +5,7 @@
 
 import { save } from '@tauri-apps/plugin-dialog';
 import { writeFile } from '@tauri-apps/plugin-fs';
+import { getI18n } from '../i18n';
 
 /**
  * 将DOM元素转换为Canvas并导出为PNG
@@ -111,7 +112,8 @@ export const exportWithHtml2Canvas = async (element, options = {}) => {
         // 如果SVG方法失败，使用纯色填充作为后备
         ctx.fillStyle = textColor;
         ctx.font = '16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-        ctx.fillText('树状图导出', padding, padding + 20);
+        const { t } = getI18n();
+        ctx.fillText(t('export.treeExport'), padding, padding + 20);
         resolve();
       };
 
@@ -140,7 +142,8 @@ export const exportWithHtml2Canvas = async (element, options = {}) => {
       });
 
       if (!filePath) {
-        return { success: false, message: '用户取消了保存' };
+        const { t } = getI18n();
+        return { success: false, message: t('export.userCancelled') };
       }
 
       // 将Blob转换为ArrayBuffer
@@ -150,7 +153,8 @@ export const exportWithHtml2Canvas = async (element, options = {}) => {
       // 使用Tauri API保存文件
       await writeFile(filePath, uint8Array);
 
-      return { success: true, message: '导出成功' };
+      const { t } = getI18n();
+      return { success: true, message: t('export.exportSuccess') };
     } catch (error) {
       throw error;
     } finally {
@@ -177,7 +181,8 @@ export const exportWithHtml2Canvas = async (element, options = {}) => {
       });
     }
   } catch (error) {
-    return { success: false, message: `导出失败: ${error.message}` };
+    const { t } = getI18n();
+    return { success: false, message: t('export.exportFailed', { error: error.message }) };
   }
 };
 

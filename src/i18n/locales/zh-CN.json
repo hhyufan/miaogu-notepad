@@ -39,10 +39,24 @@
     "settings": "设置"
   },
   "common": {
+    "confirm": "确认",
+    "cancel": "取消",
+    "save": "保存",
+    "delete": "删除",
+    "edit": "编辑",
+    "add": "添加",
+    "search": "搜索",
+    "loading": "加载中...",
+    "noData": "暂无数据",
+    "error": "错误",
+    "success": "成功",
+    "warning": "警告",
+    "info": "信息",
+    "unknownError": "未知错误",
     "untitled": "未命名",
     "modified": "已修改",
     "temporary": "临时文件",
-    "loading": "加载中..."
+    "clickToPreview": "点击预览"
   },
   "tabs": {
     "close": "关闭",
@@ -70,7 +84,11 @@
     "unsavedFile": "未保存的文件",
     "decreaseFontSize": "减小字体",
     "increaseFontSize": "增大字体",
-    "lineColumn": "行 {{line}}, 列 {{column}}"
+    "lineColumn": "行 {{line}}, 列 {{column}}",
+    "switchToCodeEditor": "切换到代码编辑器",
+    "switchToTreeEditor": "切换到树形编辑器",
+    "switchToPreviewMode": "切换到预览模式",
+    "editorMode": "编辑器模式"
   },
   "statusBar": {
     "line": "行",
@@ -138,6 +156,8 @@
     "resetSuccess": "设置已重置",
     "backgroundSuccess": "背景图片设置成功",
     "backgroundError": "选择背景图片失败",
+    "backgroundUploadSuccess": "背景图片上传成功",
+    "backgroundUploadError": "上传背景图片失败",
     "aiSettingsUpdated": "AI 设置已更新",
     "aiRequestFailed": "AI 请求失败",
     "aiNotConfigured": "AI 补全未配置"
@@ -185,6 +205,15 @@
     "saveSelectedFiles": "保存选中的文件 ({{count}})",
     "unsavedFilesMessage": "以下文件有未保存的更改，请选择要保存的文件："
   },
+  "export": {
+    "treeExport": "树状图导出",
+    "userCancelled": "用户取消了保存",
+    "exportSuccess": "导出成功",
+    "exportFailed": "导出失败: {{error}}"
+  },
+  "mermaid": {
+    "renderFailed": "图表渲染失败"
+  },
   "message": {
     "success": {
       "fileSaved": "文件保存成功",
@@ -194,7 +223,17 @@
       "settingsSaved": "设置保存成功",
       "backgroundUploaded": "背景图片上传成功",
       "backgroundSet": "背景图片设置成功",
-      "backgroundRemoved": "背景图片移除成功"
+      "backgroundRemoved": "背景图片移除成功",
+      "copiedToClipboard": "已复制到剪贴板",
+      "nodeDeleted": "节点删除成功",
+      "editSaved": "编辑保存成功"
+    },
+    "info": {
+      "copiedToClipboard": "已复制到剪贴板",
+      "currentLineCompleted": "当前行已完整输入",
+      "beyondGhostTextRange": "已超出幽灵文本范围",
+      "restoringSession": "正在恢复会话...",
+      "loading": "加载中..."
     },
     "error": {
       "fileOpenFailed": "文件打开失败",
@@ -211,11 +250,27 @@
       "updateFileLineEndingFailed": "更新文件行尾序号失败",
       "switchFileFailed": "切换文件失败",
       "invalidFilePath": "未提供有效的文件路径",
-      "unknownError": "未知错误"
+      "unknownError": "未知错误",
+      "copyFailed": "复制失败",
+      "restoreSessionFailed": "恢复会话失败",
+      "executionFailed": "执行失败: {{error}}",
+      "openTerminalFailed": "打开终端失败: {{error}}",
+      "openExplorerFailed": "打开资源管理器失败: {{error}}",
+      "saveEditFailed": "保存编辑失败",
+      "addNodeFailed": "添加节点失败",
+      "deleteNodeFailed": "删除节点失败",
+      "codeBlockNotFound": "未找到{{language}}代码示例#{{index}}",
+      "backgroundUploadError": "上传背景图片失败"
     },
     "warning": {
-      "unsavedChanges": "有未保存的更改",
-      "fileNotFound": "文件未找到"
+        "unsavedChanges": "有未保存的更改",
+        "fileNotFound": "文件未找到",
+        "openFileFirst": "请先打开一个文件",
+        "markdownOnly": "只有Markdown文件支持预览功能",
+        "saveFileFirst": "请先保存文件",
+        "nodeContentEmpty": "节点内容不能为空",
+        "noGhostTextAvailable": "没有可用的幽灵文本",
+        "noGhostTextAtCurrentPosition": "当前位置没有可补充的幽灵文本"
     }
   },
   "window": {
@@ -238,17 +293,20 @@
     "zoomOut": "Ctrl+Minus",
     "resetZoom": "Ctrl+0"
   },
+  "tree": {
+    "addRootNode": "添加根节点",
+    "expandAll": "全部展开",
+    "collapseAll": "全部折叠",
+    "addChildNode": "添加子节点",
+    "deleteNode": "删除节点",
+    "zoomIn": "放大",
+    "zoomOut": "缩小",
+    "resetZoom": "重置缩放",
+    "knowledgeMap": "知识点脉络",
+    "newNode": "[新节点]"
+  },
   "treeEditor": {
     "tooltip": {
-      "addRootNode": "添加根节点",
-      "expandAll": "展开所有",
-      "collapseAll": "收起所有",
-      "addChildNode": "添加子节点",
-      "deleteNode": "删除节点",
-      "zoomIn": "放大",
-      "zoomOut": "缩小",
-      "resetZoom": "重置缩放"
-    },
     "placeholder": {
       "inputNodeContent": "输入节点内容...",
       "newNode": "[新节点]"
@@ -256,5 +314,10 @@
     "empty": {
       "noContent": "暂无内容，点击上方 + 按钮添加节点"
     }
+  },
+  "markdownViewer": {
+    "preview": {
+      "clickToPreview": "点击预览"
+    }
   }
-}
+}}

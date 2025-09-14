@@ -100,15 +100,15 @@ const AutoTreeH1 = ({ titleText, isDarkMode, containerRef, children, currentFile
   }, [titleText, currentFolder]);
 
   const handleJumpToCode = useCallback((jumpLanguage, jumpIndex) => {
-    console.log('handleJumpToCode called:', { jumpLanguage, jumpIndex });
+
 
     // 查找对应语言和索引的代码块
     const codeBlocks = containerRef.current?.querySelectorAll(`pre.language-${jumpLanguage}`) || [];
-    console.log('Found code blocks:', codeBlocks.length, codeBlocks);
+
 
     if (codeBlocks.length >= jumpIndex && jumpIndex > 0) {
       const targetPre = codeBlocks[jumpIndex - 1]; // 索引从1开始，数组从0开始
-      console.log('Target pre element:', targetPre);
+
 
       // 滚动到目标代码块
       targetPre.scrollIntoView({
@@ -117,23 +117,23 @@ const AutoTreeH1 = ({ titleText, isDarkMode, containerRef, children, currentFile
       });
 
       // 添加高亮效果
-      console.log('Applying highlight styles...');
+
       targetPre.style.setProperty('transition', 'all 0.3s ease', 'important');
       targetPre.style.setProperty('border', '1px solid rgba(24, 144, 255, 0.5)', 'important');
       targetPre.style.setProperty('border-radius', '4px', 'important');
 
       // 3秒后移除高亮效果
       setTimeout(() => {
-        console.log('Removing highlight styles...');
+
         targetPre.style.removeProperty('border');
         targetPre.style.removeProperty('border-radius');
       }, 3000);
     } else {
-      console.log('Code block not found or invalid index');
+
     }
   }, [containerRef]);
 
-  console.log('AutoTreeH1: Rendering with treeFilePath:', treeFilePath);
+
 
   return (
     <div>
@@ -282,6 +282,7 @@ const LANGUAGE_DISPLAY_MAP = {
 const MarkdownRenderer = React.memo(({ content, currentFileName, currentFolder, isDarkMode }) => {
   const containerRef = useRef(null);
   const { token } = useToken();
+  const { t } = useI18n();
 
   // 使用useMemo来稳定content，避免不必要的重新渲染
   const memoizedContent = useMemo(() => content, [content]);
@@ -321,9 +322,9 @@ const MarkdownRenderer = React.memo(({ content, currentFileName, currentFolder, 
   const handleCopyToClipboard = useCallback(async (text) => {
     try {
       await navigator.clipboard.writeText(text);
-      message.success('已复制到剪贴板');
+      message.success(t('message.success.copiedToClipboard'));
     } catch (err) {
-      message.error('复制失败');
+      message.error(t('message.error.copyFailed'));
     }
   }, []);
 
@@ -545,7 +546,7 @@ const MarkdownRenderer = React.memo(({ content, currentFileName, currentFolder, 
                     display: 'block'
                   }}
                   preview={{
-                    mask: '点击预览',
+                    mask: t('common.clickToPreview'),
                     maskClassName: 'custom-mask'
                   }}
                   {...props}
@@ -561,16 +562,16 @@ const MarkdownRenderer = React.memo(({ content, currentFileName, currentFolder, 
 
                 // 创建跳转到代码块的回调函数
                 const handleJumpToCode = (jumpLanguage, jumpIndex) => {
-                  console.log('Inline handleJumpToCode called:', { jumpLanguage, jumpIndex });
+
 
                   // 查找对应语言和索引的代码块
                   const codeBlocks = containerRef.current?.querySelectorAll(`pre.language-${jumpLanguage}`) || [];
-                  console.log('Inline found code blocks:', codeBlocks.length, codeBlocks);
+
 
                   if (codeBlocks.length >= jumpIndex && jumpIndex > 0) {
                     const targetCodeBlock = codeBlocks[jumpIndex - 1]; // 索引从1开始，数组从0开始
                     const targetPre = targetCodeBlock.closest('pre');
-                    console.log('Inline target elements:', { targetCodeBlock, targetPre });
+
 
                     if (targetPre) {
                       // 滚动到目标代码块
@@ -580,20 +581,20 @@ const MarkdownRenderer = React.memo(({ content, currentFileName, currentFolder, 
                       });
 
                       // 添加高亮效果
-                      console.log('Inline applying highlight styles...');
+
                       targetPre.style.setProperty('transition', 'all 0.3s ease', 'important');
                       targetPre.style.setProperty('border', '1px solid rgba(24, 144, 255, 0.5)', 'important');
                       targetPre.style.setProperty('border-radius', '4px', 'important');
 
                       // 3秒后移除高亮效果
                       setTimeout(() => {
-                        console.log('Inline removing highlight styles...');
+
                         targetPre.style.removeProperty('border');
                         targetPre.style.removeProperty('border-radius');
                       }, 3000);
                     }
                   } else {
-                    console.log('Inline code block not found or invalid index');
+
                     message.error(`未找到${jumpLanguage}代码示例#${jumpIndex}`);
                   }
                 };

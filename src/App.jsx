@@ -87,11 +87,11 @@ const AppContent = ({ isDarkMode, toggleTheme, fileManager }) => {
   // 获取编辑器模式提示文本
   const getEditorModeTitle = () => {
     if (isMgtreeFile) {
-      return editorMode === EDITOR_MODES.MGTREE ? '切换到代码编辑器' : '切换到树形编辑器';
+      return editorMode === EDITOR_MODES.MGTREE ? t('editor.switchToCodeEditor') : t('editor.switchToTreeEditor');
     } else if (isMarkdownFile) {
-      return editorMode === EDITOR_MODES.MARKDOWN ? '切换到代码编辑器' : '切换到预览模式';
+      return editorMode === EDITOR_MODES.MARKDOWN ? t('editor.switchToCodeEditor') : t('editor.switchToPreviewMode');
     }
-    return '编辑器模式';
+    return t('editor.editorMode');
   };
 
   // 键盘事件监听 - CTRL + / 切换编辑器
@@ -168,13 +168,14 @@ const AppContent = ({ isDarkMode, toggleTheme, fileManager }) => {
 // 主应用组件（在Provider内部）
 const MainApp = () => {
   const { theme: currentTheme, setTheme } = useTheme();
+  const { t } = useI18n();
   const [loading, setLoading] = useState(true);
 
   // 会话恢复
   const { isRestoring, restoreError } = useSessionRestore();
 
   // 获取背景状态
-  const { backgroundEnabled, backgroundImage, backgroundTransparency } = useSelector((state) => state.theme);
+  const { backgroundEnabled, backgroundImage } = useSelector((state) => state.theme);
 
 
 
@@ -455,11 +456,11 @@ const MainApp = () => {
       <div className="app-loading">
         <Spin size="large" />
         <div className="loading-spinner">
-          {isRestoring ? '正在恢复会话...' : '加载中...'}
+          {isRestoring ? t('message.info.restoringSession') : t('message.info.loading')}
         </div>
         {restoreError && (
           <div className="restore-error">
-            恢复会话失败: {restoreError}
+            {t('message.error.restoreSessionFailed')}: {restoreError}
           </div>
         )}
       </div>

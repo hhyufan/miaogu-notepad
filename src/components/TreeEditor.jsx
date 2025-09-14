@@ -35,7 +35,8 @@ const { Text, Title } = Typography;
 // 解析树形文本
 const parseTreeText = (text) => {
   const lines = text.split("\n").filter((line) => line.trim());
-  const root = { key: "root", title: "知识点脉络", children: [], level: -1 };
+  const { t } = useTranslation();
+  const root = { key: "root", title: t('tree.knowledgeMap'), children: [], level: -1 };
   const stack = [root];
   let keyCounter = 0;
 
@@ -115,7 +116,7 @@ const parseTreeText = (text) => {
     }
 
     // 处理占位符：如果title是"[新节点]"，则转换为空字符串
-    const finalTitle = cleanTitle === "[新节点]" ? "" : cleanTitle;
+    const finalTitle = cleanTitle === t('tree.newNode') ? "" : cleanTitle;
 
     const node = {
       key: `node-${keyCounter++}`,
@@ -154,7 +155,7 @@ const treeToText = (nodes, level = 0) => {
     } else {
       // 如果没有originalText，输出节点标题，如果标题为空则使用占位符
       const indent = "  ".repeat(level);
-      const nodeText = node.title || "[新节点]";
+      const nodeText = node.title || t('tree.newNode');
       result += indent + nodeText + "\n";
     }
 
@@ -275,7 +276,7 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
     // 从DOM直接获取当前输入值，避免受控组件状态问题
     const value = (inputRef.current?.input?.value || inputRef.current?.value || '').trim();
     if (!value) {
-      message.error("节点内容不能为空");
+      message.error(t('message.warning.nodeContentEmpty'));
       return;
     }
 
@@ -349,7 +350,7 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
       await saveToFileSystem(newTreeData);
     } catch (error) {
       console.error("保存编辑失败:", error);
-      message.error("保存编辑失败");
+      message.error(t('message.error.saveEditFailed'));
     } finally {
       // 立即重置标志，无需延迟
       setIsInternalOperation(false);
@@ -424,7 +425,7 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
       await saveToFileSystem(newTreeData);
     } catch (error) {
       console.error("添加节点失败:", error);
-      message.error("添加节点失败");
+      message.error(t('message.error.addNodeFailed'));
     } finally {
       // 立即重置标志，无需延迟
       setIsInternalOperation(false);
@@ -462,10 +463,10 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
       // 实时保存到文件系统
       await saveToFileSystem(newTreeData);
 
-      message.success("节点删除成功");
+      message.success(t('message.success.nodeDeleted'));
     } catch (error) {
       console.error("删除节点失败:", error);
-      message.error("删除节点失败");
+      message.error(t('message.error.deleteNodeFailed'));
     } finally {
       // 立即重置标志，无需延迟
       setIsInternalOperation(false);
