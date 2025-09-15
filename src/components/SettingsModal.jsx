@@ -170,7 +170,16 @@ const SettingsModal = ({ visible, onClose }) => {
       // 保存背景设置
       setBackgroundImage(localSettings.backgroundImage);
       setBackgroundEnabled(localSettings.backgroundEnabled);
-      setBackgroundTransparency(localSettings.backgroundTransparency);
+      
+      // 分别设置dark和light模式的背景透明度
+      if (localSettings.backgroundTransparency && typeof localSettings.backgroundTransparency === 'object') {
+        if (localSettings.backgroundTransparency.dark !== undefined) {
+          setBackgroundTransparency('dark', localSettings.backgroundTransparency.dark);
+        }
+        if (localSettings.backgroundTransparency.light !== undefined) {
+          setBackgroundTransparency('light', localSettings.backgroundTransparency.light);
+        }
+      }
 
       // 保存编辑器设置
 

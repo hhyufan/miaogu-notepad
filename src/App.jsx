@@ -167,7 +167,16 @@ const AppContent = ({ isDarkMode, toggleTheme, fileManager }) => {
 
 // 主应用组件（在Provider内部）
 const MainApp = () => {
-  const { theme: currentTheme, setTheme } = useTheme();
+  const { 
+    theme: currentTheme, 
+    setTheme, 
+    setFontSize, 
+    setFontFamily, 
+    setLineHeight,
+    setBackgroundImage,
+    setBackgroundEnabled,
+    setBackgroundTransparency
+  } = useTheme();
   const { t } = useI18n();
   const [loading, setLoading] = useState(true);
 
@@ -359,8 +368,29 @@ const MainApp = () => {
           const savedTheme = await settingsApi.get('theme', 'light');
           const savedFontSize = await settingsApi.get('fontSize', 14);
           const savedFontFamily = await settingsApi.get('fontFamily', 'Consolas, Monaco, monospace');
+          const savedLineHeight = await settingsApi.get('lineHeight', 1.5);
+          const savedBackgroundImage = await settingsApi.get('backgroundImage', '');
+          const savedBackgroundEnabled = await settingsApi.get('backgroundEnabled', false);
+          const savedBackgroundTransparency = await settingsApi.get('backgroundTransparency', { dark: 80, light: 55 });
 
+          // 应用所有设置到Redux store
           setTheme(savedTheme);
+          setFontSize(savedFontSize);
+          setFontFamily(savedFontFamily);
+          setLineHeight(savedLineHeight);
+          setBackgroundImage(savedBackgroundImage);
+          setBackgroundEnabled(savedBackgroundEnabled);
+          
+          // 设置背景透明度（需要分别设置dark和light模式）
+          if (savedBackgroundTransparency && typeof savedBackgroundTransparency === 'object') {
+            if (savedBackgroundTransparency.dark !== undefined) {
+              setBackgroundTransparency('dark', savedBackgroundTransparency.dark);
+            }
+            if (savedBackgroundTransparency.light !== undefined) {
+              setBackgroundTransparency('light', savedBackgroundTransparency.light);
+            }
+          }
+          
           document.documentElement.setAttribute('data-theme', savedTheme);
         } else {
           // 浏览器环境，使用默认设置
