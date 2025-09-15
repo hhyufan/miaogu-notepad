@@ -62,5 +62,6 @@
   "R": "r",
   "dockerfile": "dockerfile",
   "Dockerfile": "dockerfile",
-  "txt": "plaintext"
+  "txt": "plaintext",
+  "mgtree": "plaintext"
 }

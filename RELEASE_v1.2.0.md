@@ -1,6 +1,6 @@
 # 🎉 喵咕记事本 v1.2.0 发布 - Markdown渲染与树形编辑器
 
-![GitHub Release](https://img.shields.io/badge/release-v1.2.0-green) [![Date](https://img.shields.io/badge/date-2025--01--04-blue)](https://github.com/hhyufan/miaogu-ide)
+![GitHub Release](https://img.shields.io/badge/release-v1.2.0-green) [![Date](https://img.shields.io/badge/date-2025--09--15-blue)](https://github.com/hhyufan/miaogu-ide)
 
 ## 🚀 版本亮点
 

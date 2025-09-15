@@ -1030,7 +1030,8 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
       'toml': 'toml',
       'ini': 'ini',
       'conf': 'ini',
-      'txt': 'plaintext'
+      'txt': 'plaintext',
+      'mgtree': 'plaintext'
     };
 
     return languageMap[ext] || 'plaintext';
