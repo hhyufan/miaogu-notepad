@@ -202,6 +202,26 @@ body {
   background-color: transparent !important;
 }
 
+/* MarkdownViewer 图片样式优化 */
+.markdown-viewer-container .ant-image {
+  max-width: 100% !important;
+  
+  img {
+    max-width: 100% !important;
+    max-height: 500px !important;
+    width: auto !important;
+    height: auto !important;
+    object-fit: contain !important;
+  }
+}
+
+/* 针对SVG图片的特殊处理 */
+.markdown-viewer-container .ant-image img[src$=".svg"],
+.markdown-viewer-container .ant-image img[src*=".svg"] {
+  max-width: 400px !important;
+  max-height: 300px !important;
+}
+
 .markdown-viewer-container .theme-toggle-btn,
 .markdown-viewer-container .ant-btn,
 .theme-toggle {

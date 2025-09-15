@@ -6,7 +6,7 @@
 
 **Miaogu Notepad** is an lightweight notepad built with Tauri + React + Monaco Editor. It combines the performance advantages of desktop applications with the flexibility of modern web technologies, integrating **AI Smart Completion Engine** to provide a clean, smooth, and intelligent code editing experience.
 
-> ⚡**Tauri Lightweight Advantage**: Based on Rust + System WebView architecture, packaged as a **single exe file**, size **< 17MB**
+> ⚡**Tauri Lightweight Advantage**: Based on Rust + System WebView architecture, packaged as a **single exe file**, size **< 18MB**
 >
 > **Why can Tauri generate a single exe file?**
 >
@@ -57,7 +57,7 @@
 - **View Transition**: Smooth interface transition animations using modern Web APIs
 - **Internationalization**: Complete Chinese/English interface switching support
 - **Single File Deployment**: Packaged as a single exe file, no installation required, download and use
-- **Ultra Lightweight**: Application size only **< 17MB**, 90%+ size reduction compared to Electron apps
+- **Ultra Lightweight**: Application size only **< 18MB**, 90%+ size reduction compared to Electron apps
 - **Zero Dependency Runtime**: No need to pre-install Node.js, .NET Framework, or other runtime environments
 
 ## 📸 Screenshots
@@ -65,6 +65,10 @@
 | Light Mode                        | Dark Mode                       |
 | --------------------------------- | ------------------------------- |
 | ![Light](images/theme_light_en.png) | ![Dark](images/theme_dark_en.png) |
+
+| 树编辑器                      | Markdown渲染                     |
+| ----------------------------- | ---------------------------- |
+| ![TreeEditor](images/tree_editor_en.png) | ![MarkdownRenderer](images/markdown_previewer_en.png) |
 
 ## 🛠 Technical Architecture
 
@@ -174,7 +178,6 @@ npm run tauri:build
 Miaogu Notepad supports defining and using tree structures in Markdown documents through three methods:
 
 **1. Inline Tree Diagram (```tree code block)**
-```markdown
 ```tree
 Root Node
   Child Node 1
@@ -184,19 +187,16 @@ Root Node
   Child Node 3
     Deep Node >java[2]
 ```
-```
 
 **2. External File Reference (@tree() syntax)**
-```markdown
 ```tree
 @tree(algorithm-tree)
-```
 ```
 This method automatically finds and renders the content of `trees/algorithm-tree.mgtree` file.
 
 **3. Auto Association (H1 title auto-matching)**
 When an H1 title exists in the Markdown document, the system automatically finds the mgtree file with the same name:
-```markdown
+```md
 # Data Structures and Algorithms
 ```
 The system will automatically find and render the `trees/Data Structures and Algorithms.mgtree` file.
@@ -208,13 +208,13 @@ The system will automatically find and render the `trees/Data Structures and Alg
 ##### Four Jump Syntaxes
 
 **1. Explicit Index Jump**
-```
+```demo
 Node Name >java[2]
 ```
 Jump to the 2nd java code block in the document
 
 **2. Incremental Jump**
-```
+```demo
 Basic Syntax >java[1]
 Advanced Usage >java++
 Advanced Features >java++
@@ -222,14 +222,14 @@ Advanced Features >java++
 Auto-increment index: 1 → 2 → 3
 
 **3. Jump Addition**
-```
+```demo
 Basic Concepts >python[1]
 Practical Projects >python+=3
 ```
 Jump from index 1 to index 4
 
 **4. Same Index Reuse**
-```
+```demo
 Theoretical Foundation >javascript[1]
 Related Concepts >javascript
 ```

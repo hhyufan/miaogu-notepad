@@ -536,14 +536,17 @@ const MarkdownRenderer = React.memo(({ content, currentFileName, currentFolder, 
                 <Image
                   src={imageSrc}
                   alt={alt}
-                  width="50%"
                   style={{
+                    maxWidth: '100%',
+                    maxHeight: '500px',
+                    width: 'auto',
                     height: 'auto',
                     borderRadius: '4px',
                     boxShadow: token.boxShadow,
                     border: `1px solid ${token.colorBorder}`,
                     margin: '1rem 0',
-                    display: 'block'
+                    display: 'block',
+                    objectFit: 'contain'
                   }}
                   preview={{
                     mask: t('common.clickToPreview'),
