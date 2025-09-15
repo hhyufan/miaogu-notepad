@@ -33,10 +33,9 @@ import "./TreeEditor.scss";
 const { Text, Title } = Typography;
 
 // 解析树形文本
-const parseTreeText = (text) => {
+const parseTreeText = (text, knowledgeMapTitle = 'Knowledge Map', newNodeText = '[新节点]') => {
   const lines = text.split("\n").filter((line) => line.trim());
-  const { t } = useTranslation();
-  const root = { key: "root", title: t('tree.knowledgeMap'), children: [], level: -1 };
+  const root = { key: "root", title: knowledgeMapTitle, children: [], level: -1 };
   const stack = [root];
   let keyCounter = 0;
 
@@ -116,7 +115,7 @@ const parseTreeText = (text) => {
     }
 
     // 处理占位符：如果title是"[新节点]"，则转换为空字符串
-    const finalTitle = cleanTitle === t('tree.newNode') ? "" : cleanTitle;
+    const finalTitle = cleanTitle === newNodeText ? "" : cleanTitle;
 
     const node = {
       key: `node-${keyCounter++}`,
@@ -144,7 +143,7 @@ const parseTreeText = (text) => {
 };
 
 // 将树形数据转换为文本
-const treeToText = (nodes, level = 0) => {
+const treeToText = (nodes, level = 0, newNodeText = '[新节点]') => {
   let result = "";
 
   nodes.forEach((node) => {
@@ -155,12 +154,12 @@ const treeToText = (nodes, level = 0) => {
     } else {
       // 如果没有originalText，输出节点标题，如果标题为空则使用占位符
       const indent = "  ".repeat(level);
-      const nodeText = node.title || t('tree.newNode');
+      const nodeText = node.title || newNodeText;
       result += indent + nodeText + "\n";
     }
 
     if (node.children && node.children.length > 0) {
-      result += treeToText(node.children, level + 1);
+      result += treeToText(node.children, level + 1, newNodeText);
     }
   });
 
@@ -208,7 +207,7 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
     if (!currentFile || isInternalOperation) return;
 
     try {
-      const textContent = treeToText(data);
+      const textContent = treeToText(data, 0, t('tree.newNode'));
       updateCode(textContent);
     } catch (error) {
       console.error("保存到文件系统失败:", error);
@@ -219,7 +218,7 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
   useEffect(() => {
     if (currentFile && currentFile.content && !isInternalOperation) {
       try {
-        const parsedData = parseTreeText(currentFile.content);
+        const parsedData = parseTreeText(currentFile.content, t('tree.knowledgeMap'), t('tree.newNode'));
         setTreeData(parsedData);
       } catch (error) {
         console.error("解析树形数据失败:", error);

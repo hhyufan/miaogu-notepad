@@ -17,9 +17,9 @@ import './TreeViewer.scss';
 const { Text, Title } = Typography;
 
 // 解析树状文本为树形数据结构
-const parseTreeText = (text) => {
+const parseTreeText = (text, rootTitle = 'Root') => {
   const lines = text.split('\n').filter(line => line.trim());
-  const root = { key: 'root', title: 'Root', children: [], level: -1 };
+  const root = { key: 'root', title: rootTitle, children: [], level: -1 };
   const stack = [root];
   let keyCounter = 0;
 
@@ -294,7 +294,7 @@ const TreeViewer = ({ treeFilePath, treeContent, className = '', onJumpToCode, c
   // 处理树状数据
   const processTreeData = useCallback((text, fileName) => {
     try {
-      const parsedData = parseTreeText(text);
+      const parsedData = parseTreeText(text, t('tree.knowledgeMap'));
       setTreeData(parsedData);
 
       // 检查是否是文件切换（排除初始化情况）
