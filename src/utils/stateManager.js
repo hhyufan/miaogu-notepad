@@ -1,15 +1,28 @@
-// 状态持久化管理工具
-// 使用Tauri Settings API进行状态的保存和恢复
+/**
+ * @fileoverview 状态持久化管理工具 - 使用Tauri Settings API进行状态的保存和恢复
+ * 提供应用状态的持久化存储，包括展开状态、当前文件、树形数据等
+ * @author hhyufan
+ * @version 1.2.0
+ */
 
 import tauriApi from './tauriApi';
+
 const { settings: settingsApi } = tauriApi;
 
+/**
+ * 状态管理器类 - 负责应用状态的持久化存储
+ */
 class StateManager {
   constructor() {
     this.isTauri = window.__TAURI__ !== undefined;
   }
 
-  // 保存状态到Tauri settings
+  /**
+   * 保存状态到Tauri settings
+   * @param {string} key - 状态键名
+   * @param {*} value - 要保存的值
+   * @returns {Promise<boolean>} 是否保存成功
+   */
   async saveState(key, value) {
     if (!this.isTauri || !settingsApi) {
       console.warn('Not in Tauri environment, state will not be persisted');
@@ -25,7 +38,6 @@ class StateManager {
     }
   }
 
-  // 从Tauri settings恢复状态
   async loadState(key, defaultValue = null) {
     if (!this.isTauri || !settingsApi) {
       console.warn('Not in Tauri environment, returning default value');
@@ -41,7 +53,6 @@ class StateManager {
     }
   }
 
-  // 删除指定状态
   async deleteState(key) {
     if (!this.isTauri || !settingsApi) {
       console.warn('Not in Tauri environment');
@@ -57,7 +68,6 @@ class StateManager {
     }
   }
 
-  // 清空所有状态
   async clearAllStates() {
     if (!this.isTauri || !settingsApi) {
       console.warn('Not in Tauri environment');
@@ -66,7 +76,6 @@ class StateManager {
 
     try {
       // Tauri settings API 没有直接的清空所有方法
-      // 这里可以根据需要删除特定的键
       const keysToDelete = [
         'expandedSections',
         'currentFile',
@@ -80,7 +89,6 @@ class StateManager {
         try {
           await settingsApi.remove(key);
         } catch (error) {
-          // 忽略单个键删除失败的错误
         }
       }
       return true;
@@ -90,13 +98,11 @@ class StateManager {
     }
   }
 
-  // 保存展开状态
   async saveExpandedSections(expandedSections) {
 
     return await this.saveState('expandedSections', expandedSections);
   }
 
-  // 恢复展开状态
   async loadExpandedSections() {
 
     const result = await this.loadState('expandedSections', []);
@@ -104,13 +110,11 @@ class StateManager {
     return result;
   }
 
-  // 保存当前文件
   async saveCurrentFile(currentFile) {
 
     return await this.saveState('currentFile', currentFile);
   }
 
-  // 恢复当前文件
   async loadCurrentFile() {
 
     const result = await this.loadState('currentFile', null);
@@ -118,13 +122,11 @@ class StateManager {
     return result;
   }
 
-  // 保存树形数据
   async saveTreeData(treeData) {
 
     return await this.saveState('treeData', treeData);
   }
 
-  // 恢复树形数据
   async loadTreeData() {
 
     const result = await this.loadState('treeData', []);
@@ -132,13 +134,11 @@ class StateManager {
     return result;
   }
 
-  // 保存选中的键
   async saveSelectedKeys(selectedKeys) {
 
     return await this.saveState('selectedKeys', selectedKeys);
   }
 
-  // 恢复选中的键
   async loadSelectedKeys() {
 
     const result = await this.loadState('selectedKeys', []);
@@ -147,7 +147,6 @@ class StateManager {
   }
 }
 
-// 创建单例实例
 const stateManager = new StateManager();
 
 export default stateManager;

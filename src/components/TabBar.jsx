@@ -1,3 +1,10 @@
+/**
+ * @fileoverview 标签页组件 - 管理多个打开文件的标签页显示和操作
+ * 提供文件标签页的显示、切换、关闭等功能，支持右键菜单操作
+ * @author hhyufan
+ * @version 1.2.0
+ */
+
 import './TabBar.scss'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
@@ -5,15 +12,21 @@ import { EditOutlined, FileAddOutlined } from '@ant-design/icons'
 import { Tabs, Dropdown } from 'antd'
 import { useI18n } from '../hooks/useI18n'
 
+/**
+ * 标签页组件
+ * @param {Object} props - 组件属性
+ * @param {Object} props.fileManager - 文件管理器实例
+ * @returns {JSX.Element} 标签页组件
+ */
 const TabBar = ({ fileManager }) => {
     const { t } = useI18n();
-    const { 
-        currentFile, 
-        openedFiles, 
-        switchFile: switchToFile, 
-        closeFile: closeFileByPath 
+    const {
+        currentFile,
+        openedFiles,
+        switchFile: switchToFile,
+        closeFile: closeFileByPath
     } = fileManager
-    
+
     const { theme, backgroundEnabled, backgroundImage } = useSelector(state => state.theme)
     const hasBackground = backgroundEnabled && backgroundImage
     const [contextMenu, setContextMenu] = useState({ visible: false, tabKey: null })
@@ -28,7 +41,6 @@ const TabBar = ({ fileManager }) => {
         }
     }, [closeFileByPath])
 
-    // 右键菜单处理函数
     const handleCloseTab = useCallback((tabKey) => {
         closeFileByPath(tabKey)
         setContextMenu({ visible: false, tabKey: null })
@@ -51,7 +63,6 @@ const TabBar = ({ fileManager }) => {
         setContextMenu({ visible: false, tabKey: null })
     }, [openedFiles, closeFileByPath])
 
-    // 右键菜单项
     const contextMenuItems = [
         {
             key: 'close',
@@ -70,13 +81,10 @@ const TabBar = ({ fileManager }) => {
         },
     ]
 
-    // 生成唯一的文件标识符
     const getFileKey = useCallback((file) => {
-        // 对于临时文件，使用临时标识符
         if (file.isTemporary) {
             return `temp-${file.name}`;
         }
-        // 对于已保存文件，使用文件路径
         return file.path;
     }, []);
 
@@ -111,7 +119,6 @@ const TabBar = ({ fileManager }) => {
         closable: true
     })), [openedFiles, getFileKey, contextMenuItems])
 
-    // 设置标签栏高度CSS变量
     useEffect(() => {
         if (openedFiles.length === 0 || (openedFiles.length === 1 && openedFiles[0].isTemporary)) {
             document.documentElement.style.setProperty('--tab-bar-height', '0px')
@@ -119,19 +126,17 @@ const TabBar = ({ fileManager }) => {
             document.documentElement.style.setProperty('--tab-bar-height', '40px')
         }
 
-        // 组件卸载时清理
         return () => {
             document.documentElement.style.setProperty('--tab-bar-height', '0px')
         }
     }, [openedFiles.length, openedFiles])
 
-    // 如果没有打开的文件，或者只有一个临时文件，不渲染标签栏
     if (openedFiles.length === 0 || (openedFiles.length === 1 && openedFiles[0].isTemporary)) {
         return null
     }
 
     return (
-        <div 
+        <div
             className={`tab-bar ${hasBackground ? 'with-background' : ''}`}
             data-theme={theme}
         >

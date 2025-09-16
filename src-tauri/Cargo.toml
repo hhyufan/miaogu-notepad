@@ -1,3 +1,6 @@
+# Cargo配置文件 - 定义Rust项目的依赖、构建配置等信息
+# 喵咕记事本Tauri后端项目配置
+
 [package]
 name = "miaogu-notepad"
 version = "1.2.0"

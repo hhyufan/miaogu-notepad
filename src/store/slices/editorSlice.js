@@ -1,13 +1,18 @@
+/**
+ * @fileoverview 编辑器状态切片 - 管理编辑器相关状态
+ * 包含文件管理、编辑器配置、语言设置等编辑器相关状态
+ * @author hhyufan
+ * @version 1.2.0
+ */
+
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
-  // 文件管理状态
   openedFiles: [],
   currentFile: null,
   fileContent: '',
   isModified: false,
 
-  // Monaco Editor 配置
   content: '',
   language: 'javascript',
   wordWrap: 'on',

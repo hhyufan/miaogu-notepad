@@ -48,7 +48,6 @@ body {
   --code-bg-color: #f6f8fa;
   --outline-color: #FFFFFF3A;
 
-  // 滚动条颜色
   --scrollbar-track-color: rgba(0, 0, 0, 0.08);
   --scrollbar-thumb-color: rgba(0, 0, 0, 0.25);
   --scrollbar-thumb-hover-color: rgba(0, 0, 0, 0.4);
@@ -59,7 +58,6 @@ body {
   --tab-bar-height: 36px;
   --editor-background-image: none;
 
-  // other settings
 }
 
 [data-theme='dark'] {
@@ -90,7 +88,6 @@ body {
   --code-bg-color: #282c34;
   --outline-color: transparent;
 
-  // 滚动条颜色
   --scrollbar-track-color: rgba(255, 255, 255, 0.1);
   --scrollbar-thumb-color: rgba(255, 255, 255, 0.3);
   --scrollbar-thumb-hover-color: rgba(255, 255, 255, 0.5);
@@ -138,10 +135,8 @@ body {
   user-select: none;
   position: relative;
 
-  // 当有背景图片时的特殊样式
   &.has-background {
 
-    // 添加透明度蒙版覆盖层
     &::before {
       content: '';
       position: absolute;
@@ -154,14 +149,12 @@ body {
       pointer-events: none;
     }
 
-    // 确保内容在背景之上
     .ant-layout-header,
     .main-layout {
       position: relative;
       z-index: 2;
     }
 
-    // TabBar背景蒙版支持
     .tab-bar {
       position: relative;
       z-index: 2;
@@ -387,7 +380,6 @@ body {
   left: 0;
 }
 
-// Monaco Editor 样式
 .monaco-editor {
   font-family: 'Fira Code', 'Consolas', 'Monaco', 'Courier New', monospace !important;
 
@@ -400,7 +392,6 @@ body {
   }
 }
 
-// Ant Design 组件样式覆盖
 .ant-layout {
   background: transparent;
 }
@@ -467,7 +458,6 @@ body {
   }
 }
 
-// 深色主题
 [data-theme='dark'] {
   --app-bg: #1a1a1a;
   --app-overlay: rgba(0, 0, 0, 0.3);
@@ -476,31 +466,25 @@ body {
   --border-color: #333333;
   --primary-color: #1890ff;
 
-  // 菜单
   --menu-item-hover-bg: rgba(255, 255, 255, 0.1);
   --menu-item-selected-bg: rgba(24, 144, 255, 0.2);
   --menu-item-selected-color: #1890ff;
 
-  // 按钮
   --btn-text-hover-bg: rgba(255, 255, 255, 0.1);
 
-  // 输入框
   --input-bg: #262626;
   --input-border-color: #434343;
   --input-color: #ffffff;
 
-  // 模态框
   --modal-bg: #1f1f1f;
   --modal-header-bg: #1f1f1f;
   --modal-body-bg: #1f1f1f;
   --modal-footer-bg: #1f1f1f;
 
-  // 下拉菜单
   --dropdown-bg: #262626;
   --dropdown-item-hover-bg: rgba(255, 255, 255, 0.1);
 }
 
-// 浅色主题
 [data-theme='light'] {
   --app-bg: #ffffff;
   --app-overlay: rgba(255, 255, 255, 0.3);
@@ -509,33 +493,27 @@ body {
   --border-color: #d9d9d9;
   --primary-color: #1890ff;
 
-  // 菜单
   --menu-item-hover-bg: rgba(0, 0, 0, 0.04);
   --menu-item-selected-bg: rgba(24, 144, 255, 0.1);
   --menu-item-selected-color: #1890ff;
 
-  // 按钮
   --btn-text-hover-bg: rgba(0, 0, 0, 0.04);
 
-  // 输入框
   --input-bg: #ffffff;
   --input-border-color: #d9d9d9;
   --input-color: #000000;
 
-  // 模态框
   --modal-bg: #ffffff;
   --modal-header-bg: #ffffff;
   --modal-body-bg: #ffffff;
   --modal-footer-bg: #ffffff;
 
-  // 下拉菜单
   --dropdown-bg: #ffffff;
   --dropdown-item-hover-bg: rgba(0, 0, 0, 0.04);
 }
 
 
 
-// 响应式设计
 @media (max-width: 768px) {
   .app-layout {
     .app-content {
@@ -544,7 +522,6 @@ body {
   }
 }
 
-// 动画
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -561,7 +538,6 @@ body {
   animation: fadeIn 0.3s ease-out;
 }
 
-// 滚动条样式
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;

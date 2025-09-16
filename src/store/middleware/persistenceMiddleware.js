@@ -1,3 +1,10 @@
+/**
+ * @fileoverview 持久化中间件 - 自动保存Redux状态到Tauri Store
+ * 监听特定的Redux action，自动将状态变化持久化到本地存储
+ * @author hhyufan
+ * @version 1.2.0
+ */
+
 import { persistenceManager } from '../../utils/persistenceManager';
 
 /**
@@ -5,15 +12,11 @@ import { persistenceManager } from '../../utils/persistenceManager';
  * 监听Redux状态变化并自动保存到Tauri Store
  */
 const persistenceMiddleware = (store) => (next) => (action) => {
-  // 执行action
   const result = next(action);
 
-  // 获取更新后的状态
   const state = store.getState();
 
-  // 需要持久化的action类型
   const persistableActions = [
-    // 主题相关
     'theme/setTheme',
     'theme/setFontSize',
     'theme/setFontFamily',
@@ -23,7 +26,6 @@ const persistenceMiddleware = (store) => (next) => (action) => {
     'theme/setBackgroundTransparency',
 
 
-    // 编辑器相关
     'editor/setLanguage',
     'editor/setWordWrap',
     'editor/setMinimap',
@@ -42,7 +44,6 @@ const persistenceMiddleware = (store) => (next) => (action) => {
     'editor/setFormatOnPaste',
     'editor/setFormatOnType',
 
-    // 文件相关
     'file/openFile',
     'file/createFile',
     'file/saveFile',
@@ -54,9 +55,7 @@ const persistenceMiddleware = (store) => (next) => (action) => {
     'file/renameFile',
   ];
 
-  // 检查是否需要持久化
   if (persistableActions.includes(action.type)) {
-    // 异步保存状态，不阻塞UI
     setTimeout(() => {
       persistenceManager.saveAppState(state).catch();
     }, 0);

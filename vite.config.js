@@ -3,7 +3,10 @@ import react from "@vitejs/plugin-react";
 
 const host = process.env.TAURI_DEV_HOST;
 
-// https://vite.dev/config/
+/**
+ * Vite 配置文件
+ * @see https://vite.dev/config/
+ */
 export default defineConfig(async () => ({
   plugins: [react()],
   
@@ -25,13 +28,9 @@ export default defineConfig(async () => ({
     include: ['monaco-editor'],
   },
 
-  // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
-  //
-  // 1. prevent Vite from obscuring rust errors
-  clearScreen: false,
-  // 2. tauri expects a fixed port, fail if that port is not available
+  clearScreen: false, // 防止 Vite 遮盖 Rust 错误
   server: {
-    port: 1420,
+    port: 1420, // Tauri 需要固定端口
     strictPort: true,
     host: host || false,
     hmr: host
@@ -42,8 +41,7 @@ export default defineConfig(async () => ({
         }
       : undefined,
     watch: {
-      // 3. tell Vite to ignore watching `src-tauri`
-      ignored: ["**/src-tauri/**"],
+      ignored: ["**/src-tauri/**"], // 忽略 src-tauri 目录监听
     },
   },
 }));

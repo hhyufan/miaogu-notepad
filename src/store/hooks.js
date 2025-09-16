@@ -1,10 +1,15 @@
+/**
+ * @fileoverview Redux Store Hooks - 提供类型化的Redux hooks
+ * 封装常用的状态选择器，提供更便捷的状态访问
+ * @author hhyufan
+ * @version 1.2.0
+ */
+
 import { useDispatch, useSelector } from 'react-redux';
 
-// 类型安全的hooks
 export const useAppDispatch = () => useDispatch();
 export const useAppSelector = useSelector;
 
-// 便捷的选择器hooks
 export const useCurrentFile = () => useAppSelector(state => state.editor.currentFile);
 export const useTreeData = () => useAppSelector(state => state.editor.treeData);
 export const useSelectedKeys = () => useAppSelector(state => state.editor.selectedKeys);

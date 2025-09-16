@@ -1,34 +1,41 @@
+/**
+ * @fileoverview 国际化Hook - 提供翻译功能和语言切换功能
+ * 封装react-i18next，提供更便捷的国际化操作接口
+ * @author hhyufan
+ * @version 1.2.0
+ */
+
 import { useTranslation } from 'react-i18next';
 import { useCallback } from 'react';
 
 /**
  * 自定义i18n hook
- * 提供翻译功能和语言切换功能
+ * @returns {Object} 包含翻译函数和语言管理功能的对象
+ * @returns {Function} returns.t - 翻译函数
+ * @returns {Function} returns.changeLanguage - 切换语言函数
+ * @returns {string} returns.currentLanguage - 当前语言代码
+ * @returns {Array} returns.supportedLanguages - 支持的语言列表
+ * @returns {Function} returns.getCurrentLanguageInfo - 获取当前语言信息
+ * @returns {boolean} returns.isReady - i18n是否已初始化
  */
 export const useI18n = () => {
   const { t, i18n } = useTranslation();
 
-  // 切换语言
   const changeLanguage = useCallback(async (language) => {
     try {
       await i18n.changeLanguage(language);
-      // 保存到localStorage
       localStorage.setItem('miaogu-notepad-language', language);
     } catch (error) {
-      // 静默处理语言切换错误
     }
   }, [i18n]);
 
-  // 获取当前语言
   const currentLanguage = i18n.language;
 
-  // 获取支持的语言列表
   const supportedLanguages = [
     { code: 'zh-CN', name: '简体中文', nativeName: '简体中文' },
     { code: 'en-US', name: 'English', nativeName: 'English' }
   ];
 
-  // 获取当前语言信息
   const getCurrentLanguageInfo = useCallback(() => {
     return supportedLanguages.find(lang => lang.code === currentLanguage) || supportedLanguages[0];
   }, [currentLanguage]);

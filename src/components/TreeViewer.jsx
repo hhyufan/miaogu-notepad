@@ -1,3 +1,10 @@
+/**
+ * @fileoverview 树形视图组件 - 显示和管理树形结构数据
+ * 支持解析树形文本、代码跳转、节点展开/折叠等功能
+ * @author hhyufan
+ * @version 1.2.0
+ */
+
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Button, Card, Space, Spin, Tooltip, Tree, Typography } from 'antd';
@@ -10,34 +17,35 @@ import {
   FolderOutlined,
   ShrinkOutlined
 } from '@ant-design/icons';
-// 移除useTheme导入，改用直接读取data-theme属性
 import { useI18n } from '../hooks/useI18n';
 import './TreeViewer.scss';
 
 const { Text, Title } = Typography;
 
-// 解析树状文本为树形数据结构
+/**
+ * 解析树形文本为树形数据结构
+ * 支持多种跳转语法：>lang[index]、>lang++、>lang+=n、>lang
+ * @param {string} text - 要解析的树形文本
+ * @param {string} rootTitle - 根节点标题，默认为'Root'
+ * @returns {Object} 解析后的树形数据结构
+ */
 const parseTreeText = (text, rootTitle = 'Root') => {
   const lines = text.split('\n').filter(line => line.trim());
   const root = { key: 'root', title: rootTitle, children: [], level: -1 };
   const stack = [root];
   let keyCounter = 0;
 
-  // 跟踪每种语言的最后一个跳转索引
   const lastJumpIndex = {};
 
   lines.forEach((line, _) => {
     const trimmedLine = line.trim();
     if (!trimmedLine) return;
 
-    // 计算缩进级别（每2个空格或1个tab为一级）
     const leadingSpaces = line.length - line.trimStart().length;
     const level = Math.floor(leadingSpaces / 2);
 
-    // 检查是否包含跳转信息
     const cleanLine = trimmedLine.replace(/[\r\n]/g, '');
 
-    // 支持多种跳转语法：
     // 1. >java[1] - 指定索引
     // 2. >java++ - 递增（上一个+1）
     // 3. >java - 同上一个索引
@@ -52,32 +60,27 @@ const parseTreeText = (text, rootTitle = 'Root') => {
     let jumpIndex = null;
 
     if (jumpMatchExplicit) {
-      // 显式指定索引：>java[1]
       isClickable = true;
       jumpLanguage = jumpMatchExplicit[1];
       jumpIndex = parseInt(jumpMatchExplicit[2]);
       lastJumpIndex[jumpLanguage] = jumpIndex;
     } else if (jumpMatchIncrement) {
-      // 递增语法：>java++
       isClickable = true;
       jumpLanguage = jumpMatchIncrement[1];
       jumpIndex = (lastJumpIndex[jumpLanguage] || 0) + 1;
       lastJumpIndex[jumpLanguage] = jumpIndex;
     } else if (jumpMatchJump) {
-      // 跳跃增加语法：>java+=n
       isClickable = true;
       jumpLanguage = jumpMatchJump[1];
       const jumpAmount = parseInt(jumpMatchJump[2]);
       jumpIndex = (lastJumpIndex[jumpLanguage] || 0) + jumpAmount;
       lastJumpIndex[jumpLanguage] = jumpIndex;
     } else if (jumpMatchSame) {
-      // 同上一个索引：>java
       isClickable = true;
       jumpLanguage = jumpMatchSame[1];
       jumpIndex = lastJumpIndex[jumpLanguage] || 1;
     }
 
-    // 清理标题，移除跳转信息
     let cleanTitle = cleanLine;
     if (isClickable) {
       cleanTitle = cleanTitle
@@ -98,7 +101,6 @@ const parseTreeText = (text, rootTitle = 'Root') => {
       children: []
     };
 
-    // 找到正确的父节点
     while (stack.length > 1 && stack[stack.length - 1].level >= level) {
       stack.pop();
     }
@@ -111,7 +113,16 @@ const parseTreeText = (text, rootTitle = 'Root') => {
   return root.children;
 };
 
-// 渲染树节点
+/**
+ * 渲染树形节点
+ * 根据节点类型和状态渲染不同的图标和样式
+ * @param {Object} node - 树形节点数据
+ * @param {Function} onJumpToCode - 代码跳转回调函数
+ * @param {boolean} isDarkMode - 是否为暗色主题
+ * @param {Array} expandedKeys - 已展开的节点key数组
+ * @param {Function} onToggleExpand - 节点展开/折叠回调函数
+ * @returns {Object} 渲染后的树形节点配置
+ */
 const renderTreeNode = (node, onJumpToCode, isDarkMode, expandedKeys, onToggleExpand) => {
   const isClickable = node.isClickable;
   const hasChildren = node.children && node.children.length > 0;
@@ -119,11 +130,9 @@ const renderTreeNode = (node, onJumpToCode, isDarkMode, expandedKeys, onToggleEx
 
   const handleNodeClick = (e) => {
     if (isClickable && onJumpToCode) {
-      // 跳转节点：执行跳转功能
       e.stopPropagation();
       onJumpToCode(node.jumpLanguage, node.jumpIndex);
     } else if (hasChildren && !isClickable && onToggleExpand) {
-      // 非跳转的目录节点：执行展开折叠功能
       e.stopPropagation();
       onToggleExpand(node.key, isExpanded);
     }
@@ -219,6 +228,19 @@ const renderTreeNode = (node, onJumpToCode, isDarkMode, expandedKeys, onToggleEx
   };
 };
 
+/**
+ * 树形视图组件
+ * 显示树形结构数据，支持节点展开/折叠、代码跳转等功能
+ * @param {Object} props - 组件属性
+ * @param {string} props.treeFilePath - 树形文件路径
+ * @param {string} props.treeContent - 树形内容文本
+ * @param {string} props.className - 自定义CSS类名
+ * @param {Function} props.onJumpToCode - 代码跳转回调函数
+ * @param {string} props.currentFileName - 当前文件名
+ * @param {string} props.currentFolder - 当前文件夹路径
+ * @param {number} props.fontSize - 字体大小，默认为16
+ * @returns {JSX.Element} 树形视图组件
+ */
 const TreeViewer = ({ treeFilePath, treeContent, className = '', onJumpToCode, currentFileName, currentFolder, fontSize = 16 }) => {
   const { t } = useI18n();
 
@@ -378,14 +400,11 @@ const TreeViewer = ({ treeFilePath, treeContent, className = '', onJumpToCode, c
     loadTreeFile().then();
   }, [treeFilePath, treeContent, processTreeData, currentFileName]);
 
-  // 展开/折叠处理
   const onExpand = (expandedKeysValue) => {
     setExpandedKeys(expandedKeysValue);
-    // 自动保存展开状态
     saveExpandedState(expandedKeysValue, currentFileName);
   };
 
-  // 切换单个节点的展开状态
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const onToggleExpand = (nodeKey, isCurrentlyExpanded) => {
     let newKeys;
@@ -396,16 +415,13 @@ const TreeViewer = ({ treeFilePath, treeContent, className = '', onJumpToCode, c
       newKeys = [...expandedKeys, nodeKey];
       setExpandedKeys(newKeys);
     }
-    // 自动保存展开状态
     saveExpandedState(newKeys, currentFileName);
   };
 
-  // 渲染树形数据
   const renderedTreeData = useMemo(() => {
     return treeData.map(node => renderTreeNode(node, onJumpToCode, isDarkMode, expandedKeys, onToggleExpand));
   }, [treeData, onJumpToCode, isDarkMode, expandedKeys, onToggleExpand]);
 
-  // 全部展开
   const expandAll = () => {
     const allKeys = [];
     const collectAllKeys = (nodes) => {
@@ -418,28 +434,20 @@ const TreeViewer = ({ treeFilePath, treeContent, className = '', onJumpToCode, c
     };
     collectAllKeys(treeData);
     setExpandedKeys(allKeys);
-    // 自动保存展开状态
     saveExpandedState(allKeys, currentFileName);
   };
 
-  // 全部折叠
   const collapseAll = () => {
     setExpandedKeys([]);
-    // 自动保存展开状态
     saveExpandedState([], currentFileName);
   };
 
-  // 取消加载状态显示
-  // if (loading) {
-  //   return (
   //     <div className={`tree-viewer ${className} ${isDarkMode ? 'dark' : ''}`}>
   //       <div className="tree-viewer-loading">
   //         <Spin size="large" />
   //         <div>加载中...</div>
   //       </div>
   //     </div>
-  //   );
-  // }
 
   if (error) {
     return (

@@ -1,12 +1,25 @@
+/**
+ * @fileoverview 文件管理Hook - 提供文件操作、标签页管理、会话恢复等功能
+ * 包含文件打开、保存、关闭、重命名等核心功能，以及标签页管理和会话恢复
+ * @author hhyufan
+ * @version 1.2.0
+ */
+
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Modal } from 'antd'
 import tauriApi from '../utils/tauriApi';
+
 const { file: fileApi } = tauriApi;
 import { useI18n } from './useI18n'
 import { listen } from '@tauri-apps/api/event'
 import { withFileTransition } from '../utils/viewTransition'
 
-// 高性能工具函数
+/**
+ * 防抖函数 - 延迟执行函数调用
+ * @param {Function} func - 要防抖的函数
+ * @param {number} wait - 延迟时间(ms)
+ * @returns {Function} 防抖后的函数
+ */
 const debounce = (func, wait) => {
     let timeout
     return function executedFunction(...args) {
@@ -19,6 +32,12 @@ const debounce = (func, wait) => {
     }
 }
 
+/**
+ * 节流函数 - 限制函数执行频率
+ * @param {Function} func - 要节流的函数
+ * @param {number} limit - 限制间隔(ms)
+ * @returns {Function} 节流后的函数
+ */
 const throttle = (func, limit) => {
     let inThrottle
     return function () {
@@ -32,29 +51,47 @@ const throttle = (func, limit) => {
     }
 }
 
-// 获取文件名的工具函数
+/**
+ * 从文件路径获取文件名
+ * @param {string} path - 文件路径
+ * @param {Function} t - 国际化翻译函数
+ * @returns {string} 文件名
+ */
 const getFileName = (path, t) => {
     return path.split(/[\/\\]/).pop() || t('common.untitled')
 }
 
-// 获取文件扩展名的工具函数
+/**
+ * 获取文件扩展名
+ * @param {string} fileName - 文件名
+ * @returns {string} 文件扩展名(小写)
+ */
 const getFileExtensionOptimized = (fileName) => {
     const lastDotIndex = fileName.lastIndexOf('.')
     return lastDotIndex > 0 ? fileName.substring(lastDotIndex + 1).toLowerCase() : ''
 }
 
-// 简化的文件类型检查
+/**
+ * 检查文件是否在黑名单中
+ * @param {string} fileName - 文件名
+ * @returns {boolean} 是否被禁止打开
+ */
 const isFileBlacklisted = (fileName) => {
     const ext = getFileExtensionOptimized(fileName)
     const blacklistedExts = ['exe', 'dll', 'bin', 'so', 'dylib', 'zip', 'rar', '7z', 'tar', 'gz']
     return blacklistedExts.includes(ext)
 }
 
-// 生成保存文件过滤器
+/**
+ * 获取保存文件的过滤器配置
+ * 根据当前文件扩展名生成推荐的文件类型过滤器
+ * @param {string} currentFileName - 当前文件名，默认为空字符串
+ * @param {Function} t - 国际化翻译函数
+ * @returns {Array} 文件过滤器配置数组
+ */
 const getSaveFilters = (currentFileName = '', t) => {
     const ext = getFileExtensionOptimized(currentFileName)
 
-    // 如果文件有扩展名，生成推荐过滤器；否则只返回通用过滤器
     if (ext) {
         const recommendedFilter = {
             name: t('dialog.fileFilter.fileType', { type: ext.toUpperCase() }),
@@ -62,19 +99,30 @@ const getSaveFilters = (currentFileName = '', t) => {
         }
         return [recommendedFilter, { name: t('dialog.fileFilter.allFiles'), extensions: ['*'] }]
     } else {
-        // 没有扩展名时，只返回通用过滤器，避免自动添加后缀
         return [{ name: t('dialog.fileFilter.allFiles'), extensions: ['*'] }]
     }
 }
 
-// 文件缓存管理器
+/**
+ * 文件缓存类
+ * 使用LRU算法管理文件内容缓存，提高文件访问性能
+ */
 class FileCache {
+    /**
+     * 构造函数
+     * @param {number} maxSize - 缓存最大容量，默认100
+     */
     constructor(maxSize = 100) {
         this.cache = new Map()
         this.maxSize = maxSize
         this.accessOrder = new Set()
     }
 
+    /**
+     * 获取缓存值
+     * @param {string} key - 缓存键
+     * @returns {*} 缓存值，不存在则返回null
+     */
     get(key) {
         if (this.cache.has(key)) {
             this.accessOrder.delete(key)
@@ -84,6 +132,11 @@ class FileCache {
         return null
     }
 
+    /**
+     * 设置缓存值
+     * @param {string} key - 缓存键
+     * @param {*} value - 缓存值
+     */
     set(key, value) {
         if (this.cache.size >= this.maxSize && !this.cache.has(key)) {
             const firstKey = this.accessOrder.values().next().value
@@ -96,32 +149,43 @@ class FileCache {
         this.accessOrder.add(key)
     }
 
+    /**
+     * 删除缓存项
+     * @param {string} key - 缓存键
+     */
     delete(key) {
         this.cache.delete(key)
         this.accessOrder.delete(key)
     }
 
+    /**
+     * 清空所有缓存
+     */
     clear() {
         this.cache.clear()
         this.accessOrder.clear()
     }
 }
 
-// 全局文件缓存实例
 const fileCache = new FileCache(50)
 
-// 通用错误处理函数
+/**
+ * 创建错误处理函数
+ * @param {Function} t - 国际化翻译函数
+ * @returns {Function} 错误处理函数
+ */
 const createHandleError = (t) => (titleKey, error, params = {}) => {
     const title = t(`messages.error.${titleKey}`)
     const errorMessage = error?.message || error || t('messages.error.unknownError')
     const content = params.fileName ? t(`messages.error.${titleKey}`, params) : errorMessage
-    // 静默处理错误提示
     Modal.error({ title, content })
 }
 
 /**
  * 文件管理 Hook - 适配Tauri API
- * 提供完整的文件操作功能，包括打开、保存、创建、关闭等
+ * 提供完整的文件操作功能，包括打开、保存、关闭、重命名等
+ * 支持标签页管理、会话恢复、文件缓存等高级功能
+ * @returns {Object} 文件管理器对象，包含所有文件操作方法和状态
  */
 export const useFileManager = () => {
     const { t } = useI18n()
@@ -133,17 +197,14 @@ export const useFileManager = () => {
     const defaultFileNameRef = useRef(defaultFileName)
     const [fileWatchers, setFileWatchers] = useState(new Map())
 
-    // 跟踪用户主动保存操作的ref
     const userSavingFiles = useRef(new Set())
 
-    // 性能优化：使用 Map 来快速查找文件
     const openedFilesMap = useMemo(() => {
         const map = new Map()
         openedFiles.forEach(file => map.set(file.path, file))
         return map
     }, [openedFiles])
 
-    // 文件监听器清理
     useEffect(() => {
         return paths => {
             fileWatchers.forEach(watcher => {
@@ -154,21 +215,18 @@ export const useFileManager = () => {
         }
     }, [])
 
-    // 防抖的文件保存函数
     const debouncedAutoSave = useMemo(
         () => debounce(async (filePath, content) => {
             if (fileApi?.writeFileContent && filePath && !filePath.startsWith('temp://')) {
                 try {
                     await fileApi.writeFileContent(filePath, content)
                 } catch (error) {
-                    // 静默处理自动保存错误
                 }
             }
         }, 500),
         []
     )
 
-    // 节流的编辑器内容更新函数
     const throttledEditorUpdate = useMemo(
         () => throttle((content) => {
             setEditorCode(content)
@@ -180,13 +238,10 @@ export const useFileManager = () => {
         defaultFileNameRef.current = defaultFileName
     }, [defaultFileName])
 
-    // 用于防止重复打开同一个文件
     const lastOpenedFileRef = useRef({ path: '', timestamp: 0 })
 
-    // 监听通过"打开方式"打开文件的事件 (Tauri版本)
     useEffect(() => {
         const handleFileOpen = async (filePath) => {
-            // 接收到文件打开事件
             if (filePath) {
 
 
@@ -195,56 +250,45 @@ export const useFileManager = () => {
                 const now = Date.now()
                 const lastOpened = lastOpenedFileRef.current
 
-                // 防止短时间内重复打开同一个文件（2秒内）
                 if (lastOpened.path === filePath && (now - lastOpened.timestamp) < 2000) {
 
                     return
                 }
 
-                // 严格检查文件是否已经打开 - 只检查数组，因为数组是真实状态
                 const existingFileIndex = openedFiles.findIndex(f => f.path === filePath);
 
                 if (existingFileIndex !== -1) {
 
                     setCurrentFilePath(filePath)
 
-                    // 使用数组中的文件
                     const file = openedFiles[existingFileIndex];
                     throttledEditorUpdate(file.content)
 
-                    // 更新最后打开的文件信息
                     lastOpenedFileRef.current = { path: filePath, timestamp: now }
                     return
                 }
 
 
-                // 更新最后打开的文件信息
                 lastOpenedFileRef.current = { path: filePath, timestamp: now }
 
                 try {
                     await setOpenFile(filePath)
-                    // 文件关联打开成功
                 } catch (error) {
-                    // 静默处理文件关联打开错误
                 }
             }
         }
 
-        // 在Tauri环境中监听open-file事件
         const hasTauri = typeof window !== 'undefined' && window.__TAURI_INTERNALS__ !== undefined;
         if (hasTauri) {
 
 
-            // 监听来自Rust后端的open-file事件
             const unlistenOpenFile = listen('open-file', (event) => {
 
                 handleFileOpen(event.payload)
             })
 
-            // 监听文件拖拽事件
             const unlistenFileDrop = listen('tauri://drag-drop', async (event) => {
 
-                // 触发自定义事件来隐藏蒙版（文件已放下）
                 window.dispatchEvent(new CustomEvent('tauri-drag-leave'));
 
                 // Tauri 2.0 的拖拽事件payload结构: {paths: Array, position: Object}
@@ -254,24 +298,19 @@ export const useFileManager = () => {
                         try {
 
 
-                            // 检查是否为目录
                             const isDirectory = await fileApi.isDirectory(path);
 
                             if (isDirectory) {
-                                // 如果是文件夹，不打开新标签，只更新面包屑
 
-                                // 触发面包屑更新事件
                                 window.dispatchEvent(new CustomEvent('update-breadcrumb', {
                                     detail: { path }
                                 }));
                             } else {
-                                // 如果是文件，正常打开
 
                                 await handleFileOpen(path);
                             }
                         } catch (error) {
                             console.error('Failed to check if dropped item is directory:', path, error);
-                            // 如果目录检查失败，默认作为文件处理，但只打开一次
 
                             try {
                                 await handleFileOpen(path);
@@ -283,21 +322,16 @@ export const useFileManager = () => {
                 }
             })
 
-            // 监听拖拽开始事件（用于显示蒙版）
             const unlistenDragEnter = listen('tauri://drag-enter', (event) => {
 
-                // 触发自定义事件来显示蒙版
                 window.dispatchEvent(new CustomEvent('tauri-drag-enter'));
             })
 
-            // 监听拖拽离开事件（用于隐藏蒙版）
             const unlistenDragLeave = listen('tauri://drag-leave', (event) => {
 
-                // 触发自定义事件来隐藏蒙版
                 window.dispatchEvent(new CustomEvent('tauri-drag-leave'));
             })
 
-            // 清理监听器
             return () => {
                 unlistenOpenFile.then(fn => fn())
                 unlistenFileDrop.then(fn => fn())
@@ -305,7 +339,6 @@ export const useFileManager = () => {
                 unlistenDragLeave.then(fn => fn())
             }
         } else {
-            // 开发模式下的调试支持
             window.debugOpenFile = handleFileOpen
         }
 
@@ -316,7 +349,6 @@ export const useFileManager = () => {
         }
     }, [])
 
-    // 获取当前文件对象 - 优化缓存逻辑
     const currentFile = useMemo(() => {
         const fileFromMap = openedFilesMap.get(currentFilePath);
         if (fileFromMap) {
@@ -344,31 +376,24 @@ export const useFileManager = () => {
         }
     }, [openedFilesMap, currentFilePath, defaultFileName, editorCode])
 
-    // 获取当前文件内容
     const currentCode = useMemo(() => {
-        // 对于临时文件，使用editorCode确保内容同步
-        if (currentFile.isTemporary) {
+        if (currentFile['isTemporary']) {
             return editorCode;
         }
-        return currentFile.content;
-    }, [currentFile.content, currentFile.isTemporary, editorCode])
+        return currentFile['content'];
+    }, [currentFile['content'], currentFile['isTemporary'], editorCode])
 
-    // 检查并处理文件路径冲突
     const handlePathConflict = useCallback((filePath) => {
-        // 查找是否有重复路径的文件
         const duplicates = openedFiles.filter((f) => f.path === filePath)
 
         if (duplicates.length > 1) {
-            // 保留第一个文件，关闭其他重复的文件
             const [keepFile, ...removeFiles] = duplicates
             setOpenedFiles((prev) => prev.filter((f) => !removeFiles.includes(f)))
         }
     }, [openedFiles])
 
-    // 检查并清理空的临时文件
     const cleanupEmptyTempFiles = useCallback(() => {
         setOpenedFiles((prev) => {
-            // 查找空的临时文件（内容为空且未修改）
             const emptyTempFiles = prev.filter(file =>
                 file.isTemporary &&
                 !file.isModified &&
@@ -377,19 +402,15 @@ export const useFileManager = () => {
 
             if (emptyTempFiles.length === 0) return prev
 
-            // 移除空的临时文件
             const newFiles = prev.filter(file => !emptyTempFiles.includes(file))
 
-            // 如果当前文件是被清理的空临时文件之一，需要切换到其他文件
             const currentFileWasRemoved = emptyTempFiles.some(file => file.path === currentFilePath)
             if (currentFileWasRemoved && newFiles.length > 0) {
-                // 切换到第一个文件
                 const firstFile = newFiles[0]
                 setCurrentFilePath(firstFile.path)
                 setEditorCode(firstFile.content)
                 throttledEditorUpdate(firstFile.content)
             } else if (currentFileWasRemoved && newFiles.length === 0) {
-                // 如果没有其他文件，重置状态
                 setCurrentFilePath('')
                 setEditorCode('')
                 throttledEditorUpdate('')
@@ -399,28 +420,23 @@ export const useFileManager = () => {
         })
     }, [currentFilePath, throttledEditorUpdate])
 
-    // 检查并关闭空的当前临时文件
     const closeEmptyCurrentTempFile = useCallback(() => {
-        if (currentFile && currentFile.isTemporary && !currentFile.isModified &&
-            (currentFile.content === '' || currentFile.content === currentFile.originalContent)) {
-            // 关闭当前空的临时文件
-            setOpenedFiles((prev) => prev.filter(f => f.path !== currentFile.path))
+        if (currentFile && currentFile['isTemporary'] && !currentFile['isModified'] &&
+            (currentFile['content'] === '' || currentFile['content'] === currentFile['originalContent'])) {
+            setOpenedFiles((prev) => prev.filter(f => f.path !== currentFile['path']))
             return true
         }
         return false
     }, [currentFile])
 
-    // 设置打开文件
     const setOpenFile = useCallback(async (filePath, content = null, options = {}) => {
         try {
-            // 检查文件黑名单
             const fileName = getFileName(filePath, t)
             if (isFileBlacklisted(fileName)) {
                 handleError('fileTypeNotSupported', '', { fileName })
                 return
             }
 
-            // 检查文件是否已经打开
             if (openedFilesMap.has(filePath) && !options.forceReload) {
                 setCurrentFilePath(filePath)
                 const file = openedFilesMap.get(filePath)
@@ -428,34 +444,28 @@ export const useFileManager = () => {
                 return
             }
 
-            // 如果文件已打开但需要强制重新加载，先移除旧的文件记录
             if (openedFilesMap.has(filePath) && options.forceReload) {
                 setOpenedFiles(prev => prev.filter(f => f.path !== filePath))
             }
 
-            // 额外检查：防止重复添加相同路径的文件
             const existingFileIndex = openedFiles.findIndex(f => f.path === filePath)
             if (existingFileIndex !== -1 && !options.forceReload) {
-                // 文件已存在，直接切换到该文件
                 setCurrentFilePath(filePath)
                 const existingFile = openedFiles[existingFileIndex]
                 throttledEditorUpdate(existingFile.content)
                 return
             }
 
-            // 如果存在重复文件且需要强制重新加载，移除旧记录
             if (existingFileIndex !== -1 && options.forceReload) {
                 setOpenedFiles(prev => prev.filter((f, index) => index !== existingFileIndex))
             }
 
-            // 在打开新文件前，检查并关闭空的当前临时文件
             closeEmptyCurrentTempFile()
 
             let fileContent = content
             let fileEncoding = options.encoding || 'UTF-8'
             let fileLineEnding = options.lineEnding || 'LF'
 
-            // 如果没有提供内容，则从文件系统读取
             if (fileContent === null) {
                 const result = await fileApi.readFileContent(filePath)
                 if (!result || typeof result.content !== 'string') {
@@ -477,30 +487,23 @@ export const useFileManager = () => {
                 lineEnding: fileLineEnding
             }
 
-            // 检查并处理可能的路径冲突
             handlePathConflict(filePath)
 
-            // 最后一次检查：确保不会添加重复文件到数组中
             setOpenedFiles((prev) => {
-                // 检查是否已存在相同路径的文件
                 const existingIndex = prev.findIndex(f => f.path === filePath);
                 if (existingIndex !== -1) {
 
-                    // 如果已存在，替换而不是添加
                     const newFiles = [...prev];
                     newFiles[existingIndex] = newFile;
                     return newFiles;
                 }
-                // 如果不存在，正常添加
                 return [...prev, newFile];
             })
             setCurrentFilePath(filePath)
             throttledEditorUpdate(fileContent)
 
-            // 缓存文件内容
             fileCache.set(filePath, fileContent)
 
-            // 开始监听文件变更（仅对非临时文件）
             if (!filePath.startsWith('temp://')) {
                 try {
                     await fileApi.startFileWatching(filePath)
@@ -513,7 +516,6 @@ export const useFileManager = () => {
         }
     }, [openedFilesMap, handlePathConflict, closeEmptyCurrentTempFile, throttledEditorUpdate])
 
-    // 打开文件
     const openFile = useCallback(async () => {
         try {
             const result = await fileApi.openFileDialog(t)
@@ -525,14 +527,11 @@ export const useFileManager = () => {
         }
     }, [setOpenFile])
 
-    // 创建新文件
     const createFile = useCallback(async (fileName = null, initialContent = '') => {
         try {
-            // 在创建新文件前，检查并关闭空的当前临时文件
             closeEmptyCurrentTempFile()
 
             const finalFileName = fileName || defaultFileName
-            // 生成临时文件路径
             const tempPath = `temp://${finalFileName}`
 
             const newFile = {
@@ -550,7 +549,6 @@ export const useFileManager = () => {
             setCurrentFilePath(tempPath)
             throttledEditorUpdate(initialContent)
 
-            // 如果使用了默认文件名，更新默认文件名计数
             if (!fileName) {
                 const match = defaultFileName.match(/(.*?)(\d*)$/)
                 if (match) {
@@ -564,30 +562,24 @@ export const useFileManager = () => {
         }
     }, [closeEmptyCurrentTempFile, throttledEditorUpdate])
 
-    // 更新代码内容 - 参考主项目实现的高性能优化版本
     const updateCode = useCallback((newCode) => {
-        // 避免不必要的状态更新
         if (editorCode === newCode) return
 
         setEditorCode(newCode)
 
-        // 批量更新文件状态，减少重新渲染
         setOpenedFiles((prev) => {
             const targetIndex = prev.findIndex(file => file.path === currentFilePath)
             if (targetIndex === -1) return prev
 
             const targetFile = prev[targetIndex]
-            // 使用originalContent进行修改检测，如果没有originalContent则使用content
             const isModified = targetFile.originalContent !== undefined
                 ? targetFile.originalContent !== newCode
                 : targetFile.content !== newCode
 
-            // 如果状态没有变化，直接返回原数组
             if (targetFile.content === newCode && targetFile.isModified === isModified) {
                 return prev
             }
 
-            // 使用浅拷贝优化性能
             const newFiles = [...prev]
             newFiles[targetIndex] = {
                 ...targetFile,
@@ -598,28 +590,22 @@ export const useFileManager = () => {
             return newFiles
         })
 
-        // 使用防抖的自动保存（仅对临时文件）
-        if (currentFile && currentFile.isTemporary && currentFilePath) {
+        if (currentFile && currentFile['isTemporary'] && currentFilePath) {
             debouncedAutoSave(currentFilePath, newCode)
         }
 
-        // 使用节流的编辑器内容更新
         throttledEditorUpdate(newCode)
     }, [editorCode, currentFilePath, currentFile, debouncedAutoSave, throttledEditorUpdate])
 
-    // 更新默认文件名
     const updateDefaultFileName = useCallback((newName) => {
         if (!newName.trim()) return false
         setDefaultFileName(newName)
         return true
     }, [])
 
-    // 关闭文件
     const closeFile = useCallback((key) => {
-        // 清除相关缓存
         fileCache.delete(`file_${key}`)
 
-        // 停止文件监听（仅对非临时文件）
         if (!key.startsWith('temp://')) {
             try {
                 fileApi.stopFileWatching(key)
@@ -629,10 +615,8 @@ export const useFileManager = () => {
         }
 
         setOpenedFiles((prev) => {
-            // 查找要关闭的文件
             let fileToClose = prev.find(f => f.path === key)
 
-            // 如果直接匹配失败，检查是否是临时文件的 key 格式
             if (!fileToClose && key.startsWith('temp-')) {
                 const tempFileName = key.replace('temp-', '')
                 fileToClose = prev.find(f => f.isTemporary && f.name === tempFileName)
@@ -646,17 +630,14 @@ export const useFileManager = () => {
                 const newCurrentPath = newFiles[0]?.path || ''
                 setCurrentFilePath(newCurrentPath)
 
-                // 如果关闭后没有剩余文件，自动创建新的临时文件
                 if (newFiles.length === 0) {
                     updateDefaultFileName(t('common.untitled'))
                     setEditorCode('')
                     throttledEditorUpdate('')
-                    // 自动创建新的临时文件
                     setTimeout(() => {
                         createFile()
                     }, 0)
                 } else {
-                    // 切换到第一个文件
                     const firstFile = newFiles[0]
                     setEditorCode(firstFile.content)
                     throttledEditorUpdate(firstFile.content)
@@ -667,7 +648,6 @@ export const useFileManager = () => {
         })
     }, [currentFilePath, updateDefaultFileName, throttledEditorUpdate, createFile])
 
-    // 保存文件
     const saveFile = useCallback(async (saveAs = false) => {
         let targetPath = null // 初始化targetPath
 
@@ -676,44 +656,35 @@ export const useFileManager = () => {
             const hasNoOpenFile = !currentFilePath || currentFilePath.startsWith('temp://')
 
             if (saveAs || hasNoOpenFile) {
-                // 另存为或保存新文件
-                const result = await fileApi.saveFileDialog(currentFile.name, t, saveAs || hasNoOpenFile)
+                const result = await fileApi.saveFileDialog(currentFile['name'], t, saveAs || hasNoOpenFile)
 
                 if (!result) return { success: false, canceled: true }
                 targetPath = result
             } else {
-                // 保存现有文件
                 targetPath = currentFilePath
             }
 
-            // 标记文件正在被用户主动保存
             userSavingFiles.current.add(targetPath)
 
-            // 检查是否与已打开的文件路径重复（不包括当前文件）
             const duplicateOpenedFile = openedFiles.find(
                 (f) => f.path !== currentFilePath && f.path === targetPath
             )
 
             if (duplicateOpenedFile) {
-                // 选择覆盖，关闭已打开的重复文件
                 closeFile(duplicateOpenedFile.path)
             }
 
-            // 使用文件的原始编码保存
-            const fileEncoding = currentFile.encoding || 'UTF-8'
+            const fileEncoding = currentFile['encoding'] || 'UTF-8'
             const saveResult = await fileApi.saveFile(targetPath, contentToSave, fileEncoding)
             if (!saveResult.success) {
                 return { success: false, conflict: true, targetPath }
             }
 
-            // 获取文件名
             const fileName = targetPath.split(/[\\/]/).pop() || 'unknown'
 
-            // 先更新当前文件路径，然后更新文件列表
             setCurrentFilePath(targetPath)
 
             if (currentFilePath && openedFiles.some((file) => file.path === currentFilePath)) {
-                // 如果当前有打开的文件，更新它
                 setOpenedFiles((prev) =>
                     prev.map((file) =>
                         file.path === currentFilePath
@@ -731,7 +702,6 @@ export const useFileManager = () => {
                     )
                 )
             } else {
-                // 如果没有打开的文件，创建一个新的文件标签
                 const newFile = {
                     path: targetPath,
                     name: fileName,
@@ -745,17 +715,12 @@ export const useFileManager = () => {
                 setOpenedFiles((prev) => [...prev, newFile])
             }
 
-            // 如果成功保存了临时文件，重置默认文件名但不清除编辑器内容
             if (hasNoOpenFile) {
-                // 立即更新状态，避免UI延迟
                 setDefaultFileName(t('common.untitled'))
-                // 注意：不清除编辑器内容，保持用户的编辑状态
             }
 
-            // 检查并处理可能的路径冲突
             handlePathConflict(targetPath)
 
-            // 触发文件保存事件，通知其他组件文件已保存
             window.dispatchEvent(new CustomEvent('file-saved', { detail: { path: targetPath } }));
 
             return { success: true, path: targetPath }
@@ -763,22 +728,17 @@ export const useFileManager = () => {
             handleError('fileSaveFailed', error)
             return { success: false, error: error.message || '未知错误' }
         } finally {
-            // 清除保存标记
             if (targetPath) {
                 userSavingFiles.current.delete(targetPath)
             }
         }
     }, [currentFilePath, openedFiles, editorCode, currentFile, closeFile, handlePathConflict, throttledEditorUpdate])
 
-    // 切换文件
     const switchFile = useCallback((key) => {
-        // 首先尝试直接匹配路径
         let target = openedFilesMap.get(key)
         let targetPath = key
 
-        // 如果直接匹配失败，检查是否是临时文件的 key 格式
         if (!target && key.startsWith('temp-')) {
-            // 查找匹配的临时文件
             const tempFileName = key.replace('temp-', '')
             const tempFile = openedFiles.find(file =>
                 file.isTemporary && file.name === tempFileName
@@ -793,21 +753,17 @@ export const useFileManager = () => {
             return;
         }
 
-        // 使用View Transition包装文件切换操作
         withFileTransition(() => {
             setCurrentFilePath(targetPath)
             setEditorCode(target.content)
 
-            // 使用节流的编辑器内容更新
             throttledEditorUpdate(target.content)
         })
     }, [openedFilesMap, openedFiles, throttledEditorUpdate])
 
-    // 检查未保存的临时文件和已修改文件
     const getUnsavedFiles = useCallback(() => {
         const unsavedFiles = openedFiles.filter((file) => file.isTemporary || file.isModified)
 
-        // 如果只有一个临时文件且内容为空，不触发未保存判断
         if (unsavedFiles.length === 1 && openedFiles.length === 1) {
             const singleFile = unsavedFiles[0]
             if (singleFile.isTemporary &&
@@ -819,17 +775,14 @@ export const useFileManager = () => {
         return unsavedFiles
     }, [openedFiles])
 
-    // 检查当前文件是否有未保存的修改
     const hasUnsavedChanges = useMemo(() => {
-        return currentFile && (currentFile.isTemporary || currentFile.isModified)
+        return currentFile && (currentFile['isTemporary'] || currentFile['isModified'])
     }, [currentFile])
 
-    // 另存为文件
     const exportFile = useCallback(async () => {
         await saveFile(true)
     }, [saveFile])
 
-    // 保存指定的文件对象数组
     const saveFiles = useCallback(async (files) => {
         const results = []
 
@@ -839,28 +792,23 @@ export const useFileManager = () => {
                 const isTemp = file.isTemporary
 
                 if (isTemp) {
-                    // 如果是临时文件，调用另存为对话框
                     const result = await fileApi.saveFileDialog(file.name, t, true)
 
                     if (!result) {
-                        // 用户取消了保存操作
                         results.push({ path: file.path, success: false, canceled: true })
                         continue
                     }
                     targetPath = result
 
-                    // 检查是否与已打开的文件路径重复（不包括当前文件）
                     const duplicateOpenedFile = openedFiles.find(
                         (f) => f.path !== file.path && f.path === targetPath
                     )
 
                     if (duplicateOpenedFile) {
-                        // 选择覆盖，关闭已打开的重复文件
                         closeFile(duplicateOpenedFile.path)
                     }
                 }
 
-                // 使用文件的原始编码保存
                 const fileEncoding = file.encoding || 'UTF-8'
                 const saveResult = await fileApi.saveFile(targetPath, file.content, fileEncoding)
                 if (!saveResult.success) {
@@ -870,7 +818,6 @@ export const useFileManager = () => {
 
                 results.push({ path: file.path, success: true, newPath: targetPath })
 
-                // 更新文件状态
                 setOpenedFiles((prev) =>
                     prev.map((f) =>
                         f.path === file.path
@@ -889,7 +836,6 @@ export const useFileManager = () => {
                     )
                 )
 
-                // 如果保存的是当前文件，更新当前文件路径
                 if (file.path === currentFilePath) {
                     setCurrentFilePath(targetPath)
                 }
@@ -902,15 +848,11 @@ export const useFileManager = () => {
         return results
     }, [fileApi, openedFiles, closeFile, currentFilePath, setOpenedFiles, setCurrentFilePath])
 
-    // 重命名文件
     const renameFile = useCallback(async (oldPath, newName) => {
         try {
-            // 检查是否为临时文件
             if (oldPath.startsWith('temp://')) {
-                // 对于临时文件，只需要更新内存中的文件信息
                 const newTempPath = `temp://${newName}`
 
-                // 更新打开的文件列表
                 setOpenedFiles((prev) =>
                     prev.map((file) =>
                         file.path === oldPath
@@ -923,7 +865,6 @@ export const useFileManager = () => {
                     )
                 )
 
-                // 如果重命名的是当前文件，更新当前文件路径
                 if (currentFilePath === oldPath) {
                     setCurrentFilePath(newTempPath)
                 }
@@ -937,7 +878,6 @@ export const useFileManager = () => {
                 return { success: false, message: '未提供有效的文件路径' }
             }
 
-            // 构建新的完整路径
             const oldDir = oldPath.substring(0, oldPath.lastIndexOf('\\') + 1)
             const newPath = oldDir + newName
 
@@ -1222,7 +1162,7 @@ export const useFileManager = () => {
 
             // 检查文件是否有未保存的修改
 
-            if (currentFile.isModified) {
+            if (currentFile['isModified']) {
 
 
 
@@ -1261,8 +1201,8 @@ export const useFileManager = () => {
                             } else {
                                 // 如果不是当前文件，保存该文件的内容
 
-                                const fileEncoding = currentFile.encoding || 'UTF-8'
-                                const saveResult = await fileApi.saveFile(filePath, currentFile.content, fileEncoding)
+                                const fileEncoding = currentFile['encoding'] || 'UTF-8'
+                                const saveResult = await fileApi.saveFile(filePath, currentFile['content'], fileEncoding)
                                 if (saveResult.success) {
 
                                     // 更新文件状态
@@ -1380,24 +1320,43 @@ export const useFileManager = () => {
     }
 }
 
-// 高性能文件选择器 hooks
+/**
+ * 高性能文件选择器 Hook
+ * 使用选择器模式优化性能，避免不必要的重渲染
+ * @param {Function} selector - 选择器函数，用于从fileManager中选择需要的数据
+ * @param {Object} fileManager - 文件管理器对象
+ * @returns {*} 选择器函数的返回值
+ */
 export const useFileSelector = (selector, fileManager) => {
     if (!fileManager) throw new Error('useFileSelector必须传入fileManager对象')
 
     return useMemo(() => selector(fileManager), [fileManager, selector])
 }
 
-// 专门用于获取当前文件的hook
+/**
+ * 获取当前文件的 Hook
+ * @param {Object} fileManager - 文件管理器对象
+ * @returns {Object|null} 当前打开的文件对象
+ */
 export const useCurrentFile = (fileManager) => {
     return useFileSelector(useCallback(state => state.currentFile, []), fileManager)
 }
 
-// 专门用于获取打开文件列表的hook
+/**
+ * 获取打开文件列表的 Hook
+ * @param {Object} fileManager - 文件管理器对象
+ * @returns {Array} 已打开的文件列表
+ */
 export const useOpenedFiles = (fileManager) => {
     return useFileSelector(useCallback(state => state.openedFiles, []), fileManager)
 }
 
-// 专门用于获取文件操作函数的hook
+/**
+ * 获取文件操作函数的 Hook
+ * 返回所有文件操作相关的方法，便于组件使用
+ * @param {Object} fileManager - 文件管理器对象
+ * @returns {Object} 包含所有文件操作方法的对象
+ */
 export const useFileActions = (fileManager) => {
     return useFileSelector(useCallback(state => ({
         currentCode: state.currentCode,

@@ -1,10 +1,16 @@
+/**
+ * @fileoverview Mermaid图表渲染组件 - 渲染Mermaid语法的图表和流程图
+ * 支持流程图、时序图、甘特图等多种图表类型，提供主题切换和错误处理
+ * @author hhyufan
+ * @version 1.2.0
+ */
+
 import React, { useEffect, useRef, useState } from 'react';
 import { Spin, Alert, Skeleton } from 'antd';
 import mermaid from 'mermaid';
 import { useI18n } from '../hooks/useI18n';
 import './MermaidRenderer.css';
 
-// 初始化 Mermaid
 mermaid.initialize({
   startOnLoad: false,
   theme: 'default',
@@ -46,6 +52,14 @@ mermaid.initialize({
   }
 });
 
+/**
+ * Mermaid图表渲染组件
+ * 根据提供的Mermaid代码渲染对应的图表，支持主题切换和错误处理
+ * @param {Object} props - 组件属性
+ * @param {string} props.code - Mermaid图表代码
+ * @param {boolean} props.isDarkMode - 是否为暗色主题，默认为false
+ * @returns {JSX.Element} Mermaid图表渲染组件
+ */
 const MermaidRenderer = ({ code, isDarkMode = false }) => {
   const { t } = useI18n();
   const elementRef = useRef(null);
@@ -59,10 +73,8 @@ const MermaidRenderer = ({ code, isDarkMode = false }) => {
     setLoading(true);
     setError(null);
 
-    // 添加延迟渲染，参考miaogu-markdown的实现
     const timer = setTimeout(async () => {
       try {
-        // 更新主题
         mermaid.initialize({
           theme: isDarkMode ? 'dark' : 'default',
           startOnLoad: false,
@@ -70,10 +82,8 @@ const MermaidRenderer = ({ code, isDarkMode = false }) => {
           fontFamily: 'JetBrains Mono, Consolas, Monaco, monospace'
         });
 
-        // 生成唯一ID
         const id = `mermaid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-        // 直接渲染图表，不使用parse验证（参考miaogu-markdown实现）
         const { svg } = await mermaid.render(id, code);
         setSvgContent(svg);
         setLoading(false);
@@ -90,8 +100,8 @@ const MermaidRenderer = ({ code, isDarkMode = false }) => {
 
   if (loading) {
     return (
-      <div 
-        className={`mermaid-container ${isDarkMode ? 'dark' : 'light'}`} 
+      <div
+        className={`mermaid-container ${isDarkMode ? 'dark' : 'light'}`}
         style={{ padding: '16px' }}
       >
         <div className={`skeleton-wrapper ${isDarkMode ? 'dark' : 'light'}`}>

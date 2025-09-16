@@ -1,6 +1,5 @@
 /**
- * View Transition API 样式定义
- * 为不同的UI过渡提供流畅的动画效果
+ * View Transition API 样式定义 - 为不同的UI过渡提供流畅的动画效果
  */
 
 /* 基础过渡样式 */
@@ -132,7 +131,7 @@
   view-transition-name: file-content;
 }
 
-/* 按钮点击效果 */
+/* 按钮交互效果 */
 .theme-toggle-btn {
   transition: all 0.2s ease;
   
@@ -157,7 +156,7 @@
   }
 }
 
-/* 减少动画对于偏好减少动画的用户 */
+/* 无障碍支持 - 减少动画 */
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-old(*),
   ::view-transition-new(*) {

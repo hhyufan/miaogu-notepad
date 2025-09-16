@@ -1,21 +1,27 @@
+/**
+ * @fileoverview 主题Hook - 管理应用的明暗主题状态
+ * 提供主题切换功能，支持本地存储和DOM类名管理
+ * @author hhyufan
+ * @version 1.2.0
+ */
+
 import { useState, useEffect } from 'react';
 
 /**
  * 主题钩子 - 管理应用的明暗主题状态
- * @returns {Object} 包含isDarkMode状态和toggleTheme切换函数的对象
+ * @returns {Object} 包含主题状态和切换函数的对象
+ * @returns {boolean} returns.isDarkMode - 是否为暗色主题
+ * @returns {Function} returns.toggleTheme - 切换主题函数
  */
 export const useTheme = () => {
   const [isDarkMode, setIsDarkMode] = useState(() => {
-    // 从localStorage读取保存的主题设置，默认为false（浅色主题）
     const savedTheme = localStorage.getItem('theme');
     return savedTheme === 'dark';
   });
 
-  // 当主题状态改变时，保存到localStorage并更新document的class
   useEffect(() => {
     localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
-    
-    // 更新document的class以应用全局主题样式
+
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
       document.body.classList.add('dark-theme');
@@ -25,7 +31,6 @@ export const useTheme = () => {
     }
   }, [isDarkMode]);
 
-  // 切换主题的函数
   const toggleTheme = () => {
     setIsDarkMode(prev => !prev);
   };

@@ -1,14 +1,23 @@
+/**
+ * @fileoverview Tauri API封装 - 提供文件操作、设置存储、窗口控制等功能
+ * 统一封装Tauri的各种API，提供一致的接口给前端使用
+ * @author hhyufan
+ * @version 1.2.0
+ */
+
 import { invoke } from '@tauri-apps/api/core';
 import { open, save } from '@tauri-apps/plugin-dialog';
 import { readTextFile, writeTextFile, exists, readFile } from '@tauri-apps/plugin-fs';
 import { Store } from '@tauri-apps/plugin-store';
 
-// 创建持久化存储实例
 let store = null;
 let storeInitialized = false;
 let useLocalStorage = false;
 
-// 初始化 store
+/**
+ * 初始化存储实例
+ * @returns {Promise<*>} 存储实例
+ */
 const initStore = async () => {
   if (storeInitialized) return store;
 
@@ -21,7 +30,6 @@ const initStore = async () => {
       storeInitialized = true;
     } else {
 
-      // 在非 Tauri 环境中使用 localStorage 作为备用
       useLocalStorage = true;
       storeInitialized = true;
     }
@@ -34,7 +42,10 @@ const initStore = async () => {
   return store;
 };
 
-// localStorage 备用存储方法
+/**
+ * 本地存储适配器
+ * 当Tauri Store不可用时，使用localStorage作为后备方案
+ */
 const localStorageStore = {
   async get(key) {
     try {
@@ -54,7 +65,6 @@ const localStorageStore = {
 
     } catch (error) {
       console.error(`localStorage设置失败: ${key}`, error);
-      // 检查是否是存储空间不足
       if (error.name === 'QuotaExceededError') {
         throw new Error('存储空间不足，请清理浏览器缓存');
       }
@@ -99,13 +109,14 @@ const localStorageStore = {
   },
 
   async save() {
-    // localStorage 自动保存，无需额外操作
   }
 };
 
-// 文件操作 API
+/**
+ * 文件操作 API
+ * 提供文件读写、对话框、文件监控等功能
+ */
 export const fileApi = {
-  // 打开文件对话框
   async openFileDialog(t) {
     try {
       return await open({
@@ -121,16 +132,13 @@ export const fileApi = {
     }
   },
 
-  // 保存文件对话框
   async saveFileDialog(defaultName = 'untitled.txt', t, isNewFile = false) {
     try {
-      // 检查文件名是否有扩展名，如果没有则添加 .txt
       let finalDefaultName = defaultName;
       if (defaultName && !defaultName.includes('.')) {
         finalDefaultName = `${defaultName}.txt`;
       }
 
-      // 根据是否是新文件来决定标题
       const title = isNewFile
         ? (t ? t('dialog.fileDialog.saveAs') : 'Save As')
         : (t ? t('dialog.fileDialog.saveFile') : 'Save File');
@@ -148,7 +156,6 @@ export const fileApi = {
     }
   },
 
-  // 选择图片对话框
   async selectImageDialog(t) {
     try {
       const selected = await open({
@@ -161,9 +168,7 @@ export const fileApi = {
       });
 
       if (selected && !Array.isArray(selected)) {
-        // 读取二进制文件内容并获取base64
         const base64 = await this.readBinaryFile(selected);
-        // 根据文件扩展名确定MIME类型
         const ext = selected.split('.').pop().toLowerCase();
         let mimeType = 'image/jpeg';
         if (ext === 'png') mimeType = 'image/png';
@@ -181,7 +186,6 @@ export const fileApi = {
     }
   },
 
-  // 读取文件内容
   async readFile(filePath) {
     try {
       return await readTextFile(filePath);
@@ -190,11 +194,9 @@ export const fileApi = {
     }
   },
 
-  // 读取二进制文件内容（用于图片等）
   async readBinaryFile(filePath) {
     try {
       const data = await readFile(filePath);
-      // 将Uint8Array转换为base64，使用更安全的方法
       let binary = '';
       const bytes = new Uint8Array(data);
       const len = bytes.byteLength;
@@ -208,7 +210,6 @@ export const fileApi = {
     }
   },
 
-  // 写入文件内容
   async writeFile(filePath, content) {
     try {
       await writeTextFile(filePath, content);
@@ -218,7 +219,6 @@ export const fileApi = {
     }
   },
 
-  // 检查文件是否存在
   async fileExists(filePath) {
     try {
       return await exists(filePath);
@@ -227,7 +227,6 @@ export const fileApi = {
     }
   },
 
-  // 使用 Tauri 命令读取文件
   async readFileContent(filePath) {
     try {
       const result = await invoke('read_file_content', { path: filePath });
@@ -241,7 +240,6 @@ export const fileApi = {
     }
   },
 
-  // 使用 Tauri 命令写入文件
   async writeFileContent(filePath, content) {
     try {
       await invoke('write_file_content', { path: filePath, content });
@@ -251,7 +249,6 @@ export const fileApi = {
     }
   },
 
-  // 检查文件是否存在（使用 Tauri 命令）
   async checkFileExists(filePath) {
     try {
       return await invoke('check_file_exists', { path: filePath });
@@ -260,7 +257,6 @@ export const fileApi = {
     }
   },
 
-  // 获取文件信息
   async getFileInfo(filePath) {
     try {
       return await invoke('get_file_info', { path: filePath });
@@ -290,7 +286,6 @@ export const fileApi = {
     }
   },
 
-  // 设置打开文件（类似主项目的setOpenFile）
   async setOpenFile(filePath) {
     try {
       if (!filePath) {
@@ -302,7 +297,6 @@ export const fileApi = {
     }
   },
 
-  // 保存文件（类似主项目的saveFile）
   async saveFile(filePath, content, encoding = null) {
     try {
       return await invoke('save_file', { filePath, content, encoding });
@@ -311,7 +305,6 @@ export const fileApi = {
     }
   },
 
-  // 获取目录内容
 async getDirectoryContents(dirPath) {
     try {
       const contents = await invoke('get_directory_contents', { dirPath });
@@ -329,7 +322,6 @@ async getDirectoryContents(dirPath) {
     }
   },
 
-  // 执行文件
   async executeFile(filePath) {
     try {
       return await invoke('execute_file', { filePath });
@@ -338,7 +330,6 @@ async getDirectoryContents(dirPath) {
     }
   },
 
-  // 在终端中打开
   async openInTerminal(path) {
     try {
       return await invoke('open_in_terminal', { path });
@@ -347,7 +338,6 @@ async getDirectoryContents(dirPath) {
     }
   },
 
-  // 在资源管理器中显示
    async showInExplorer(path) {
      try {
        return await invoke('show_in_explorer', { path });
@@ -356,7 +346,6 @@ async getDirectoryContents(dirPath) {
      }
    },
 
-  // 开始文件监听
   async startFileWatching(filePath) {
     try {
       return await invoke('start_file_watching', { filePath });
@@ -365,7 +354,6 @@ async getDirectoryContents(dirPath) {
     }
   },
 
-  // 停止文件监听
   async stopFileWatching(filePath) {
     try {
       return await invoke('stop_file_watching', { filePath });
@@ -374,7 +362,6 @@ async getDirectoryContents(dirPath) {
     }
   },
 
-  // 检查文件外部变更
   async checkFileExternalChanges(filePath) {
     try {
       return await invoke('check_file_external_changes', { filePath });
@@ -384,9 +371,11 @@ async getDirectoryContents(dirPath) {
   }
 };
 
-// 设置存储 API
+/**
+ * 设置存储 API
+ * 提供应用设置的持久化存储功能
+ */
 export const settingsApi = {
-  // 获取设置
   async get(key, defaultValue = null) {
     try {
       await initStore();
@@ -401,7 +390,6 @@ export const settingsApi = {
     }
   },
 
-  // 设置值
   async set(key, value) {
     try {
 
@@ -427,7 +415,6 @@ export const settingsApi = {
     }
   },
 
-  // 删除设置
   async delete(key) {
     try {
       await initStore();
@@ -442,7 +429,6 @@ export const settingsApi = {
     }
   },
 
-  // 清空所有设置
   async clear() {
     try {
       await initStore();
@@ -453,11 +439,9 @@ export const settingsApi = {
       await currentStore.clear();
       await currentStore.save();
     } catch (error) {
-      // Silently handle clear errors
     }
   },
 
-  // 获取所有设置
   async getAll() {
     try {
       await initStore();
@@ -472,9 +456,11 @@ export const settingsApi = {
   }
 };
 
-// 应用 API
+/**
+ * 应用 API
+ * 提供应用级别的功能，如命令行参数获取等
+ */
 export const appApi = {
-  // 问候函数（测试用）
   async greet(name) {
     try {
       return await invoke('greet', { name });
@@ -483,10 +469,8 @@ export const appApi = {
     }
   },
 
-  // 获取命令行参数
   async getCliArgs() {
     try {
-      // 在Tauri环境中调用原生方法
       if (typeof window !== 'undefined' && window.__TAURI_INTERNALS__ !== undefined) {
         const args = await invoke('get_cli_args');
         return args;
@@ -495,7 +479,6 @@ export const appApi = {
         const urlParams = new URLSearchParams(window.location.search);
         const fileParam = urlParams.get('file');
 
-        // 检查localStorage中是否有调试用的文件路径
         const debugFilePath = localStorage.getItem('miaogu-notepad-debug-file');
 
         if (fileParam) {

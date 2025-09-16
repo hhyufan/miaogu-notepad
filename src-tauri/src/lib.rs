@@ -1,3 +1,12 @@
+/*!
+ * @fileoverview Tauri后端核心库 - 提供文件操作、系统集成等功能
+ *
+ * 喵咕记事本后端实现，包含文件读写、编码检测、文件监控、系统集成等功能
+ *
+ * @author hhyufan
+ * @version 1.2.0
+ */
+
 use std::fs;
 use std::path::Path;
 use std::process::Command;
@@ -10,7 +19,8 @@ use notify::{Watcher, RecursiveMode, Event, EventKind};
 use once_cell::sync::Lazy;
 use tauri::{AppHandle, Emitter};
 
-// 文件信息结构体
+/// 文件信息结构体
+/// 用于描述文件或目录的基本信息
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct FileInfo {
     name: String,
@@ -21,7 +31,8 @@ struct FileInfo {
     modified: u64,
 }
 
-// 文件操作结果结构体
+/// 文件操作结果结构体
+/// 用于返回文件操作的结果信息，包含成功状态、消息和相关数据
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct FileOperationResult {
     success: bool,
@@ -38,7 +49,14 @@ struct FileOperationResult {
     line_ending: Option<String>,
 }
 
-// 检测文件编码
+/// 检测文件编码
+/// 通过分析文件字节内容来确定文件的字符编码格式
+///
+/// # Arguments
+/// * `bytes` - 文件的字节内容
+///
+/// # Returns
+/// * `&'static Encoding` - 检测到的编码格式
 fn detect_file_encoding(bytes: &[u8]) -> &'static Encoding {
     // 简单的编码检测逻辑
     if bytes.starts_with(&[0xEF, 0xBB, 0xBF]) {
@@ -54,7 +72,14 @@ fn detect_file_encoding(bytes: &[u8]) -> &'static Encoding {
     UTF_8
 }
 
-// 检测行尾序列
+/// 检测行尾序列
+/// 分析文本内容中的换行符类型，确定文件使用的行尾格式
+///
+/// # Arguments
+/// * `content` - 文本内容
+///
+/// # Returns
+/// * `String` - 行尾类型（"CRLF", "LF", "CR"）
 fn detect_line_ending(content: &str) -> String {
     // 统计不同行结束符的数量
     let crlf_count = content.matches("\r\n").count();
@@ -74,7 +99,8 @@ fn detect_line_ending(content: &str) -> String {
     }
 }
 
-// 文件变更事件结构体
+/// 文件变更事件结构体
+/// 用于描述文件系统中发生的变更事件
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct FileChangeEvent {
     file_path: String,
@@ -82,13 +108,15 @@ struct FileChangeEvent {
     timestamp: u64,
 }
 
-// 文件监听器状态
+/// 文件监控状态结构体
+/// 管理文件监控器和被监控文件的状态信息
 struct FileWatcherState {
     watchers: HashMap<String, Box<dyn Watcher + Send>>,
     watched_files: HashMap<String, u64>, // 文件路径 -> 最后修改时间
 }
 
-// 全局文件监听器状态
+/// 全局文件监控器状态
+/// 使用懒加载方式初始化全局文件监控状态
 static FILE_WATCHER_STATE: Lazy<Arc<Mutex<FileWatcherState>>> = Lazy::new(|| {
     Arc::new(Mutex::new(FileWatcherState {
         watchers: HashMap::new(),
@@ -96,7 +124,14 @@ static FILE_WATCHER_STATE: Lazy<Arc<Mutex<FileWatcherState>>> = Lazy::new(|| {
     }))
 });
 
-// 文件操作相关的命令
+/// 读取文件内容
+/// 读取指定路径的文件，自动检测编码和行尾格式
+///
+/// # Arguments
+/// * `path` - 文件路径
+///
+/// # Returns
+/// * `Result<FileOperationResult, String>` - 包含文件内容和元信息的操作结果
 #[tauri::command]
 async fn read_file_content(path: String) -> Result<FileOperationResult, String> {
     match fs::read(&path) {
@@ -128,6 +163,15 @@ async fn read_file_content(path: String) -> Result<FileOperationResult, String> 
     }
 }
 
+/// 写入文件内容
+/// 将内容写入指定路径的文件，如果目录不存在会自动创建
+///
+/// # Arguments
+/// * `path` - 文件路径
+/// * `content` - 要写入的内容
+///
+/// # Returns
+/// * `Result<(), String>` - 操作结果
 #[tauri::command]
 async fn write_file_content(path: String, content: String) -> Result<(), String> {
     // 确保目录存在
@@ -143,11 +187,27 @@ async fn write_file_content(path: String, content: String) -> Result<(), String>
     }
 }
 
+/// 检查文件是否存在
+/// 检查指定路径的文件或目录是否存在
+///
+/// # Arguments
+/// * `path` - 文件或目录路径
+///
+/// # Returns
+/// * `bool` - 文件是否存在
 #[tauri::command]
 async fn check_file_exists(path: String) -> bool {
     Path::new(&path).exists()
 }
 
+/// 获取文件信息
+/// 获取指定路径文件或目录的详细信息
+///
+/// # Arguments
+/// * `path` - 文件或目录路径
+///
+/// # Returns
+/// * `Result<FileInfo, String>` - 文件信息或错误消息
 #[tauri::command]
 async fn get_file_info(path: String) -> Result<FileInfo, String> {
     let file_path = Path::new(&path);
@@ -173,7 +233,14 @@ async fn get_file_info(path: String) -> Result<FileInfo, String> {
     }
 }
 
-// 设置打开文件（类似主项目的setOpenFile）
+/// 设置打开文件
+/// 打开指定文件并返回文件内容和相关信息
+///
+/// # Arguments
+/// * `file_path` - 要打开的文件路径
+///
+/// # Returns
+/// * `Result<FileOperationResult, String>` - 包含文件内容和元信息的操作结果
 #[tauri::command]
 async fn set_open_file(file_path: String) -> Result<FileOperationResult, String> {
     if file_path.is_empty() {
@@ -250,7 +317,16 @@ async fn set_open_file(file_path: String) -> Result<FileOperationResult, String>
     }
 }
 
-// 保存文件（类似主项目的saveFile）
+/// 保存文件
+/// 将内容保存到指定文件，支持指定编码格式
+///
+/// # Arguments
+/// * `file_path` - 文件路径
+/// * `content` - 要保存的内容
+/// * `encoding` - 可选的编码格式
+///
+/// # Returns
+/// * `Result<FileOperationResult, String>` - 保存操作结果
 #[tauri::command]
 async fn save_file(file_path: String, content: String, encoding: Option<String>) -> Result<FileOperationResult, String> {
     if file_path.is_empty() {
@@ -888,6 +964,8 @@ async fn check_file_external_changes(file_path: String) -> Result<Option<FileCha
     Ok(None)
 }
 
+/// Tauri应用程序运行函数
+/// 初始化并启动Tauri应用程序，配置插件和命令处理器
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default();

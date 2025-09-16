@@ -1,3 +1,10 @@
+/**
+ * @fileoverview 应用程序主组件
+ * 提供整体布局、主题管理、编辑器模式切换等核心功能
+ * @author hhyufan
+ * @version 1.2.0
+ */
+
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {App as AntdApp, Button, ConfigProvider, Layout, Spin, theme} from 'antd';
 import {CodeOutlined, EyeOutlined, InboxOutlined, MoonFilled, PartitionOutlined, SunOutlined} from '@ant-design/icons';
@@ -18,35 +25,40 @@ import {withEditorModeTransition, withThemeTransition} from './utils/viewTransit
 import './App.scss';
 
 const { settings: settingsApi, app: appApi } = tauriApi;
-
 const { Content } = Layout;
 
-// 编辑器模式枚举
+/**
+ * 编辑器模式枚举
+ */
 const EDITOR_MODES = {
   MONACO: 'monaco',
   MARKDOWN: 'markdown',
   MGTREE: 'mgtree'
 };
 
-// 内部组件，用于访问文件上下文
+/**
+ * 应用内容组件 - 处理编辑器模式切换和主题切换
+ * @param {Object} props - 组件属性
+ * @param {boolean} props.isDarkMode - 是否为暗色模式
+ * @param {Function} props.toggleTheme - 主题切换函数
+ * @param {Object} props.fileManager - 文件管理器实例
+ */
 const AppContent = ({ isDarkMode, toggleTheme, fileManager }) => {
   const { t } = useI18n();
   const [isTreeMode, setIsTreeMode] = useState(false);
   const [editorMode, setEditorMode] = useState(EDITOR_MODES.MONACO);
   const { currentFile } = fileManager;
 
-  // 检查当前文件是否为.mgtree文件
-  const isMgtreeFile = currentFile && currentFile.name && currentFile.name.endsWith('.mgtree');
+  const isMgtreeFile = currentFile && currentFile['name'] && currentFile['name'].endsWith('.mgtree');
+  const isMarkdownFile = currentFile && currentFile['name'] &&
+    ['md', 'markdown'].some(ext => currentFile['name'].toLowerCase().endsWith('.' + ext));
 
-  // 检查当前文件是否为Markdown文件
-  const isMarkdownFile = currentFile && currentFile.name &&
-    ['md', 'markdown'].some(ext => currentFile.name.toLowerCase().endsWith('.' + ext));
-
-  // 切换编辑器模式的函数
+  /**
+   * 切换编辑器模式
+   */
   const toggleEditorMode = useCallback(async () => {
     await withEditorModeTransition(() => {
       if (isMgtreeFile) {
-        // mgtree文件：Monaco <-> MGTree
         if (editorMode === EDITOR_MODES.MONACO) {
           setEditorMode(EDITOR_MODES.MGTREE);
           setIsTreeMode(true);
@@ -55,7 +67,6 @@ const AppContent = ({ isDarkMode, toggleTheme, fileManager }) => {
           setIsTreeMode(false);
         }
       } else if (isMarkdownFile) {
-        // Markdown文件：Monaco <-> Markdown预览
         if (editorMode === EDITOR_MODES.MONACO) {
           setEditorMode(EDITOR_MODES.MARKDOWN);
         } else {
@@ -65,7 +76,6 @@ const AppContent = ({ isDarkMode, toggleTheme, fileManager }) => {
     });
   }, [editorMode, isMgtreeFile, isMarkdownFile]);
 
-  // 获取编辑器模式图标
   const getEditorModeIcon = () => {
     if (isMgtreeFile) {
       return editorMode === EDITOR_MODES.MGTREE ? <CodeOutlined /> : <PartitionOutlined />;
@@ -75,7 +85,6 @@ const AppContent = ({ isDarkMode, toggleTheme, fileManager }) => {
     return <CodeOutlined />;
   };
 
-  // 获取编辑器模式按钮的CSS类名
   const getEditorModeClassName = () => {
     if (isMgtreeFile) {
       return editorMode === EDITOR_MODES.MGTREE ? 'code-mode' : 'mgtree-mode';
@@ -85,7 +94,6 @@ const AppContent = ({ isDarkMode, toggleTheme, fileManager }) => {
     return 'code-mode';
   };
 
-  // 获取编辑器模式提示文本
   const getEditorModeTitle = () => {
     if (isMgtreeFile) {
       return editorMode === EDITOR_MODES.MGTREE ? t('editor.switchToCodeEditor') : t('editor.switchToTreeEditor');
@@ -95,7 +103,6 @@ const AppContent = ({ isDarkMode, toggleTheme, fileManager }) => {
     return t('editor.editorMode');
   };
 
-  // 键盘事件监听 - CTRL + / 切换编辑器
   useEffect(() => {
     const handleKeyDown = async (event) => {
       if (event.ctrlKey && event.key === '/') {
@@ -110,12 +117,10 @@ const AppContent = ({ isDarkMode, toggleTheme, fileManager }) => {
     };
   }, [toggleEditorMode]);
 
-  // 当文件切换时，根据文件类型设置编辑器模式
   useEffect(() => {
-    // 其他文件重置为Monaco编辑器模式
     setEditorMode(EDITOR_MODES.MONACO);
     setIsTreeMode(false);
-  }, [isMgtreeFile, isMarkdownFile, fileManager.currentFile?.path]); // 添加文件路径依赖，确保文件切换时触发
+  }, [isMgtreeFile, isMarkdownFile, fileManager.currentFile?.path]);
 
   return (
     <>
@@ -166,7 +171,9 @@ const AppContent = ({ isDarkMode, toggleTheme, fileManager }) => {
   );
 };
 
-// 主应用组件（在Provider内部）
+/**
+ * 主应用组件 - 处理应用初始化、拖拽、主题管理等核心功能
+ */
 const MainApp = () => {
   const {
     theme: currentTheme,
@@ -179,22 +186,18 @@ const MainApp = () => {
     setBackgroundTransparency
   } = useTheme();
   const { t } = useI18n();
-  const [loading, setLoading] = useState(true);// 拖拽状态
+  const [loading, setLoading] = useState(true);
   const [isDragOver, setIsDragOver] = useState(false);
 
-  // 监听Tauri拖拽事件
   useEffect(() => {
     const handleTauriDragEnter = () => {
-
       setIsDragOver(true);
     };
 
     const handleTauriDragLeave = () => {
-
       setIsDragOver(false);
     };
 
-    // 监听自定义事件
     window.addEventListener('tauri-drag-enter', handleTauriDragEnter);
     window.addEventListener('tauri-drag-leave', handleTauriDragLeave);
 
@@ -204,16 +207,13 @@ const MainApp = () => {
     };
   }, []);
 
-  // 会话恢复
   const { isRestoring, restoreError } = useSessionRestore();
-
-  // 获取背景状态
   const { backgroundEnabled, backgroundImage } = useSelector((state) => state.theme);
-
-  // 初始化文件管理器
   const fileManager = useFileManager();
 
-  // 拖拽事件处理函数
+  /**
+   * 处理拖拽悬停事件
+   */
   const handleDragOver = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -223,40 +223,42 @@ const MainApp = () => {
     }
   }, [isDragOver]);
 
+  /**
+   * 处理拖拽进入事件
+   */
   const handleDragEnter = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
-
     setIsDragOver(true);
   }, []);
 
+  /**
+   * 处理拖拽离开事件
+   */
   const handleDragLeave = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
 
-    // 检查是否真的离开了应用区域
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX;
     const y = e.clientY;
 
-    // 如果鼠标位置在应用区域外，则隐藏覆盖层
     if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
       setIsDragOver(false);
     }
   }, []);
 
+  /**
+   * 处理文件拖拽放置事件
+   */
   const handleDrop = useCallback(async (e) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
 
-
-
-    // 检查是否在Tauri环境中运行
     const hasTauri = typeof window !== 'undefined' && window.__TAURI_INTERNALS__ !== undefined;
 
     if (!hasTauri) {
-      // 浏览器环境的拖拽处理
       const files = Array.from(e.dataTransfer.files);
 
       if (files.length === 0) {
@@ -268,12 +270,10 @@ const MainApp = () => {
           if (file.webkitRelativePath) {
             await fileManager.setOpenFile(file.webkitRelativePath);
           } else {
-            // 回退方案：读取文件内容并显示文件名作为路径
             let content;
             let fileName = file.name;
 
             try {
-              // 尝试作为文本文件读取
               content = await new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = (e) => resolve(e.target.result);
@@ -287,7 +287,6 @@ const MainApp = () => {
               });
             } catch (error) {
               console.error('Failed to read file:', error);
-              // 如果读取失败，可能是二进制文件
               await fileManager.setOpenFile(fileName, '', {
                 encoding: 'UTF-8',
                 lineEnding: 'LF'
@@ -301,7 +300,9 @@ const MainApp = () => {
     }
   }, [fileManager]);
 
-  // 主题切换函数
+  /**
+   * 主题切换函数
+   */
   const toggleTheme = useCallback(async () => {
     const newTheme = currentTheme === 'light' ? 'dark' : 'light';
 
@@ -309,34 +310,27 @@ const MainApp = () => {
       setTheme(newTheme);
     });
 
-    // 保存到Tauri设置
     if (window.__TAURI__) {
-      settingsApi.set('theme', newTheme).catch(() => {
-        // Silently handle theme save errors
-      });
+      settingsApi.set('theme', newTheme).catch(() => {});
     } else {
       localStorage.setItem('theme', newTheme);
     }
   }, [currentTheme, setTheme]);
 
-  // 手动测试CLI参数的函数
   const testCliArgs = async () => {
     try {
       return await appApi.getCliArgs();
     } catch (error) {
-      // Silently handle CLI args test errors
       return [];
     }
   };
 
-  // 设置调试文件路径的函数
   const setDebugFile = (filePath) => {
     if (!window.__TAURI__) {
       localStorage.setItem('miaogu-notepad-debug-file', filePath);
     }
   };
 
-  // 测试文件打开的函数
   const testFileOpen = async () => {
     try {
       const args = await appApi.getCliArgs();
@@ -344,12 +338,9 @@ const MainApp = () => {
       if (args && args.length > 0) {
         const filePath = args[0];
 
-        // 检查文件是否存在
         try {
           await fileApi.fileExists(filePath);
-        } catch (error) {
-          // Silently handle file existence check errors
-        }
+        } catch (error) {}
 
         try {
           await fileManager.setOpenFile(filePath);
@@ -374,16 +365,14 @@ const MainApp = () => {
     return { success: false };
   };
 
-  // 用于跟踪是否已经处理过CLI参数
   const cliArgsProcessedRef = useRef(false);
 
-  // 处理命令行参数中的文件路径 - 只在应用初始化时执行一次
   useEffect(() => {
     const handleCliArgs = async () => {
-      // 如果已经处理过CLI参数，直接返回
       if (cliArgsProcessedRef.current) {
         return;
       }
+
       const showFileStatus = () => {
         return {
           currentFile: fileManager.currentFile,
@@ -392,59 +381,43 @@ const MainApp = () => {
         };
       };
 
-      // 添加调试函数到window对象，方便调试
       window.testCliArgs = testCliArgs;
       window.setDebugFile = setDebugFile;
       window.testFileOpen = testFileOpen;
       window.showFileStatus = showFileStatus;
 
       if (!isRestoring && !loading) {
-        // 标记CLI参数已开始处理
         cliArgsProcessedRef.current = true;
 
-        // 尝试获取CLI参数（无论是否在Tauri环境中）
         try {
           const args = await appApi.getCliArgs();
 
           if (args && args.length > 0) {
-            // 获取第一个参数作为文件路径
             const filePath = args[0];
 
             if (filePath && typeof filePath === 'string') {
-              // 检查文件是否存在
               try {
                 await fileApi.fileExists(filePath);
-              } catch (error) {
-                // Silently handle file existence check errors
-              }
+              } catch (error) {}
 
-              // 尝试打开文件
               try {
                 await fileManager.setOpenFile(filePath);
-                return; // 成功打开文件，不需要创建新文件
-              } catch (error) {
-                // 静默处理CLI参数文件打开错误
-              }
+                return;
+              } catch (error) {}
             }
           }
-        } catch (error) {
-          // Silently handle CLI args errors in development mode
-        }
+        } catch (error) {}
 
-        // 开发模式：检查localStorage中的调试文件
         if (!window.__TAURI__) {
           const debugFile = localStorage.getItem('miaogu-notepad-debug-file');
           if (debugFile) {
             try {
               await fileManager.setOpenFile(debugFile);
               return;
-            } catch (error) {
-              // 静默处理调试文件打开错误
-            }
+            } catch (error) {}
           }
         }
 
-        // 如果没有命令行参数或打开失败，且没有其他打开的文件，则创建新文件
         if (fileManager.openedFiles.length === 0) {
           const initialContent = ''
           await fileManager.createFile('untitled.js', initialContent);
@@ -453,19 +426,12 @@ const MainApp = () => {
     };
 
     handleCliArgs().then();
-  }, [isRestoring, loading]); // 移除fileManager相关依赖，避免重复执行
-
-
-
-
+  }, [isRestoring, loading]);
 
   useEffect(() => {
-    // 初始化应用设置
     const initializeApp = async () => {
       try {
-        // 检查是否在Tauri环境中
         if (window.__TAURI__) {
-          // 从持久化存储加载设置
           const savedTheme = await settingsApi.get('theme', 'light');
           const savedFontSize = await settingsApi.get('fontSize', 14);
           const savedFontFamily = await settingsApi.get('fontFamily', 'Consolas, Monaco, monospace');
@@ -474,7 +440,6 @@ const MainApp = () => {
           const savedBackgroundEnabled = await settingsApi.get('backgroundEnabled', false);
           const savedBackgroundTransparency = await settingsApi.get('backgroundTransparency', { dark: 80, light: 55 });
 
-          // 应用所有设置到Redux store
           setTheme(savedTheme);
           setFontSize(savedFontSize);
           setFontFamily(savedFontFamily);
@@ -482,7 +447,6 @@ const MainApp = () => {
           setBackgroundImage(savedBackgroundImage);
           setBackgroundEnabled(savedBackgroundEnabled);
 
-          // 设置背景透明度（需要分别设置dark和light模式）
           if (savedBackgroundTransparency && typeof savedBackgroundTransparency === 'object') {
             if (savedBackgroundTransparency.dark !== undefined) {
               setBackgroundTransparency('dark', savedBackgroundTransparency.dark);
@@ -494,15 +458,12 @@ const MainApp = () => {
 
           document.documentElement.setAttribute('data-theme', savedTheme);
         } else {
-          // 浏览器环境，使用默认设置
-          // 只在首次加载时设置默认主题，避免覆盖用户的主题切换
           if (!document.documentElement.getAttribute('data-theme')) {
             setTheme('light');
             document.documentElement.setAttribute('data-theme', 'light');
           }
         }
       } catch (error) {
-        // 出错时使用默认设置
         if (!document.documentElement.getAttribute('data-theme')) {
           setTheme('light');
           document.documentElement.setAttribute('data-theme', 'light');
@@ -513,44 +474,33 @@ const MainApp = () => {
     };
 
     initializeApp().then();
-  }, []); // 移除setTheme依赖，避免重复初始化
+  }, []);
 
-  // 初始化主题
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', currentTheme);
   }, [currentTheme]);
 
-  // 监听背景设置变化并更新CSS变量
   useEffect(() => {
     const updateBackgroundStyles = () => {
       const state = store.getState();
       const { backgroundEnabled, backgroundTransparency, backgroundImage } = state.theme;
 
       if (backgroundEnabled && backgroundImage) {
-        // 设置背景图片和双透明度 - 修复CSS变量格式
         const imageUrl = `url("${backgroundImage}")`;
         document.documentElement.style.setProperty('--editor-background-image', imageUrl);
 
-        // 使用双透明度设置 - 修正颜色值，使用黑色而不是深灰色
         const darkTransparency = backgroundTransparency.dark / 100;
         const lightTransparency = backgroundTransparency.light / 100;
 
         const lightOpacity = `rgba(255, 255, 255, ${lightTransparency})`;
-        const darkOpacity = `rgba(0, 0, 0, ${darkTransparency})`; // 使用纯黑色增强透明度效果
+        const darkOpacity = `rgba(0, 0, 0, ${darkTransparency})`;
 
         document.documentElement.style.setProperty('--editor-background-light', lightOpacity);
         document.documentElement.style.setProperty('--editor-background-dark', darkOpacity);
 
-        // 不直接设置 --editor-background，让CSS根据主题自动选择
-        // CSS中已经定义了：
-        // [data-theme='light'] { --editor-background: var(--editor-background-light); }
-        // [data-theme='dark'] { --editor-background: var(--editor-background-dark); }
-
-        // 测试图片是否能加载
         const testImg = new Image();
         testImg.src = backgroundImage;
       } else {
-        // 清除背景图片，设置为透明
         document.documentElement.style.setProperty('--editor-background-image', 'none');
 
         const defaultLight = 'rgba(255, 255, 255, 0.5)';
@@ -558,16 +508,10 @@ const MainApp = () => {
 
         document.documentElement.style.setProperty('--editor-background-light', defaultLight);
         document.documentElement.style.setProperty('--editor-background-dark', defaultDark);
-
-        // 不直接设置 --editor-background，让CSS根据主题自动选择
-
       }
     };
 
-    // 初始化背景样式
     updateBackgroundStyles();
-
-    // 监听store变化
     const unsubscribe = store.subscribe(updateBackgroundStyles);
 
     return () => {
@@ -640,6 +584,11 @@ const MainApp = () => {
   );
 };
 
+/**
+ * 应用程序根组件
+ * 提供Redux store的Provider包装
+ * @returns {JSX.Element} 应用程序根组件
+ */
 function App() {
   return (
     <Provider store={store}>

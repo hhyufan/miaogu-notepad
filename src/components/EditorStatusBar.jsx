@@ -1,3 +1,10 @@
+/**
+ * @fileoverview 编辑器状态栏组件 - 显示文件信息、编码、行尾符等状态信息
+ * 提供文件路径导航、编码切换、行尾符设置、字体大小调节等功能
+ * @author hhyufan
+ * @version 1.2.0
+ */
+
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Breadcrumb, Button, Divider, Dropdown, Tooltip } from 'antd'
 import { FileOutlined, FolderOutlined, ZoomInOutlined, ZoomOutOutlined } from '@ant-design/icons'
@@ -9,7 +16,12 @@ const { file: fileApi, settings: settingsApi } = tauriApi
 import { splitPath, buildFullPath } from '../utils/pathUtils'
 import './EditorStatusBar.scss'
 
-// 编码标准化函数
+/**
+ * 标准化编码名称
+ * 将编码名称转换为标准格式，处理特殊编码映射
+ * @param {string} encoding - 原始编码名称
+ * @returns {string} 标准化后的编码名称
+ */
 function standardizeEncodingName(encoding) {
     const lowerKey = encoding.toLowerCase()
     const specialMap = {
@@ -21,6 +33,13 @@ function standardizeEncodingName(encoding) {
     return mapped.toUpperCase() === mapped ? mapped : mapped.toUpperCase()
 }
 
+/**
+ * 编辑器状态栏组件
+ * 显示当前文件的状态信息，包括路径、编码、行尾符等，并提供相关操作
+ * @param {Object} props - 组件属性
+ * @param {Object} props.fileManager - 文件管理器实例
+ * @returns {JSX.Element} 状态栏组件
+ */
 const EditorStatusBar = ({ fileManager }) => {
     const currentFile = useCurrentFile(fileManager)
     const { updateFileLineEnding } = useFileActions(fileManager)
@@ -41,46 +60,39 @@ const EditorStatusBar = ({ fileManager }) => {
     const [dragStartX, setDragStartX] = useState(0)
     const [dragStartScrollLeft, setDragStartScrollLeft] = useState(0)
 
-    // Line ending options
     const lineEndingOptions = useMemo(() => [
         { value: 'LF', label: t('editor.lineEnding.LF') },
         { value: 'CRLF', label: t('editor.lineEnding.CRLF') },
         { value: 'CR', label: t('editor.lineEnding.CR') }
     ], [t])
 
-    // Get current line ending label
     const getCurrentLineEndingLabel = useCallback(() => {
-        const lineEndingValue = typeof currentFile.lineEnding === 'string' ? currentFile.lineEnding : 'LF'
+        const lineEndingValue = typeof currentFile['lineEnding'] === 'string' ? currentFile['lineEnding'] : 'LF'
         const option = lineEndingOptions.find((opt) => opt.value === lineEndingValue)
         return option ? option.label : 'LF (\\n)'
-    }, [currentFile.lineEnding, lineEndingOptions])
+    }, [currentFile['lineEnding'], lineEndingOptions])
 
-    // 获取当前编码标签
     const getCurrentEncodingLabel = useCallback(() => {
-        const encodingValue = typeof currentFile.encoding === 'string' ? currentFile.encoding : 'UTF-8'
+        const encodingValue = typeof currentFile['encoding'] === 'string' ? currentFile['encoding'] : 'UTF-8'
         return standardizeEncodingName(encodingValue)
-    }, [currentFile.encoding])
+    }, [currentFile['encoding']])
 
-    // 处理路径分段 - 当文件路径变化时更新面包屑
     useEffect(() => {
-        if (currentFile && currentFile.path && !currentFile.isTemporary) {
-            const segments = splitPath(currentFile.path)
+        if (currentFile && currentFile['path'] && !currentFile['isTemporary']) {
+            const segments = splitPath(currentFile['path'])
             setPathSegments(segments)
-            // 清除之前的目录内容缓存
             setDirectoryContents({})
         } else {
             setPathSegments([])
         }
     }, [currentFile?.path, currentFile?.isTemporary])
 
-    // 监听面包屑更新事件（用于文件夹拖拽）
     useEffect(() => {
         const handleBreadcrumbUpdate = (event) => {
             const { path } = event.detail
             if (path) {
                 const segments = splitPath(path)
                 setPathSegments(segments)
-                // 清除之前的目录内容缓存
                 setDirectoryContents({})
             }
         }
@@ -91,7 +103,6 @@ const EditorStatusBar = ({ fileManager }) => {
         }
     }, [])
 
-    // 检查滚动状态和更新滚动条
     const updateScrollState = useCallback(() => {
         if (breadcrumbRef.current && filePathRef.current) {
             const breadcrumb = breadcrumbRef.current
@@ -109,10 +120,8 @@ const EditorStatusBar = ({ fileManager }) => {
                 clientWidth
             })
 
-            // 更新溢出状态的CSS类 - 只在有文件时显示省略号
-            // 检查是否滚动到结尾（允许1px的误差）
             const isAtEnd = scrollLeft >= scrollWidth - clientWidth - 1
-            const hasFile = currentFile.path && !currentFile.isTemporary
+            const hasFile = currentFile['path'] && !currentFile['isTemporary']
 
             if (hasFile && canScroll && !isAtEnd) {
                 container.classList.add('has-overflow')
@@ -120,7 +129,6 @@ const EditorStatusBar = ({ fileManager }) => {
                 container.classList.remove('has-overflow')
             }
 
-            // 更新滚动条位置和宽度
             const thumbElement = container.querySelector('.scroll-thumb')
             if (thumbElement) {
                 if (canScroll) {
@@ -131,21 +139,18 @@ const EditorStatusBar = ({ fileManager }) => {
                     thumbElement.style.width = `${thumbWidth}%`
                     thumbElement.style.left = `${thumbLeft}%`
                 } else {
-                    // 当不需要滚动时，重置滑块样式
                     thumbElement.style.width = '20%'
                     thumbElement.style.left = '0%'
                 }
             }
         }
-    }, [currentFile.path, currentFile.isTemporary])
+    }, [currentFile['path'], currentFile['isTemporary']])
 
-    // 监听面包屑内容变化和窗口大小变化
     useEffect(() => {
         const timer = setTimeout(updateScrollState, 100)
         return () => clearTimeout(timer)
     }, [pathSegments, updateScrollState])
 
-    // 组件挂载时立即更新滚动状态
     useEffect(() => {
         updateScrollState()
     }, [updateScrollState])
@@ -156,7 +161,6 @@ const EditorStatusBar = ({ fileManager }) => {
         return () => window.removeEventListener('resize', handleResize)
     }, [updateScrollState])
 
-    // 处理滚动条点击
     const handleScrollBarClick = useCallback((e) => {
         if (!breadcrumbRef.current || !scrollState.canScroll || isDragging) return
 
@@ -168,7 +172,6 @@ const EditorStatusBar = ({ fileManager }) => {
         updateScrollState()
     }, [scrollState.canScroll, scrollState.scrollWidth, scrollState.clientWidth, isDragging, updateScrollState])
 
-    // 处理滚动条拖拽开始
     const handleThumbMouseDown = useCallback((e) => {
         e.preventDefault()
         e.stopPropagation()
@@ -178,13 +181,11 @@ const EditorStatusBar = ({ fileManager }) => {
         setDragStartX(e.clientX)
         setDragStartScrollLeft(breadcrumbRef.current.scrollLeft)
 
-        // 添加拖拽状态的CSS类
         if (filePathRef.current) {
             filePathRef.current.classList.add('dragging')
         }
     }, [scrollState.canScroll])
 
-    // 处理鼠标移动（拖拽）
     const handleMouseMove = useCallback((e) => {
         if (!isDragging || !breadcrumbRef.current || !filePathRef.current) return
 
@@ -193,7 +194,6 @@ const EditorStatusBar = ({ fileManager }) => {
         const containerWidth = containerRect.width
         const maxScroll = scrollState.scrollWidth - scrollState.clientWidth
 
-        // 计算拖拽距离对应的滚动距离，设置灵敏度倍数
         const sensitivity = 2.0 // 灵敏度倍数
         const scrollDelta = (deltaX / containerWidth) * maxScroll * sensitivity
         breadcrumbRef.current.scrollLeft = Math.max(
@@ -203,17 +203,14 @@ const EditorStatusBar = ({ fileManager }) => {
         updateScrollState()
     }, [isDragging, dragStartX, dragStartScrollLeft, scrollState.scrollWidth, scrollState.clientWidth, updateScrollState])
 
-    // 处理鼠标释放（拖拽结束）
     const handleMouseUp = useCallback(() => {
         setIsDragging(false)
 
-        // 移除拖拽状态的CSS类
         if (filePathRef.current) {
             filePathRef.current.classList.remove('dragging')
         }
     }, [])
 
-    // 添加全局鼠标事件监听
     useEffect(() => {
         if (isDragging) {
             document.addEventListener('mousemove', handleMouseMove)
@@ -225,22 +222,18 @@ const EditorStatusBar = ({ fileManager }) => {
         }
     }, [isDragging, handleMouseMove, handleMouseUp])
 
-    // 处理面包屑滚动
     const handleBreadcrumbScroll = useCallback(() => {
         updateScrollState()
     }, [updateScrollState])
 
-    // 字体大小调整
     const handleFontSizeChange = async (newSize) => {
         const validSize = Math.max(10, Math.min(30, newSize))
         setFontSize(validSize)
 
-        // 保存到Tauri设置
         if (window['__TAURI__']) {
             try {
                 await settingsApi.set('fontSize', validSize)
             } catch (error) {
-                // 静默处理字体大小保存错误
             }
         }
     }
@@ -250,14 +243,11 @@ const EditorStatusBar = ({ fileManager }) => {
         return buildFullPath(pathSegments, index)
     }, [pathSegments])
 
-    // 处理面包屑项点击
     const handleBreadcrumbClick = useCallback(async (index) => {
         const dirPath = buildPath(index)
         if (!dirPath) return
 
-        // 检查路径是否为文件，如果是文件则直接打开
         try {
-            // 先检查是否为文件
             const isFile = dirPath.includes('.') && !dirPath.endsWith('\\')
             if (isFile) {
                 // 如果是文件，直接打开文件
@@ -350,10 +340,10 @@ const EditorStatusBar = ({ fileManager }) => {
 
     // Handle line ending change
     const handleLineEndingChange = useCallback((value) => {
-        if (updateFileLineEnding && currentFile.path) {
-            updateFileLineEnding(currentFile.path, value)
+        if (updateFileLineEnding && currentFile['path']) {
+            updateFileLineEnding(currentFile['path'], value)
         }
-    }, [updateFileLineEnding, currentFile.path])
+    }, [updateFileLineEnding, currentFile['path']])
 
     // 加载字体大小设置
     useEffect(() => {
@@ -372,7 +362,7 @@ const EditorStatusBar = ({ fileManager }) => {
         <div className={`editor-status-bar ${hasBackground ? 'with-background' : ''}`}>
             <div className="status-item file-path" ref={filePathRef}>
                 {/* 自定义滚动条轨道 - 只在有文件且需要滚动时显示 */}
-                {currentFile.path && !currentFile.isTemporary && scrollState.canScroll && (
+                {currentFile['path'] && !currentFile['isTemporary'] && scrollState.canScroll && (
                     <>
                         <div className="scroll-track" onClick={handleScrollBarClick}></div>
                         <div
@@ -450,7 +440,7 @@ const EditorStatusBar = ({ fileManager }) => {
                         <Button
                             className="encoding-button"
                             size="small"
-                            disabled={!currentFile.path || currentFile.isTemporary}
+                            disabled={!currentFile['path'] || currentFile['isTemporary']}
                         >
                             {getCurrentEncodingLabel()}
                         </Button>
@@ -460,7 +450,7 @@ const EditorStatusBar = ({ fileManager }) => {
                 <Tooltip title={t('editor.lineEnding.title')}>
                     <div className="status-item">
                         <Dropdown
-                            disabled={!currentFile.path || currentFile.isTemporary}
+                            disabled={!currentFile['path'] || currentFile['isTemporary']}
                             menu={{
                                 items: lineEndingOptions.map((option) => ({
                                     key: option.value,
@@ -474,7 +464,7 @@ const EditorStatusBar = ({ fileManager }) => {
                             <Button
                                 className="line-ending-button"
                                 size="small"
-                                disabled={!currentFile.path || currentFile.isTemporary}
+                                disabled={!currentFile['path'] || currentFile['isTemporary']}
                             >
                                 {getCurrentLineEndingLabel()}
                             </Button>

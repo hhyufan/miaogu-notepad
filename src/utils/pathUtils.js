@@ -1,4 +1,9 @@
-// 路径处理工具函数
+/**
+ * @fileoverview 路径处理工具函数 - 提供跨平台的路径操作功能
+ * 支持Windows和Unix/Linux路径格式的处理和转换
+ * @author hhyufan
+ * @version 1.2.0
+ */
 
 /**
  * 分割文件路径为路径段
@@ -10,20 +15,19 @@ export const splitPath = (filePath) => {
     return []
   }
 
-  // 处理Windows路径
   if (/^[A-Z]:\\/i.test(filePath)) {
     const parts = filePath.split('\\')
     const drive = parts[0] + '\\' // 保留盘符格式如 "C:\\"
     const restParts = parts.slice(1).filter(Boolean)
     return [drive, ...restParts]
   }
-  
+
   // 处理Unix/Linux路径
   if (filePath.startsWith('/')) {
     const parts = filePath.split('/').filter(Boolean)
     return parts
   }
-  
+
   // 处理相对路径
   return filePath.split(/[\\/]/).filter(Boolean)
 }
@@ -47,7 +51,7 @@ export const buildFullPath = (pathSegments, index) => {
     }
     return segments[0] + segments.slice(1).join('\\')
   }
-  
+
   // Unix/Linux路径处理
   const segments = pathSegments.slice(0, index + 1)
   return '/' + segments.join('/')
@@ -100,11 +104,11 @@ export const normalizePath = (path, separator = null) => {
   if (!path || typeof path !== 'string') {
     return ''
   }
-  
+
   // 如果没有指定分隔符，根据系统判断
   if (!separator) {
     separator = navigator.platform.toLowerCase().includes('win') ? '\\' : '/'
   }
-  
+
   return path.replace(/[\\/]/g, separator)
 }

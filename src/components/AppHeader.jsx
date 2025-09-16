@@ -1,3 +1,10 @@
+/**
+ * @fileoverview 应用头部组件 - 包含菜单栏、窗口控制和文件操作功能
+ * 提供文件新建、打开、保存等操作，以及窗口最小化、最大化、关闭等控制
+ * @author hhyufan
+ * @version 1.2.0
+ */
+
 import { Layout, Button, Dropdown, Modal, Input, Typography, Checkbox } from 'antd';
 import {
     MinusOutlined,
@@ -12,7 +19,14 @@ import {
     SettingOutlined,
     FileAddOutlined
 } from '@ant-design/icons';
-// 内联SVG组件替代img标签，以支持CSS颜色继承
+
+/**
+ * 内联SVG图标组件 - 支持CSS颜色继承的置顶图标
+ * @param {Object} props - 组件属性
+ * @param {string} props.className - CSS类名
+ * @param {Object} props.style - 内联样式
+ * @returns {JSX.Element} SVG图标元素
+ */
 const PinIcon = ({ className, style }) => (
     <svg
         className={className}
@@ -38,11 +52,23 @@ import SettingsModal from './SettingsModal';
 const { Header } = Layout;
 const { Title, Text } = Typography;
 
-// 辅助函数
+/**
+ * 从文件路径中提取文件名
+ * @param {string} path - 文件路径
+ * @param {Function} t - 国际化翻译函数
+ * @returns {string} 文件名或默认的"未命名"文本
+ */
 const getFileNameFromPath = (path, t) => {
     return path.split(/[\/\\]/).pop() || t('common.untitled');
 };
 
+/**
+ * 应用头部组件
+ * 提供文件操作菜单、窗口控制按钮和标题栏功能
+ * @param {Object} props - 组件属性
+ * @param {Object} props.fileManager - 文件管理器实例，包含文件操作方法
+ * @returns {JSX.Element} 头部组件
+ */
 const AppHeader = ({ fileManager }) => {
     const { t } = useI18n();
     const [isModalVisible, setIsModalVisible] = useState(false);
@@ -57,7 +83,6 @@ const AppHeader = ({ fileManager }) => {
     const selectedFilesRef = useRef([]);
     const fileNameInputRef = useRef(null);
 
-    // 从fileManager获取文件管理功能
     const {
         currentFile,
         currentCode,
@@ -70,7 +95,6 @@ const AppHeader = ({ fileManager }) => {
         saveFiles
     } = fileManager;
 
-    // 文件操作函数
     const handleOpenFile = async () => {
         await openFileDialog();
     };
@@ -95,12 +119,10 @@ const AppHeader = ({ fileManager }) => {
         }
     };
 
-    // 检查是否在Tauri环境中
     const isTauriEnvironment = () => {
         return typeof window !== 'undefined' && window['__TAURI_INTERNALS__'];
     };
 
-    // 窗口控制函数
     const handleMinimize = async () => {
         if (!isTauriEnvironment()) {
 
@@ -111,7 +133,6 @@ const AppHeader = ({ fileManager }) => {
             const appWindow = getCurrentWindow();
             await appWindow.minimize();
         } catch (error) {
-            // 静默处理窗口最小化错误
         }
     };
 
@@ -132,7 +153,6 @@ const AppHeader = ({ fileManager }) => {
                 setIsMaximized(true);
             }
         } catch (error) {
-            // 静默处理窗口最大化切换错误
         }
     };
 
@@ -154,7 +174,6 @@ const AppHeader = ({ fileManager }) => {
         }
     };
 
-    // 处理文件选择
     const handleSelectFile = (e, file) => {
         const isChecked = e.target.checked;
         setSelectedFiles(prev => {
@@ -166,7 +185,6 @@ const AppHeader = ({ fileManager }) => {
         });
     };
 
-    // 保存选中的文件
     const saveSelectedFiles = async (files) => {
         if (!files || files.length === 0) return;
 
@@ -175,22 +193,16 @@ const AppHeader = ({ fileManager }) => {
             const successCount = results.filter(r => r.success).length;
             const canceledCount = results.filter(r => r.canceled).length;
 
-            // 如果所有选中的文件都成功保存，关闭弹窗和窗口
             if (successCount === files.length) {
                 setUnsavedModalVisible(false);
                 setSelectedFiles([]);
                 selectedFilesRef.current = [];
-                // 保存成功后关闭窗口
                 await closeWindow();
             } else if (canceledCount > 0 && successCount + canceledCount === files.length) {
-                // 如果有文件被取消但没有失败的文件，不关闭窗口，让用户重新选择
 
             } else {
-                // 有文件保存失败
-                // 静默处理部分文件保存失败
             }
         } catch (error) {
-            // 静默处理文件保存错误
         }
     };
 
@@ -204,13 +216,11 @@ const AppHeader = ({ fileManager }) => {
             const appWindow = getCurrentWindow();
             await appWindow.close();
         } catch (error) {
-            // 静默处理窗口关闭错误
         }
     };
 
     const handleClose = async () => {
 
-        // 检查是否有未保存的内容
         const unsavedFiles = getUnsavedFiles();
         if (unsavedFiles.length > 0) {
             setSelectedFiles(unsavedFiles);
@@ -224,35 +234,30 @@ const AppHeader = ({ fileManager }) => {
     const getCurrentFileName = () => {
         // 优先使用name属性（不含时间戳），只有在name不存在时才从path提取
         if (currentFile?.name) {
-            return currentFile.name;
+            return currentFile['name'];
         }
         if (currentFile?.path) {
-            return getFileNameFromPath(currentFile.path, t);
+            return getFileNameFromPath(currentFile['path'], t);
         }
         return t('common.untitled');
     };
 
-    // 提取重复的文件重命名逻辑
     const handleFileRename = async () => {
         if (editedFileName.trim() && editedFileName !== getCurrentFileName()) {
             try {
-                // 如果当前没有文件（默认编辑器状态），先创建一个临时文件
                 if (!currentFile?.path) {
                     await createNewFile(editedFileName.trim(), currentCode);
                     return;
                 }
 
-                await renameFile(currentFile.path, editedFileName.trim());
+                await renameFile(currentFile['path'], editedFileName.trim());
             } catch (error) {
-                // 静默处理文件重命名错误
-                // 重命名失败时恢复原文件名
                 setEditedFileName(getCurrentFileName());
             }
         }
         setIsEditingFileName(false);
     };
 
-    // 监听窗口状态变化
     useEffect(() => {
         let unlisten;
         const setupWindowListener = async () => {
@@ -268,7 +273,6 @@ const AppHeader = ({ fileManager }) => {
                     setIsMaximized(maximized);
                 });
             } catch (error) {
-                // 静默处理窗口监听器设置错误
             }
         };
         setupWindowListener().catch();
@@ -277,28 +281,23 @@ const AppHeader = ({ fileManager }) => {
         };
     }, []);
 
-    // 键盘快捷键
     useEffect(() => {
         const handleKeyDown = (e) => {
-            // Ctrl+N: 新建文件
             if (e.ctrlKey && e.key === 'n' && !e.shiftKey) {
                 e.preventDefault();
                 handleNewFile();
             }
 
-            // Ctrl+O: 打开文件
             if (e.ctrlKey && e.key === 'o' && !e.shiftKey) {
                 e.preventDefault();
                 handleOpenFile().catch();
             }
 
-            // Ctrl+S: 保存文件
             if (e.ctrlKey && e.key === 's' && !e.shiftKey) {
                 e.preventDefault();
                 handleSaveFile().catch();
             }
 
-            // Ctrl+Shift+S: 另存为
             if (e.ctrlKey && e.shiftKey && e.key === 'S') {
                 e.preventDefault();
                 handleSaveAsFile().catch();
@@ -311,7 +310,6 @@ const AppHeader = ({ fileManager }) => {
         };
     }, [currentFile]);
 
-    // 文件菜单项
     const fileMenuItems = [
         {
             key: 'open',
@@ -394,7 +392,7 @@ const AppHeader = ({ fileManager }) => {
                     )}
                     {currentFile?.path && !currentFile?.isTemporary && (
                         <Text type="secondary" className="file-path">
-                            {currentFile.path}
+                            {currentFile['path']}
                         </Text>
                     )}
                 </div>

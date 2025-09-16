@@ -1,6 +1,8 @@
 /**
- * View Transition API 工具函数
- * 提供流畅的UI过渡效果
+ * @fileoverview View Transition API 工具函数
+ * 提供流畅的UI过渡效果，支持主题切换、编辑器模式切换等场景
+ * @author hhyufan
+ * @version 1.2.0
  */
 
 /**
@@ -29,16 +31,13 @@ export const withViewTransition = async (updateFunction, transitionName = '') =>
       updateFunction();
     });
 
-    // 如果提供了过渡名称，可以用于CSS中的特定样式
     if (transitionName && transition.ready) {
       await transition.ready;
       document.documentElement.setAttribute('data-transition', transitionName);
     }
 
-    // 等待过渡完成
     await transition.finished;
-    
-    // 清理过渡名称
+
     if (transitionName) {
       document.documentElement.removeAttribute('data-transition');
     }
@@ -82,17 +81,14 @@ export const withFileTransition = (fileUpdateFunction) => {
  * 预设的过渡配置
  */
 export const TRANSITION_CONFIGS = {
-  // 快速过渡（适用于按钮点击等）
   FAST: {
     duration: '0.2s',
     easing: 'ease-out'
   },
-  // 中等过渡（适用于模式切换）
   MEDIUM: {
     duration: '0.3s',
     easing: 'ease-in-out'
   },
-  // 慢速过渡（适用于大幅布局变化）
   SLOW: {
     duration: '0.5s',
     easing: 'ease-in-out'

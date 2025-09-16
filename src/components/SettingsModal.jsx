@@ -1,16 +1,23 @@
+/**
+ * @fileoverview 设置弹窗组件 - 提供主题、编辑器、AI等各种设置选项
+ * 包含主题切换、字体设置、背景图片、编辑器配置、AI助手配置等功能
+ * @author hhyufan
+ * @version 1.2.0
+ */
+
 import { useState, useCallback, useEffect } from 'react';
 import { Modal, Menu, Button, InputNumber, Select, Switch, Slider, Card, Typography, Space, App, Input } from 'antd';
 import { UploadOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useTheme, useEditor } from '../hooks/redux';
 import { useI18n } from '../hooks/useI18n';
 import tauriApi from '../utils/tauriApi';
+
 const { settings: settingsApi, file: fileApi } = tauriApi;
 import './SettingsModal.scss';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-// 字体选项
 const fontFamilyOptions = [
   { label: 'JetBrains Mono', value: 'JetBrains Mono' },
   { label: 'Fira Code', value: 'Fira Code' },
@@ -18,10 +25,13 @@ const fontFamilyOptions = [
   { label: 'Consolas', value: 'Consolas' },
 ];
 
-
-
-// 菜单项将在组件内部动态生成，使用i18n翻译
-
+/**
+ * 设置弹窗组件
+ * @param {Object} props - 组件属性
+ * @param {boolean} props.visible - 弹窗是否可见
+ * @param {Function} props.onClose - 关闭弹窗的回调函数
+ * @returns {JSX.Element} 设置弹窗组件
+ */
 const SettingsModal = ({ visible, onClose }) => {
   const { message } = App.useApp();
   const {
@@ -59,7 +69,6 @@ const SettingsModal = ({ visible, onClose }) => {
     aiModel: '',
   });
 
-  // 同步Redux状态到本地状态（保留 AI 相关字段）
   useEffect(() => {
     setLocalSettings(prev => ({
       ...prev,
@@ -73,7 +82,6 @@ const SettingsModal = ({ visible, onClose }) => {
     }));
   }, [fontSize, fontFamily, lineHeight, backgroundImage, backgroundEnabled, backgroundTransparency]);
 
-  // 初次加载时读取 AI 设置
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -93,13 +101,11 @@ const SettingsModal = ({ visible, onClose }) => {
           aiModel: String(model ?? prev.aiModel ?? ''),
         }));
       } catch (e) {
-        // ignore
       }
     })();
     return () => { mounted = false; };
   }, []);
 
-  // 监听主题变化，更新--editor-background变量
   useEffect(() => {
     if (localSettings.backgroundEnabled && localSettings.backgroundImage) {
       const darkTransparency = localSettings.backgroundTransparency.dark / 100;
@@ -119,11 +125,9 @@ const SettingsModal = ({ visible, onClose }) => {
     }
   }, [theme, localSettings.backgroundEnabled, localSettings.backgroundImage, localSettings.backgroundTransparency]);
 
-  // 更新本地设置
   const updateLocalSetting = useCallback((key, value) => {
     setLocalSettings(prev => ({ ...prev, [key]: value }));
 
-    // 实时更新背景透明度
     if (key === 'backgroundTransparency' || key === 'backgroundEnabled' || key === 'backgroundImage') {
       const updatedSettings = { ...localSettings, [key]: value };
 
@@ -136,7 +140,6 @@ const SettingsModal = ({ visible, onClose }) => {
         document.documentElement.style.setProperty('--editor-background-light', `rgba(255, 255, 255, ${lightTransparency})`);
         document.documentElement.style.setProperty('--editor-background-dark', `rgba(0, 0, 0, ${darkTransparency})`);
 
-        // 根据当前主题设置 --editor-background
         const currentTheme = document.documentElement.getAttribute('data-theme');
         if (currentTheme === 'dark') {
           document.documentElement.style.setProperty('--editor-background', `rgba(0, 0, 0, ${darkTransparency})`);
@@ -148,7 +151,6 @@ const SettingsModal = ({ visible, onClose }) => {
         document.documentElement.style.setProperty('--editor-background-light', 'rgba(255, 255, 255, 0.5)');
         document.documentElement.style.setProperty('--editor-background-dark', 'rgba(0, 0, 0, 0.5)');
 
-        // 根据当前主题设置 --editor-background
         const currentTheme = document.documentElement.getAttribute('data-theme');
         if (currentTheme === 'dark') {
           document.documentElement.style.setProperty('--editor-background', 'rgba(0, 0, 0, 0.5)');
@@ -159,19 +161,15 @@ const SettingsModal = ({ visible, onClose }) => {
     }
   }, [localSettings]);
 
-  // 保存设置
   const saveSettings = useCallback(async () => {
     try {
-      // 保存字体设置
       setFontSize(localSettings.fontSize);
       setFontFamily(localSettings.fontFamily);
       setLineHeight(localSettings.lineHeight);
 
-      // 保存背景设置
       setBackgroundImage(localSettings.backgroundImage);
       setBackgroundEnabled(localSettings.backgroundEnabled);
-      
-      // 分别设置dark和light模式的背景透明度
+
       if (localSettings.backgroundTransparency && typeof localSettings.backgroundTransparency === 'object') {
         if (localSettings.backgroundTransparency.dark !== undefined) {
           setBackgroundTransparency('dark', localSettings.backgroundTransparency.dark);
@@ -181,9 +179,7 @@ const SettingsModal = ({ visible, onClose }) => {
         }
       }
 
-      // 保存编辑器设置
 
-      // 保存到持久化存储
       await settingsApi.set('fontSize', localSettings.fontSize);
       await settingsApi.set('fontFamily', localSettings.fontFamily);
       await settingsApi.set('lineHeight', localSettings.lineHeight);
@@ -194,13 +190,11 @@ const SettingsModal = ({ visible, onClose }) => {
 
 
 
-      // 保存 AI 设置
       await settingsApi.set('ai.enabled', !!localSettings.aiEnabled);
       await settingsApi.set('ai.baseUrl', localSettings.aiBaseUrl || '');
       await settingsApi.set('ai.apiKey', localSettings.aiApiKey || '');
       await settingsApi.set('ai.model', localSettings.aiModel || '');
 
-      // 通知其他组件（如 CodeEditor）AI 设置已更新
       window.dispatchEvent(new Event('ai-settings-changed'));
 
       message.success(t('settings.saveSuccess'));
@@ -211,7 +205,6 @@ const SettingsModal = ({ visible, onClose }) => {
     }
   }, [localSettings, setFontSize, setFontFamily, setLineHeight, setBackgroundImage, setBackgroundEnabled, setBackgroundTransparency, t]);
 
-  // 重置设置
   const handleReset = useCallback(() => {
     resetTheme();
     setLocalSettings({
@@ -232,7 +225,6 @@ const SettingsModal = ({ visible, onClose }) => {
     message.success(t('settings.resetSuccess'));
   }, [resetTheme]);
 
-  // 选择背景图片
   const handleSelectBackground = useCallback(async () => {
     try {
       const result = await fileApi.selectImageDialog(t);
@@ -243,12 +235,10 @@ const SettingsModal = ({ visible, onClose }) => {
         message.success(t('settings.backgroundSuccess'));
       }
     } catch (error) {
-      // 静默处理背景图片选择错误
       message.error(t('settings.backgroundError'));
     }
   }, [updateLocalSetting, t]);
 
-  // 上传背景图片（保留原有逻辑）
   useCallback(async (file) => {
     try {
       const reader = new FileReader();
@@ -260,13 +250,11 @@ const SettingsModal = ({ visible, onClose }) => {
       reader.readAsDataURL(file);
       return false; // 阻止默认上传行为
     } catch (error) {
-      // 静默处理背景图片上传错误
       message.error(t('settings.backgroundUploadError'));
       return false;
     }
   }, [updateLocalSetting]);
 
-  // 渲染通用设置
   const renderGeneralSettings = () => (
     <div className="settings-section">
       <Title level={4}>{t('settings.general.title')}</Title>
@@ -308,7 +296,6 @@ const SettingsModal = ({ visible, onClose }) => {
     </div>
   );
 
-  // 渲染编辑器设置
   const renderEditorSettings = () => (
     <div className="settings-section">
       <Title level={4}>{t('settings.editor.title')}</Title>
@@ -358,7 +345,6 @@ const SettingsModal = ({ visible, onClose }) => {
     </div>
   );
 
-  // 渲染外观设置
   const renderAppearanceSettings = () => (
     <div className="settings-section">
       <Title level={4}>{t('settings.appearance.title')}</Title>
@@ -433,7 +419,6 @@ const SettingsModal = ({ visible, onClose }) => {
 
 
 
-  // 渲染 AI 设置
   const renderAISettings = () => (
     <div className="settings-section">
       <Title level={4}>{t('settings.ai.title')}</Title>
@@ -480,7 +465,6 @@ const SettingsModal = ({ visible, onClose }) => {
     </div>
   );
 
-  // 渲染内容
   const renderContent = () => {
     switch (activeKey) {
       case 'general':

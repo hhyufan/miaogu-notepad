@@ -1,3 +1,10 @@
+/**
+ * @fileoverview Markdown预览组件 - 提供Markdown文档的渲染和预览功能
+ * 支持代码高亮、Mermaid图表、树形结构可视化等扩展功能
+ * @author hhyufan
+ * @version 1.2.0
+ */
+
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { Typography, Image, message } from 'antd';
 import ReactMarkdown from 'react-markdown';
@@ -15,33 +22,26 @@ const { settings: settingsApi } = tauriApi;
 
 const { useToken } = theme;
 
-// 配置必须在模块作用域
 Prism.plugins.autoloader.languages_path =
   'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/';
 Prism.languages.vue = Prism.languages.html; // 提前注册扩展语言
 
-// AutoTreeH1 组件：自动检测并渲染对应的 TreeViewer
 const AutoTreeH1 = ({ titleText, isDarkMode, containerRef, children, currentFileName, currentFolder }) => {
   const [treeFilePath, setTreeFilePath] = useState(null);
 
   useEffect(() => {
     const checkTreeFile = async () => {
-      // 提取并清理标题文本
       const cleanTitle = titleText.trim();
 
-      // 构建可能的 mgtree 文件路径
       const possiblePaths = [
         `trees/${cleanTitle}.mgtree`,
         `${cleanTitle}.mgtree`
       ];
 
-      // 快速检查是否存在对应的 mgtree 文件
       for (const path of possiblePaths) {
         try {
-          // 使用file协议直接访问本地文件系统
           let fullUrl;
           if (currentFolder) {
-            // 构建完整的本地文件路径
             const separator = currentFolder.includes('\\') ? '\\' : '/';
             let fullPath;
             // 去除path中可能存在的trees前缀，避免重复

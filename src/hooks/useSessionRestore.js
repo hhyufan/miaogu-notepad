@@ -1,7 +1,15 @@
+/**
+ * @fileoverview 会话恢复Hook - 负责在应用启动时恢复上次的工作状态
+ * 包括文件状态、编辑器配置、主题设置等的完整恢复
+ * @author hhyufan
+ * @version 1.2.0
+ */
+
 import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { persistenceManager } from '../utils/persistenceManager';
 import tauriApi from '../utils/tauriApi';
+
 const { file: fileApi } = tauriApi;
 import {
   openFile,
@@ -39,8 +47,12 @@ import {
 } from '../store/slices/editorSlice';
 
 /**
- * 会话恢复Hook
- * 负责在应用启动时恢复上次的工作状态
+ * 会话恢复Hook - 负责在应用启动时恢复上次的工作状态
+ * 包括文件状态、编辑器配置、主题设置等的完整恢复
+ * @returns {Object} 包含恢复状态和操作函数的对象
+ * @returns {boolean} returns.isRestoring - 是否正在恢复中
+ * @returns {boolean} returns.isRestored - 是否已完成恢复
+ * @returns {Function} returns.restoreSession - 手动触发会话恢复
  */
 export const useSessionRestore = () => {
   const dispatch = useDispatch();
@@ -53,18 +65,10 @@ export const useSessionRestore = () => {
         setIsRestoring(true);
         setRestoreError(null);
 
-        // 初始化持久化管理器
         await persistenceManager.initialize();
-
-        // 恢复主题设置
         await restoreThemeSettings();
-
-        // 恢复编辑器设置
         await restoreEditorSettings();
-
-        // 恢复文件状态
         await restoreFileState();
-
 
       } catch (error) {
         setRestoreError(error.message);
@@ -107,9 +111,7 @@ export const useSessionRestore = () => {
         });
       }
 
-    } catch (error) {
-      // Silently handle theme restore errors
-    }
+    } catch (error) {}
   };
 
   /**
@@ -171,9 +173,7 @@ export const useSessionRestore = () => {
         dispatch(setFormatOnType(editorSettings.formatOnType));
       }
 
-    } catch (error) {
-      // Silently handle editor settings restore errors
-    }
+    } catch (error) {}
   };
 
   /**
@@ -185,18 +185,14 @@ export const useSessionRestore = () => {
       const currentFilePath = await persistenceManager.getSetting('currentFilePath', '');
       const editorContent = await persistenceManager.getSetting('editorContent', '');
 
-      // 恢复编辑器内容
       if (editorContent) {
         dispatch(updateEditorContent(editorContent));
       }
 
-      // 恢复打开的文件
       if (openedFiles && openedFiles.length > 0) {
         for (const fileInfo of openedFiles) {
           try {
-            // 检查文件是否仍然存在
             if (!fileInfo.isTemporary && fileInfo.path) {
-              // 添加超时和错误处理，避免回调错误
               const timeoutPromise = new Promise((_, reject) =>
                 setTimeout(() => reject(new Error('File operation timeout')), 5000)
               );
@@ -208,7 +204,6 @@ export const useSessionRestore = () => {
                 ]);
 
                 if (exists) {
-                  // 读取文件内容
                   const content = await Promise.race([
                     fileApi.readFileContent(fileInfo.path),
                     timeoutPromise
@@ -219,33 +214,23 @@ export const useSessionRestore = () => {
                     content,
                     originalContent: content
                   }));
-                } else {
-                  // File does not exist, skip restore
                 }
-              } catch (timeoutError) {
-                // File operation timeout, skip restore
-              }
+              } catch (timeoutError) {}
             } else if (fileInfo.isTemporary) {
-              // 恢复临时文件
               dispatch(openFile({
                 ...fileInfo,
                 content: fileInfo.content || '',
                 originalContent: ''
               }));
             }
-          } catch (error) {
-            // Silently handle file restore errors
-          }
+          } catch (error) {}
         }
 
-        // 恢复当前文件
         if (currentFilePath) {
           dispatch(switchFile(currentFilePath));
         }
       }
-    } catch (error) {
-      // Silently handle file state restore errors
-    }
+    } catch (error) {}
   };
 
   /**
@@ -253,12 +238,7 @@ export const useSessionRestore = () => {
    */
   const saveSession = async () => {
     try {
-      // 这里可以添加手动保存逻辑
-      // 通常由Redux中间件自动处理
-
-    } catch (error) {
-      // Silently handle manual save errors
-    }
+    } catch (error) {}
   };
 
   /**
@@ -267,10 +247,7 @@ export const useSessionRestore = () => {
   const clearSession = async () => {
     try {
       await persistenceManager.clearAll();
-
-    } catch (error) {
-      // Silently handle clear session errors
-    }
+    } catch (error) {}
   };
 
   return {

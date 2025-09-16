@@ -1,9 +1,17 @@
+/**
+ * @fileoverview 持久化管理器 - 负责应用状态的保存和恢复
+ * 提供防抖保存、状态恢复、设置管理等功能
+ * @author hhyufan
+ * @version 1.2.0
+ */
+
 import tauriApi from './tauriApi';
+
 const { settings: settingsApi } = tauriApi;
 
 /**
- * 持久化管理器
- * 负责应用状态的保存和恢复
+ * 持久化管理器 - 负责应用状态的保存和恢复
+ * @class PersistenceManager
  */
 class PersistenceManager {
   constructor() {
@@ -14,37 +22,28 @@ class PersistenceManager {
 
   /**
    * 初始化持久化管理器
+   * @returns {Promise<void>}
    */
   async initialize() {
     if (this.isInitialized) return;
 
     try {
-      // 恢复应用状态
       await this.restoreAppState();
       this.isInitialized = true;
-
-    } catch (error) {
-      // Silently handle initialization errors
-    }
+    } catch (error) {}
   }
 
   /**
    * 恢复应用状态
+   * @returns {Promise<Object|null>} 恢复的状态对象或null
    */
   async restoreAppState() {
     try {
-      // 恢复打开的文件列表
       const openedFiles = await settingsApi.get('openedFiles', []);
       const currentFilePath = await settingsApi.get('currentFilePath', '');
       const editorContent = await settingsApi.get('editorContent', '');
-
-      // 恢复主题设置
       const themeSettings = await settingsApi.get('themeSettings', {});
-
-      // 恢复编辑器设置
       const editorSettings = await settingsApi.get('editorSettings', {});
-
-      // 恢复窗口状态
       const windowState = await settingsApi.get('windowState', {});
 
       return {
@@ -65,43 +64,39 @@ class PersistenceManager {
   /**
    * 保存应用状态
    * @param {Object} state - Redux状态
+   * @returns {Promise<void>}
    */
   async saveAppState(state) {
     if (!this.isInitialized) return;
 
     try {
-      // 防抖保存，避免频繁写入
       this.debouncedSave(state);
-    } catch (error) {
-      // Silently handle save errors
-    }
+    } catch (error) {}
   }
 
   /**
-   * 防抖保存函数
+   * 防抖保存函数 - 避免频繁写入
    * @param {Object} state - Redux状态
    */
   debouncedSave(state) {
-    // 清除之前的定时器
     if (this.saveTimeout) {
       clearTimeout(this.saveTimeout);
     }
 
-    // 设置新的定时器
     this.saveTimeout = setTimeout(async () => {
       await this.performSave(state);
-    }, 500); // 500ms防抖
+    }, 500);
   }
 
   /**
    * 执行实际的保存操作
    * @param {Object} state - Redux状态
+   * @returns {Promise<void>}
    */
   async performSave(state) {
     try {
       const { file, theme, editor, ui } = state;
 
-      // 保存文件状态（只保存必要信息，不保存文件内容）
       const filesToSave = file.openedFiles.map(f => ({
         path: f.path,
         name: f.name,
@@ -115,7 +110,6 @@ class PersistenceManager {
       await settingsApi.set('currentFilePath', file.currentFile?.path || '');
       await settingsApi.set('editorContent', file.editorContent);
 
-      // 保存主题设置
       await settingsApi.set('themeSettings', {
         theme: theme.theme,
         fontSize: theme.fontSize,
@@ -126,7 +120,6 @@ class PersistenceManager {
         backgroundTransparency: theme.backgroundTransparency
       });
 
-      // 保存编辑器设置
       await settingsApi.set('editorSettings', {
         language: editor.language,
         wordWrap: editor.wordWrap,
@@ -147,32 +140,25 @@ class PersistenceManager {
         formatOnType: editor.formatOnType
       });
 
-      // 保存窗口状态（可选）
       if (ui) {
         await settingsApi.set('windowState', {
           sidebarVisible: ui.sidebarVisible,
-  
           statusBarVisible: ui.statusBarVisible
         });
       }
-
-
-    } catch (error) {
-      // Silently handle save operation errors
-    }
+    } catch (error) {}
   }
 
   /**
    * 保存单个设置项
    * @param {string} key - 设置键
    * @param {any} value - 设置值
+   * @returns {Promise<void>}
    */
   async saveSetting(key, value) {
     try {
       await settingsApi.set(key, value);
-    } catch (error) {
-      // Silently handle setting save errors
-    }
+    } catch (error) {}
   }
 
   /**
@@ -191,14 +177,12 @@ class PersistenceManager {
 
   /**
    * 清除所有持久化数据
+   * @returns {Promise<void>}
    */
   async clearAll() {
     try {
       await settingsApi.clear();
-
-    } catch (error) {
-      // Silently handle clear errors
-    }
+    } catch (error) {}
   }
 
   /**
@@ -213,8 +197,6 @@ class PersistenceManager {
   }
 }
 
-// 创建全局实例
 export const persistenceManager = new PersistenceManager();
 
-// 导出类供测试使用
 export default PersistenceManager;

@@ -1,3 +1,10 @@
+/**
+ * @fileoverview 树形编辑器组件 - 用于编辑和可视化树形结构数据
+ * 支持节点的增删改查、拖拽排序、缩放等功能，适用于思维导图和知识图谱编辑
+ * @author hhyufan
+ * @version 1.2.0
+ */
+
 import React, { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
@@ -32,28 +39,30 @@ import "./TreeEditor.scss";
 
 const { Text, Title } = Typography;
 
-// 解析树形文本
+/**
+ * 解析树形文本为树形数据结构
+ * 支持缩进表示层级关系，以及跳转语法（>language[index]、>language++等）
+ * @param {string} text - 要解析的文本内容
+ * @param {string} knowledgeMapTitle - 根节点标题，默认为'Knowledge Map'
+ * @param {string} newNodeText - 新节点的默认文本，默认为'[新节点]'
+ * @returns {Object} 解析后的树形数据结构
+ */
 const parseTreeText = (text, knowledgeMapTitle = 'Knowledge Map', newNodeText = '[新节点]') => {
   const lines = text.split("\n").filter((line) => line.trim());
   const root = { key: "root", title: knowledgeMapTitle, children: [], level: -1 };
   const stack = [root];
   let keyCounter = 0;
 
-  // 跟踪每种语言的最后一个跳转索引
   const lastJumpIndex = {};
 
   lines.forEach((line, _) => {
     const trimmedLine = line.trim();
     if (!trimmedLine) return;
 
-    // 计算缩进级别
     const level = line.length - line.trimStart().length; // 假设每个缩进是1个tab或若干空格
 
-    // 检查是否包含跳转信息
-    // 先清理可能存在的回车符和换行符
     const cleanLine = trimmedLine.replace(/[\r\n]/g, "");
 
-    // 支持多种跳转语法：
     // 1. >java[1] - 指定索引
     // 2. >java++ - 递增（上一个+1）
     // 3. >java - 同上一个索引
@@ -62,7 +71,6 @@ const parseTreeText = (text, knowledgeMapTitle = 'Knowledge Map', newNodeText = 
     const jumpMatchJump = cleanLine.match(/>([a-zA-Z]+)\+=(\d+)/);
     const jumpMatchSame = cleanLine.match(/>([a-zA-Z]+)(?!\[|\+|=)\s*$/);
 
-    // 使用字符串方法检测递增语法
     let jumpMatchIncrement = null;
     if (cleanLine.includes("++")) {
       const incrementMatch = cleanLine.match(/>([a-zA-Z]+)\+\+/);
@@ -76,36 +84,29 @@ const parseTreeText = (text, knowledgeMapTitle = 'Knowledge Map', newNodeText = 
     let jumpIndex = null;
 
     if (jumpMatchExplicit) {
-      // 显式指定索引：>java[1]
       hasJump = true;
       jumpLanguage = jumpMatchExplicit[1];
       jumpIndex = parseInt(jumpMatchExplicit[2]);
       lastJumpIndex[jumpLanguage] = jumpIndex;
     } else if (jumpMatchIncrement) {
-      // 递增语法：>java++
       hasJump = true;
       jumpLanguage = jumpMatchIncrement[1];
       jumpIndex = (lastJumpIndex[jumpLanguage] || 0) + 1;
       lastJumpIndex[jumpLanguage] = jumpIndex;
     } else if (jumpMatchJump) {
-      // 跳跃增加语法：>java+=n
       hasJump = true;
       jumpLanguage = jumpMatchJump[1];
       const jumpAmount = parseInt(jumpMatchJump[2]);
       jumpIndex = (lastJumpIndex[jumpLanguage] || 0) + jumpAmount;
       lastJumpIndex[jumpLanguage] = jumpIndex;
     } else if (jumpMatchSame) {
-      // 同上一个索引：>java
       hasJump = true;
       jumpLanguage = jumpMatchSame[1];
       jumpIndex = lastJumpIndex[jumpLanguage] || 1; // 如果没有上一个，默认为1
-      // 不更新lastJumpIndex，保持原值
     }
 
-    // 清理标题，移除跳转信息但保留代码块标记
     let cleanTitle = cleanLine;
     if (hasJump) {
-      // 移除所有类型的跳转语法，按照从具体到一般的顺序
       cleanTitle = cleanTitle
         .replace(/\s*>([a-zA-Z]+)\[(\d+)]\s*$/, "") // >java[1]
         .replace(/\s*>([a-zA-Z]+)\+=(\d+)\s*$/, "") // >java+=n
@@ -114,7 +115,6 @@ const parseTreeText = (text, knowledgeMapTitle = 'Knowledge Map', newNodeText = 
         .trim();
     }
 
-    // 处理占位符：如果title是"[新节点]"，则转换为空字符串
     const finalTitle = cleanTitle === newNodeText ? "" : cleanTitle;
 
     const node = {
@@ -129,7 +129,6 @@ const parseTreeText = (text, knowledgeMapTitle = 'Knowledge Map', newNodeText = 
       children: [],
     };
 
-    // 找到正确的父节点
     while (stack.length > 1 && stack[stack.length - 1].level >= level) {
       stack.pop();
     }
@@ -142,17 +141,22 @@ const parseTreeText = (text, knowledgeMapTitle = 'Knowledge Map', newNodeText = 
   return root.children;
 };
 
-// 将树形数据转换为文本
+/**
+ * 将树形数据结构转换为文本格式
+ * 使用缩进表示层级关系，保留原始文本格式
+ * @param {Array} nodes - 树形节点数组
+ * @param {number} level - 当前层级，默认为0
+ * @param {string} newNodeText - 新节点的默认文本，默认为'[新节点]'
+ * @returns {string} 转换后的文本内容
+ */
 const treeToText = (nodes, level = 0, newNodeText = '[新节点]') => {
   let result = "";
 
   nodes.forEach((node) => {
-    // 优先使用originalText来保持原始格式
     if (node.originalText) {
       const indent = "  ".repeat(level);
       result += indent + node.originalText + "\n";
     } else {
-      // 如果没有originalText，输出节点标题，如果标题为空则使用占位符
       const indent = "  ".repeat(level);
       const nodeText = node.title || newNodeText;
       result += indent + nodeText + "\n";
@@ -166,11 +170,18 @@ const treeToText = (nodes, level = 0, newNodeText = '[新节点]') => {
   return result;
 };
 
+/**
+ * 树形编辑器主组件
+ * 提供可视化的树形结构编辑功能，支持节点增删改查、拖拽排序等操作
+ * @param {Object} props - 组件属性
+ * @param {Object} props.fileManager - 文件管理器实例
+ * @param {boolean} props.isDarkMode - 是否为暗色主题
+ * @returns {JSX.Element} 树形编辑器组件
+ */
 const TreeEditor = ({ fileManager, isDarkMode }) => {
   const { t } = useTranslation();
   const { backgroundEnabled, backgroundImage, fontSize } = useSelector((state) => state.theme);
   const hasBackground = backgroundEnabled && backgroundImage;
-  // 本地状态
   const [treeData, setTreeData] = useState([]);
   const [expandedSections, setExpandedSections] = useState([]);
   const [selectedKeys, setSelectedKeys] = useState([]);
@@ -184,7 +195,6 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
 
   const { currentFile, updateCode } = fileManager;
 
-  // 生成新的节点key
   const generateNodeKey = () => {
     const allKeys = [];
     const collectKeys = (nodes) => {
@@ -202,7 +212,6 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
     return `node-${counter}`;
   };
 
-  // 保存到文件系统
   const saveToFileSystem = useCallback(async (data) => {
     if (!currentFile || isInternalOperation) return;
 
@@ -214,11 +223,10 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
     }
   }, [currentFile, updateCode, isInternalOperation]);
 
-  // 从文件内容初始化树形数据
   useEffect(() => {
-    if (currentFile && currentFile.content && !isInternalOperation) {
+    if (currentFile && currentFile['content'] && !isInternalOperation) {
       try {
-        const parsedData = parseTreeText(currentFile.content, t('tree.knowledgeMap'), t('tree.newNode'));
+        const parsedData = parseTreeText(currentFile['content'], t('tree.knowledgeMap'), t('tree.newNode'));
         setTreeData(parsedData);
       } catch (error) {
         console.error("解析树形数据失败:", error);
@@ -227,16 +235,13 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
     }
   }, [currentFile?.content, isInternalOperation]);
 
-  // 鼠标滚轮缩放事件监听
   useEffect(() => {
     const handleWheel = (e) => {
-      // 只有按住Ctrl键时才进行缩放
       if (e.ctrlKey) {
         e.preventDefault();
         const delta = e.deltaY > 0 ? -0.1 : 0.1; // 向下滚动缩小，向上滚动放大
         setZoomLevel(prev => {
           const newZoom = prev + delta;
-          // 限制缩放范围在0.5到3之间
           return Math.max(0.5, Math.min(3, newZoom));
         });
       }
@@ -251,16 +256,11 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
     }
   }, []);
 
-  // 使用非受控组件方式，避免受控组件与输入法的冲突
   const handleInputChange = (e) => {
-    // 不更新state，让浏览器原生处理输入
   };
 
-  // 开始编辑节点
   const startEditNode = (node) => {
     setEditingNode(node.key);
-    // 优先使用originalText保持原始格式，否则只使用title
-    // 如果包含占位符，则显示空字符串
     let value = node.originalText || node.title;
     if (value === t('treeEditor.placeholder.newNode')) {
       value = "";
@@ -268,18 +268,15 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
     setEditValue(value);
   };
 
-  // 保存编辑
   const saveEdit = async () => {
     if (!editingNode) return;
 
-    // 从DOM直接获取当前输入值，避免受控组件状态问题
     const value = (inputRef.current?.input?.value || inputRef.current?.value || '').trim();
     if (!value) {
       message.error(t('message.warning.nodeContentEmpty'));
       return;
     }
 
-    // 解析编辑内容，支持多种跳转语法格式
     const jumpMatchExplicit = value.match(/^(.+?)\s*>([a-zA-Z]+)\[(\d+)]\s*$/);
     const jumpMatchIncrement = value.match(/^(.+?)\s*>([a-zA-Z]+)\+\+\s*$/);
     const jumpMatchJump = value.match(/^(.+?)\s*>([a-zA-Z]+)\+=(\d+)\s*$/);
@@ -300,17 +297,14 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
       title = jumpMatchIncrement[1].trim();
       jumpLanguage = jumpMatchIncrement[2];
       hasJump = true;
-      // 对于++语法，不设置具体的jumpIndex，保持原始格式
     } else if (jumpMatchJump) {
       title = jumpMatchJump[1].trim();
       jumpLanguage = jumpMatchJump[2];
       hasJump = true;
-      // 对于+=语法，不设置具体的jumpIndex，保持原始格式
     } else if (jumpMatchSame) {
       title = jumpMatchSame[1].trim();
       jumpLanguage = jumpMatchSame[2];
       hasJump = true;
-      // 对于同索引语法，不设置具体的jumpIndex，保持原始格式
     } else {
       title = value;
     }
@@ -345,20 +339,16 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
       setEditingNode(null);
       setEditValue("");
 
-      // 实时保存到文件系统
       await saveToFileSystem(newTreeData);
     } catch (error) {
       console.error("保存编辑失败:", error);
       message.error(t('message.error.saveEditFailed'));
     } finally {
-      // 立即重置标志，无需延迟
       setIsInternalOperation(false);
     }
   };
 
-  // 取消编辑（自动保存）
   const cancelEdit = async () => {
-    // 从DOM获取当前输入值
     const currentValue = (inputRef.current?.input?.value || inputRef.current?.value || '').trim();
     if (editingNode && currentValue) {
       await saveEdit();
@@ -368,7 +358,6 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
     }
   };
 
-  // 添加子节点
   const handleAddNode = async (parentKey) => {
     const newNodeKey = generateNodeKey();
     const newNode = {
@@ -411,30 +400,24 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
         setTreeData(newTreeData);
       }
 
-      // 展开父节点
       if (parentKey !== "root") {
         setExpandedSections([...new Set([...expandedSections, parentKey])]);
       }
 
-      // 立即设置编辑状态，无需延迟
       setEditingNode(newNodeKey);
       setEditValue("");
 
-      // 实时保存到文件系统
       await saveToFileSystem(newTreeData);
     } catch (error) {
       console.error("添加节点失败:", error);
       message.error(t('message.error.addNodeFailed'));
     } finally {
-      // 立即重置标志，无需延迟
       setIsInternalOperation(false);
     }
   };
 
-  // 删除节点
   const handleDeleteNode = async (nodeKey) => {
     try {
-      // 设置内部操作标志，防止文件监听器干扰
       setIsInternalOperation(true);
 
       const deleteNodeRecursive = (nodes) => {
@@ -459,7 +442,6 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
       const newTreeData = deleteNodeRecursive(treeData);
       setTreeData(newTreeData);
 
-      // 实时保存到文件系统
       await saveToFileSystem(newTreeData);
 
       message.success(t('message.success.nodeDeleted'));
@@ -467,12 +449,10 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
       console.error("删除节点失败:", error);
       message.error(t('message.error.deleteNodeFailed'));
     } finally {
-      // 立即重置标志，无需延迟
       setIsInternalOperation(false);
     }
   };
 
-  // 渲染树节点
   const renderTreeNode = useCallback(
     (node) => {
       const isEditing = editingNode === node.key;
@@ -520,7 +500,6 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
                 onPressEnter={saveEdit}
                 onBlur={cancelEdit}
                 onKeyDown={(e) => {
-                  // 阻止事件冒泡，防止被全局键盘监听器捕获
                   e.stopPropagation();
                 }}
                 onCompositionStart={() => setIsComposing(true)}
@@ -758,7 +737,7 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
         </Space>
       </div>
 
-      <div 
+      <div
         className="tree-container"
         style={{
           zoom: zoomLevel
