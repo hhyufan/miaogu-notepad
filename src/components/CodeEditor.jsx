@@ -888,26 +888,26 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
 
     const initializeHighlighter = async () => {
       try {
-        console.log('Initializing Shiki highlighter...');
-        console.log('Themes to load:', Object.values(themes).flat());
+
+
 
         // 过滤掉_comment字段，只使用有效的语言标识符
         const validLanguages = Object.entries(extensionToLanguage)
           .filter(([key]) => !key.startsWith('_'))
           .map(([, value]) => value);
-        
+
         const highlighter = await createHighlighter({
           themes: Object.values(themes).flat(),
           langs: [...new Set(validLanguages)]
         });
 
-        console.log('Shiki highlighter created successfully');
-        
+
+
         shikiToMonaco(highlighter, monaco);
-        console.log('Shiki themes registered to Monaco');
+
 
         if (mounted) {
-          console.log('Setting highlighter ready to true');
+
           setHighlighterReady(true);
         }
       } catch (error) {
@@ -1948,10 +1948,10 @@ Filter: ${filterName}
   useEffect(() => {
     if (editorRef.current && highlighterReady) {
       const theme = getEditorTheme();
-      console.log('Setting Monaco theme to:', theme);
+
       try {
         monaco.editor.setTheme(theme);
-        console.log('Theme set successfully');
+
       } catch (error) {
         console.error('Failed to set theme:', error);
         // 回退到默认主题
