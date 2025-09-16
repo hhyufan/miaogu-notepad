@@ -904,13 +904,17 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
   }, []);
 
   useEffect(() => {
-
+    // 初始化编辑器
     if (containerRef.current && !editorRef.current && highlighterReady) {
-
+      // 创建编辑器实例
       try {
+        // 根据当前文件确定初始语言，如果没有文件则使用plaintext
+        const initialLanguage = currentFile ? getFileLanguage(currentFile['name']) : 'plaintext';
+        const initialValue = currentFile ? currentFile['content'] : '// Monaco Editor is working!\nconsole.log("Hello World");';
+        
         editorRef.current = monaco.editor.create(containerRef.current, {
-          value: '// Monaco Editor is working!\nconsole.log("Hello World");',
-          language: 'javascript',
+          value: initialValue,
+          language: initialLanguage,
           theme: highlighterReady ? getEditorTheme() : (isDarkMode ? 'vs-dark' : 'vs'),
           fontSize: fontSize,
           fontFamily: fontFamily,
@@ -1181,7 +1185,7 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
         editorRef.current = null;
       }
     };
-  }, [highlighterReady, createGhostText, restoreAllGhostTexts, acceptCurrentLineGhostText]);
+  }, [highlighterReady, createGhostText, restoreAllGhostTexts, acceptCurrentLineGhostText, currentFile, getFileLanguage]);
 
   useEffect(() => {
     if (!editorRef.current || isInternalChange.current) return;
@@ -1192,7 +1196,7 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
       monaco.editor.setModelLanguage(editorRef.current.getModel(), language);
     } else {
       editorRef.current.setValue('// Monaco Editor is working!\nconsole.log("Hello World");');
-      monaco.editor.setModelLanguage(editorRef.current.getModel(), 'javascript');
+      monaco.editor.setModelLanguage(editorRef.current.getModel(), 'plaintext');
     }
   }, [currentFile, getFileLanguage]);
 

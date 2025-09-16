@@ -55,15 +55,15 @@ const AutoTreeH1 = ({ titleText, isDarkMode, containerRef, children, currentFile
             continue;
           }
 
-          // 使用Tauri API检查文件是否存在，而不是直接fetch
+          // 使用convertFileSrc + fetch方式检查文件是否存在
           try {
-            const { exists } = await import('@tauri-apps/plugin-fs');
-            const fileExists = await exists(fullPath);
+            const { convertFileSrc } = await import('@tauri-apps/api/core');
+            const assetUrl = convertFileSrc(fullPath);
+            const response = await fetch(assetUrl);
 
-            if (fileExists) {
+            if (response.ok) {
               // 文件存在，读取内容
-              const { readTextFile } = await import('@tauri-apps/plugin-fs');
-              const text = await readTextFile(fullPath);
+              const text = await response.text();
 
               // 确保有实际内容
               if (text.trim().length > 0) {
@@ -73,9 +73,9 @@ const AutoTreeH1 = ({ titleText, isDarkMode, containerRef, children, currentFile
                 return;
               }
             }
-          } catch (fsError) {
-            // 如果Tauri FS API不可用，静默跳过这个文件
-            console.debug(`Tauri FS API不可用，跳过文件: ${fullPath}`, fsError);
+          } catch (fetchError) {
+            // 如果fetch失败，静默跳过这个文件
+            console.debug(`文件访问失败，跳过文件: ${fullPath}`, fetchError);
           }
         } catch (error) {
           // 静默处理错误，继续检查下一个路径

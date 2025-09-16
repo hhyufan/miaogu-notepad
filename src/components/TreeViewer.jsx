@@ -9,6 +9,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Button, Card, Space, Tooltip, Tree, Typography } from 'antd';
 import { convertFileSrc } from '@tauri-apps/api/core';
+import { readTextFile } from '@tauri-apps/plugin-fs';
 import {
   CodeOutlined,
   ExpandAltOutlined,
@@ -357,31 +358,42 @@ const TreeViewer = ({ treeFilePath, treeContent, onJumpToCode, currentFileName, 
       setError(null);
 
       try {
-        // 构建完整的文件路径，使用file协议访问本地文件
-        let fullPath;
+        let text;
+
         if (treeFilePath.startsWith('http')) {
-          fullPath = treeFilePath;
+          // 处理HTTP URL
+          const response = await fetch(treeFilePath);
+          if (!response.ok) {
+            throw new Error(`无法加载文件: ${response.status}`);
+          }
+          text = await response.text();
         } else {
-          // 构建本地文件路径
+          // 处理本地文件路径 - 直接使用fetch + convertFileSrc方式
           const separator = navigator.platform.includes('Win') ? '\\' : '/';
-          const localPath = `${currentFolder}${separator}trees${separator}${treeFilePath}`;
+          let localPath = `${currentFolder}${separator}trees${separator}${treeFilePath}`;
+
+          // 规范化路径，确保使用正确的分隔符
+          localPath = localPath.replace(/[\/\\]+/g, separator);
+
+
 
           try {
-            // 尝试使用Tauri的convertFileSrc转换路径
-            fullPath = convertFileSrc(localPath);
-          } catch (error) {
-            // 如果Tauri转换失败，回退到file://协议
-            fullPath = `file:///${localPath.replace(/\\\\/g, '/')}`;
+            const fullPath = convertFileSrc(localPath);
+
+            const response = await fetch(fullPath);
+
+            if (!response.ok) {
+              throw new Error(`无法加载文件: ${response.status}`);
+            }
+
+            text = await response.text();
+
+          } catch (fetchError) {
+            console.error('TreeViewer: fetch方式失败:', fetchError);
+            throw new Error(`文件读取失败: ${fetchError.message}`);
           }
         }
 
-        const response = await fetch(fullPath);
-
-        if (!response.ok) {
-          throw new Error(`无法加载文件: ${response.status}`);
-        }
-
-        const text = await response.text();
         processTreeData(text, currentFileName);
 
       } catch (err) {
