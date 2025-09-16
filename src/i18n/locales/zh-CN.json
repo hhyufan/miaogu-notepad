@@ -88,7 +88,9 @@
     "switchToCodeEditor": "切换到代码编辑器",
     "switchToTreeEditor": "切换到树形编辑器",
     "switchToPreviewMode": "切换到预览模式",
-    "editorMode": "编辑器模式"
+    "editorMode": "编辑器模式",
+    "dragFiles": "拖拽文件到此处打开",
+    "dragSubtext": "松开鼠标以打开文件"
   },
   "statusBar": {
     "line": "行",

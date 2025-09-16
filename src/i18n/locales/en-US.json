@@ -86,7 +86,9 @@
     "switchToCodeEditor": "Switch to Code Editor",
     "switchToTreeEditor": "Switch to Tree Editor",
     "switchToPreviewMode": "Switch to Preview Mode",
-    "editorMode": "Editor Mode"
+    "editorMode": "Editor Mode",
+        "dragFiles": "Drag files here to open",
+        "dragSubtext": "Release mouse to open files"
   },
   "statusBar": {
     "line": "Line",

@@ -65,25 +65,20 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
       const element = document.querySelector('h4.ant-typography');
       if (element && element.textContent && element.textContent.trim()) {
         displayFileName = element.textContent.trim();
-        console.log(`成功从AppHeader获取文件名: ${displayFileName}`);
+
       }
     } catch (error) {
-      console.log('无法从DOM获取文件名', error);
+
       return false;
     }
 
     if (!displayFileName) {
-      console.log('isMarkdownFile: 未获取到文件名');
+
       return false;
     }
 
     const extension = displayFileName.toLowerCase().split('.').pop();
     const isMarkdown = ['md', 'markdown', 'mgtree'].includes(extension);
-    console.log('isMarkdownFile 检测:', {
-      displayFileName,
-      extension,
-      isMarkdown
-    });
     return isMarkdown;
   }, []);
 
@@ -911,25 +906,20 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
 
   // 手动触发AI补全的函数 - 只在光标停留2秒不动时调用
   const triggerAICompletion = useCallback(async () => {
-    console.log('triggerAICompletion called', {
-      hasEditor: !!editorRef.current,
-      aiSettings: aiSettings,
-      isCompletionActive: isCompletionActiveRef.current
-    });
 
     if (!editorRef.current || !aiSettings.enabled || !aiSettings.baseUrl || !aiSettings.apiKey || !aiSettings.model) {
-      console.log('AI completion skipped - missing requirements');
+
       return;
     }
 
     // 额外检查：确保当前没有活跃的补全
     if (isCompletionActiveRef.current) {
-      console.log('AI completion skipped - already active');
+
       return;
     }
 
     try {
-      console.log('Triggering AI completion...');
+
       // 触发内联补全
       await editorRef.current.trigger(null, 'editor.action.inlineSuggest.trigger', {});
     } catch (error) {
@@ -1532,7 +1522,7 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
     const disposables = allLangs.map(langId =>
       monaco.languages.registerInlineCompletionsProvider(langId, {
         provideInlineCompletions: async (model, position, context, token) => {
-          console.log('provideInlineCompletions called', { position, context });
+
           try {
             // 标记补全开始
             isCompletionActiveRef.current = true;
@@ -2317,13 +2307,13 @@ Filter: ${filterName}
             onClose={handleCloseMarkdownPreview}
             fileName={currentFile?.name}
             currentFolder={(() => {
-              console.log('CodeEditor - currentFile.path:', currentFile?.path);
+
               if (!currentFile?.path) return '';
               // 处理Windows和Unix路径分隔符
               const pathSeparator = currentFile.path.includes('\\') ? '\\' : '/';
               const pathParts = currentFile.path.split(pathSeparator);
               const folderPath = pathParts.slice(0, -1).join(pathSeparator);
-              console.log('CodeEditor - extracted currentFolder:', folderPath);
+
               return folderPath;
             })()}
           />

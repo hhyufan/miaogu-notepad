@@ -188,13 +188,35 @@ export const useFileManager = () => {
         const handleFileOpen = async (filePath) => {
             // 接收到文件打开事件
             if (filePath) {
+
+
+
+
                 const now = Date.now()
                 const lastOpened = lastOpenedFileRef.current
 
                 // 防止短时间内重复打开同一个文件（2秒内）
                 if (lastOpened.path === filePath && (now - lastOpened.timestamp) < 2000) {
+
                     return
                 }
+
+                // 严格检查文件是否已经打开 - 只检查数组，因为数组是真实状态
+                const existingFileIndex = openedFiles.findIndex(f => f.path === filePath);
+
+                if (existingFileIndex !== -1) {
+
+                    setCurrentFilePath(filePath)
+
+                    // 使用数组中的文件
+                    const file = openedFiles[existingFileIndex];
+                    throttledEditorUpdate(file.content)
+
+                    // 更新最后打开的文件信息
+                    lastOpenedFileRef.current = { path: filePath, timestamp: now }
+                    return
+                }
+
 
                 // 更新最后打开的文件信息
                 lastOpenedFileRef.current = { path: filePath, timestamp: now }
@@ -211,14 +233,76 @@ export const useFileManager = () => {
         // 在Tauri环境中监听open-file事件
         const hasTauri = typeof window !== 'undefined' && window.__TAURI_INTERNALS__ !== undefined;
         if (hasTauri) {
+
+
             // 监听来自Rust后端的open-file事件
-            const unlisten = listen('open-file', (event) => {
+            const unlistenOpenFile = listen('open-file', (event) => {
+
                 handleFileOpen(event.payload)
+            })
+
+            // 监听文件拖拽事件
+            const unlistenFileDrop = listen('tauri://drag-drop', async (event) => {
+
+                // 触发自定义事件来隐藏蒙版（文件已放下）
+                window.dispatchEvent(new CustomEvent('tauri-drag-leave'));
+
+                // Tauri 2.0 的拖拽事件payload结构: {paths: Array, position: Object}
+                const { paths } = event.payload;
+                if (Array.isArray(paths) && paths.length > 0) {
+                    for (const path of paths) {
+                        try {
+
+
+                            // 检查是否为目录
+                            const isDirectory = await fileApi.isDirectory(path);
+
+                            if (isDirectory) {
+                                // 如果是文件夹，不打开新标签，只更新面包屑
+
+                                // 触发面包屑更新事件
+                                window.dispatchEvent(new CustomEvent('update-breadcrumb', {
+                                    detail: { path }
+                                }));
+                            } else {
+                                // 如果是文件，正常打开
+
+                                await handleFileOpen(path);
+                            }
+                        } catch (error) {
+                            console.error('Failed to check if dropped item is directory:', path, error);
+                            // 如果目录检查失败，默认作为文件处理，但只打开一次
+
+                            try {
+                                await handleFileOpen(path);
+                            } catch (fileError) {
+                                console.error('Failed to open as file:', path, fileError);
+                            }
+                        }
+                    }
+                }
+            })
+
+            // 监听拖拽开始事件（用于显示蒙版）
+            const unlistenDragEnter = listen('tauri://drag-enter', (event) => {
+
+                // 触发自定义事件来显示蒙版
+                window.dispatchEvent(new CustomEvent('tauri-drag-enter'));
+            })
+
+            // 监听拖拽离开事件（用于隐藏蒙版）
+            const unlistenDragLeave = listen('tauri://drag-leave', (event) => {
+
+                // 触发自定义事件来隐藏蒙版
+                window.dispatchEvent(new CustomEvent('tauri-drag-leave'));
             })
 
             // 清理监听器
             return () => {
-                unlisten.then(fn => fn())
+                unlistenOpenFile.then(fn => fn())
+                unlistenFileDrop.then(fn => fn())
+                unlistenDragEnter.then(fn => fn())
+                unlistenDragLeave.then(fn => fn())
             }
         } else {
             // 开发模式下的调试支持
@@ -349,6 +433,21 @@ export const useFileManager = () => {
                 setOpenedFiles(prev => prev.filter(f => f.path !== filePath))
             }
 
+            // 额外检查：防止重复添加相同路径的文件
+            const existingFileIndex = openedFiles.findIndex(f => f.path === filePath)
+            if (existingFileIndex !== -1 && !options.forceReload) {
+                // 文件已存在，直接切换到该文件
+                setCurrentFilePath(filePath)
+                const existingFile = openedFiles[existingFileIndex]
+                throttledEditorUpdate(existingFile.content)
+                return
+            }
+
+            // 如果存在重复文件且需要强制重新加载，移除旧记录
+            if (existingFileIndex !== -1 && options.forceReload) {
+                setOpenedFiles(prev => prev.filter((f, index) => index !== existingFileIndex))
+            }
+
             // 在打开新文件前，检查并关闭空的当前临时文件
             closeEmptyCurrentTempFile()
 
@@ -378,7 +477,23 @@ export const useFileManager = () => {
                 lineEnding: fileLineEnding
             }
 
-            setOpenedFiles((prev) => [...prev, newFile])
+            // 检查并处理可能的路径冲突
+            handlePathConflict(filePath)
+
+            // 最后一次检查：确保不会添加重复文件到数组中
+            setOpenedFiles((prev) => {
+                // 检查是否已存在相同路径的文件
+                const existingIndex = prev.findIndex(f => f.path === filePath);
+                if (existingIndex !== -1) {
+
+                    // 如果已存在，替换而不是添加
+                    const newFiles = [...prev];
+                    newFiles[existingIndex] = newFile;
+                    return newFiles;
+                }
+                // 如果不存在，正常添加
+                return [...prev, newFile];
+            })
             setCurrentFilePath(filePath)
             throttledEditorUpdate(fileContent)
 
@@ -393,9 +508,6 @@ export const useFileManager = () => {
                     console.warn('Failed to start file watching:', error)
                 }
             }
-
-            // 检查并处理可能的路径冲突
-            handlePathConflict(filePath)
         } catch (error) {
             handleError('fileOpenFailed', error)
         }
@@ -421,7 +533,7 @@ export const useFileManager = () => {
 
             const finalFileName = fileName || defaultFileName
             // 生成临时文件路径
-            const tempPath = `temp://${finalFileName}-${Date.now()}`
+            const tempPath = `temp://${finalFileName}`
 
             const newFile = {
                 path: tempPath,
@@ -796,7 +908,7 @@ export const useFileManager = () => {
             // 检查是否为临时文件
             if (oldPath.startsWith('temp://')) {
                 // 对于临时文件，只需要更新内存中的文件信息
-                const newTempPath = `temp://${newName}-${Date.now()}`
+                const newTempPath = `temp://${newName}`
 
                 // 更新打开的文件列表
                 setOpenedFiles((prev) =>

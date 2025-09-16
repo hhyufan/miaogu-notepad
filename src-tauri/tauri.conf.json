@@ -24,7 +24,8 @@
         "center": true,
         "decorations": false,
         "transparent": true,
-        "devtools": true
+        "devtools": true,
+        "dragDropEnabled": true
       }
     ],
     "security": {

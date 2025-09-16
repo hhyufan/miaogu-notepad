@@ -73,6 +73,24 @@ const EditorStatusBar = ({ fileManager }) => {
         }
     }, [currentFile?.path, currentFile?.isTemporary])
 
+    // 监听面包屑更新事件（用于文件夹拖拽）
+    useEffect(() => {
+        const handleBreadcrumbUpdate = (event) => {
+            const { path } = event.detail
+            if (path) {
+                const segments = splitPath(path)
+                setPathSegments(segments)
+                // 清除之前的目录内容缓存
+                setDirectoryContents({})
+            }
+        }
+
+        window.addEventListener('update-breadcrumb', handleBreadcrumbUpdate)
+        return () => {
+            window.removeEventListener('update-breadcrumb', handleBreadcrumbUpdate)
+        }
+    }, [])
+
     // 检查滚动状态和更新滚动条
     const updateScrollState = useCallback(() => {
         if (breadcrumbRef.current && filePathRef.current) {

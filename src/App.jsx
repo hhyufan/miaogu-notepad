@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { Layout, Button, ConfigProvider, theme, App as AntdApp, Spin } from 'antd';
-import { MoonFilled, SunOutlined, CodeOutlined, EyeOutlined, PartitionOutlined } from '@ant-design/icons';
+import { MoonFilled, SunOutlined, CodeOutlined, EyeOutlined, PartitionOutlined, InboxOutlined, CloudUploadOutlined } from '@ant-design/icons';
 import { Provider, useSelector } from 'react-redux';
 import { store } from './store';
 import { useTheme } from './hooks/redux';
@@ -167,18 +167,41 @@ const AppContent = ({ isDarkMode, toggleTheme, fileManager }) => {
 
 // 主应用组件（在Provider内部）
 const MainApp = () => {
-  const { 
-    theme: currentTheme, 
-    setTheme, 
-    setFontSize, 
-    setFontFamily, 
+  const {
+    theme: currentTheme,
+    setTheme,
+    setFontSize,
+    setFontFamily,
     setLineHeight,
     setBackgroundImage,
     setBackgroundEnabled,
     setBackgroundTransparency
   } = useTheme();
   const { t } = useI18n();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);// 拖拽状态
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  // 监听Tauri拖拽事件
+  useEffect(() => {
+    const handleTauriDragEnter = () => {
+
+      setIsDragOver(true);
+    };
+
+    const handleTauriDragLeave = () => {
+
+      setIsDragOver(false);
+    };
+
+    // 监听自定义事件
+    window.addEventListener('tauri-drag-enter', handleTauriDragEnter);
+    window.addEventListener('tauri-drag-leave', handleTauriDragLeave);
+
+    return () => {
+      window.removeEventListener('tauri-drag-enter', handleTauriDragEnter);
+      window.removeEventListener('tauri-drag-leave', handleTauriDragLeave);
+    };
+  }, []);
 
   // 会话恢复
   const { isRestoring, restoreError } = useSessionRestore();
@@ -186,10 +209,100 @@ const MainApp = () => {
   // 获取背景状态
   const { backgroundEnabled, backgroundImage } = useSelector((state) => state.theme);
 
-
-
   // 初始化文件管理器
   const fileManager = useFileManager();
+
+  // 拖拽事件处理函数
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!isDragOver) {
+      setIsDragOver(true);
+    }
+  }, [isDragOver]);
+
+  const handleDragEnter = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // 检查是否真的离开了应用区域
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+
+    // 如果鼠标位置在应用区域外，则隐藏覆盖层
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      setIsDragOver(false);
+    }
+  }, []);
+
+  const handleDrop = useCallback(async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+
+
+    // 检查是否在Tauri环境中运行
+    const hasTauri = typeof window !== 'undefined' && window.__TAURI_INTERNALS__ !== undefined;
+
+    if (hasTauri) {
+      // Tauri环境：文件处理由tauri://file-drop事件完成，这里只做日志记录
+
+      // 注意：不要return，让事件继续处理以保持视觉反馈
+    } else {
+      // 浏览器环境的拖拽处理
+      const files = Array.from(e.dataTransfer.files);
+
+      if (files.length === 0) {
+        return;
+      }
+
+      for (const file of files) {
+        try {
+          if (file.webkitRelativePath) {
+            await fileManager.setOpenFile(file.webkitRelativePath);
+          } else {
+            // 回退方案：读取文件内容并显示文件名作为路径
+            let content;
+            let fileName = file.name;
+
+            try {
+              // 尝试作为文本文件读取
+              content = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = (e) => reject(e);
+                reader.readAsText(file, 'UTF-8');
+              });
+
+              await fileManager.setOpenFile(fileName, content, {
+                encoding: 'UTF-8',
+                lineEnding: 'LF'
+              });
+            } catch (error) {
+              console.error('Failed to read file:', error);
+              // 如果读取失败，可能是二进制文件
+              await fileManager.setOpenFile(fileName, '', {
+                encoding: 'UTF-8',
+                lineEnding: 'LF'
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Error processing file:', error);
+        }
+      }
+    }
+  }, [fileManager]);
 
   // 主题切换函数
   const toggleTheme = useCallback(async () => {
@@ -380,7 +493,7 @@ const MainApp = () => {
           setLineHeight(savedLineHeight);
           setBackgroundImage(savedBackgroundImage);
           setBackgroundEnabled(savedBackgroundEnabled);
-          
+
           // 设置背景透明度（需要分别设置dark和light模式）
           if (savedBackgroundTransparency && typeof savedBackgroundTransparency === 'object') {
             if (savedBackgroundTransparency.dark !== undefined) {
@@ -390,7 +503,7 @@ const MainApp = () => {
               setBackgroundTransparency('light', savedBackgroundTransparency.light);
             }
           }
-          
+
           document.documentElement.setAttribute('data-theme', savedTheme);
         } else {
           // 浏览器环境，使用默认设置
@@ -510,8 +623,13 @@ const MainApp = () => {
     >
       <AntdApp>
         <Layout
-          className={`app-layout ${backgroundEnabled && backgroundImage ? 'has-background' : ''}`}
-          data-theme={currentTheme}>
+          className={`app-layout ${backgroundEnabled && backgroundImage ? 'has-background' : ''} ${isDragOver ? 'drag-over' : ''}`}
+          data-theme={currentTheme}
+          onDragOver={handleDragOver}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
           <AppHeader fileManager={fileManager} />
           <TabBar fileManager={fileManager} />
           <Layout className="main-layout">
@@ -524,6 +642,17 @@ const MainApp = () => {
             </Content>
             <EditorStatusBar fileManager={fileManager} />
           </Layout>
+          {isDragOver && (
+            <div className="drag-overlay">
+              <div className="drag-overlay-content">
+                <div className="drag-icon">
+                  <InboxOutlined style={{ fontSize: '48px', color: '#1890ff' }} />
+                </div>
+                <div className="drag-text">{t('editor.dragFiles')}</div>
+                <div className="drag-subtext">{t('editor.dragSubtext')}</div>
+              </div>
+            </div>
+          )}
         </Layout>
       </AntdApp>
     </ConfigProvider>

@@ -1,3 +1,5 @@
+@use './styles/drag-overlay.scss';
+
 /* 全局禁用滚动条 */
 body {
   overflow: hidden;
@@ -205,7 +207,7 @@ body {
 /* MarkdownViewer 图片样式优化 */
 .markdown-viewer-container .ant-image {
   max-width: 100% !important;
-  
+
   img {
     max-width: 100% !important;
     max-height: 500px !important;
@@ -302,53 +304,53 @@ body {
 /* 编辑器模式切换按钮样式 */
 .editor-mode-btn {
   transition: all 0.3s ease;
-  
+
   /* mgtree模式 - 紫色主题 */
   &.mgtree-mode {
     .anticon {
       color: #722ed1;
       animation: Rise 0.3s ease;
     }
-    
+
     &:hover {
       background-color: rgba(114, 46, 209, 0.1);
       transform: scale(1.05);
     }
-    
+
     &:active {
       transform: scale(0.95);
     }
   }
-  
+
   /* 代码模式 - 绿色主题 */
   &.code-mode {
     .anticon {
       color: #52c41a;
       animation: Rise 0.3s ease;
     }
-    
+
     &:hover {
       background-color: rgba(82, 196, 26, 0.1);
       transform: scale(1.05);
     }
-    
+
     &:active {
       transform: scale(0.95);
     }
   }
-  
+
   /* 预览模式 - 紫色主题 */
   &.preview-mode {
     .anticon {
       color: #722ed1;
       animation: Rise 0.3s ease;
     }
-    
+
     &:hover {
       background-color: rgba(114, 46, 209, 0.1);
       transform: scale(1.05);
     }
-    
+
     &:active {
       transform: scale(0.95);
     }

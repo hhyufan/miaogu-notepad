@@ -265,7 +265,17 @@ export const fileApi = {
     try {
       return await invoke('get_file_info', { path: filePath });
     } catch (error) {
-      throw error;
+      throw new Error(`获取文件信息失败: ${error}`);
+    }
+  },
+
+  async isDirectory(filePath) {
+    try {
+      const fileInfo = await invoke('get_file_info', { path: filePath });
+      return fileInfo.is_dir;
+    } catch (error) {
+      console.error('检查目录失败:', error);
+      return false;
     }
   },
 
