@@ -1,22 +1,23 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
-import { Layout, Button, ConfigProvider, theme, App as AntdApp, Spin } from 'antd';
-import { MoonFilled, SunOutlined, CodeOutlined, EyeOutlined, PartitionOutlined, InboxOutlined, CloudUploadOutlined } from '@ant-design/icons';
-import { Provider, useSelector } from 'react-redux';
-import { store } from './store';
-import { useTheme } from './hooks/redux';
-import { useI18n } from './hooks/useI18n';
-import tauriApi from './utils/tauriApi';
-const { settings: settingsApi, app: appApi } = tauriApi;
-import { useSessionRestore } from './hooks/useSessionRestore';
+import {useCallback, useEffect, useRef, useState} from 'react';
+import {App as AntdApp, Button, ConfigProvider, Layout, Spin, theme} from 'antd';
+import {CodeOutlined, EyeOutlined, InboxOutlined, MoonFilled, PartitionOutlined, SunOutlined} from '@ant-design/icons';
+import {Provider, useSelector} from 'react-redux';
+import {store} from './store';
+import {useTheme} from './hooks/redux';
+import {useI18n} from './hooks/useI18n';
+import tauriApi, {fileApi} from './utils/tauriApi';
+import {useSessionRestore} from './hooks/useSessionRestore';
 import AppHeader from './components/AppHeader';
 import TabBar from './components/TabBar';
 import CodeEditor from './components/CodeEditor';
 import TreeEditor from './components/TreeEditor';
 import EditorStatusBar from './components/EditorStatusBar';
 
-import { useFileManager } from './hooks/useFileManager.jsx';
-import { withThemeTransition, withEditorModeTransition } from './utils/viewTransition';
+import {useFileManager} from './hooks/useFileManager.jsx';
+import {withEditorModeTransition, withThemeTransition} from './utils/viewTransition';
 import './App.scss';
+
+const { settings: settingsApi, app: appApi } = tauriApi;
 
 const { Content } = Layout;
 
@@ -99,7 +100,7 @@ const AppContent = ({ isDarkMode, toggleTheme, fileManager }) => {
     const handleKeyDown = async (event) => {
       if (event.ctrlKey && event.key === '/') {
         event.preventDefault();
-        toggleEditorMode();
+        await toggleEditorMode();
       }
     };
 
@@ -254,11 +255,7 @@ const MainApp = () => {
     // 检查是否在Tauri环境中运行
     const hasTauri = typeof window !== 'undefined' && window.__TAURI_INTERNALS__ !== undefined;
 
-    if (hasTauri) {
-      // Tauri环境：文件处理由tauri://file-drop事件完成，这里只做日志记录
-
-      // 注意：不要return，让事件继续处理以保持视觉反馈
-    } else {
+    if (!hasTauri) {
       // 浏览器环境的拖拽处理
       const files = Array.from(e.dataTransfer.files);
 
@@ -325,8 +322,7 @@ const MainApp = () => {
   // 手动测试CLI参数的函数
   const testCliArgs = async () => {
     try {
-      const args = await appApi.getCliArgs();
-      return args;
+      return await appApi.getCliArgs();
     } catch (error) {
       // Silently handle CLI args test errors
       return [];
@@ -362,8 +358,6 @@ const MainApp = () => {
           return { success: false, error };
         }
       } else {
-        // 检查开发模式下的调试文件
-        if (!hasTauri) {
           const debugFile = localStorage.getItem('miaogu-notepad-debug-file');
           if (debugFile) {
             try {
@@ -373,7 +367,6 @@ const MainApp = () => {
               return { success: false, error };
             }
           }
-        }
       }
     } catch (error) {
       return { success: false, error };
@@ -391,11 +384,6 @@ const MainApp = () => {
       if (cliArgsProcessedRef.current) {
         return;
       }
-
-      // 在 Tauri v2 中，检查是否在 Tauri 环境中运行
-      const hasTauri = typeof window !== 'undefined' && window.__TAURI_INTERNALS__ !== undefined;
-
-      // 查看当前文件状态的函数
       const showFileStatus = () => {
         return {
           currentFile: fileManager.currentFile,
@@ -459,12 +447,12 @@ const MainApp = () => {
         // 如果没有命令行参数或打开失败，且没有其他打开的文件，则创建新文件
         if (fileManager.openedFiles.length === 0) {
           const initialContent = ''
-          fileManager.createFile('untitled.js', initialContent);
+          await fileManager.createFile('untitled.js', initialContent);
         }
       }
     };
 
-    handleCliArgs();
+    handleCliArgs().then();
   }, [isRestoring, loading]); // 移除fileManager相关依赖，避免重复执行
 
 
@@ -524,7 +512,7 @@ const MainApp = () => {
       }
     };
 
-    initializeApp();
+    initializeApp().then();
   }, []); // 移除setTheme依赖，避免重复初始化
 
   // 初始化主题
@@ -578,13 +566,6 @@ const MainApp = () => {
 
     // 初始化背景样式
     updateBackgroundStyles();
-
-    // 添加延迟检查，确保DOM已渲染
-    setTimeout(() => {
-      const rootStyle = window.getComputedStyle(document.documentElement);
-
-      const appLayout = document.querySelector('.app-layout');
-    }, 1000);
 
     // 监听store变化
     const unsubscribe = store.subscribe(updateBackgroundStyles);
