@@ -368,29 +368,27 @@ const TreeViewer = ({ treeFilePath, treeContent, onJumpToCode, currentFileName, 
           }
           text = await response.text();
         } else {
-          // 处理本地文件路径 - 直接使用fetch + convertFileSrc方式
+          // 处理本地文件路径 - 使用Tauri的readTextFile API
           const separator = navigator.platform.includes('Win') ? '\\' : '/';
           let localPath = `${currentFolder}${separator}trees${separator}${treeFilePath}`;
 
           // 规范化路径，确保使用正确的分隔符
           localPath = localPath.replace(/[\/\\]+/g, separator);
 
-
-
           try {
-            const fullPath = convertFileSrc(localPath);
-
-            const response = await fetch(fullPath);
-
-            if (!response.ok) {
-              throw new Error(`无法加载文件: ${response.status}`);
-            }
-
-            text = await response.text();
-
+            // 直接使用readTextFile读取文件内容，避免convertFileSrc + fetch的500错误
+            text = await readTextFile(localPath);
           } catch (fetchError) {
-            console.error('TreeViewer: fetch方式失败:', fetchError);
-            throw new Error(`文件读取失败: ${fetchError.message}`);
+            // 如果readTextFile失败，尝试使用相对路径
+            (`绝对路径读取失败，尝试相对路径: ${localPath}`, fetchError);
+            try {
+              // 尝试使用相对于当前工作目录的路径
+              const relativePath = `trees/${treeFilePath}`;
+              text = await readTextFile(relativePath);
+            } catch (relativeError) {
+              (`相对路径读取也失败: ${relativePath}`, relativeError);
+              throw new Error(`文件读取失败: ${fetchError.message || fetchError}`);
+            }
           }
         }
 

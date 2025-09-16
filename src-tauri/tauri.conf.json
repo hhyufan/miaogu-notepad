@@ -33,15 +33,15 @@
       "assetProtocol": {
         "enable": true,
         "scope": [
-          "$APPDATA/**",
-          "$RESOURCE/**",
           "**"
         ]
       }
     }
   },
   "plugins": {
-    "fs": null,
+    "fs": {
+      "requireLiteralLeadingDot": false
+    },
     "dialog": null,
     "store": null,
     "opener": null,

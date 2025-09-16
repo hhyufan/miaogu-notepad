@@ -964,6 +964,31 @@ async fn check_file_external_changes(file_path: String) -> Result<Option<FileCha
     Ok(None)
 }
 
+/// 在系统默认浏览器中打开URL
+/// 使用系统默认浏览器打开指定的URL链接
+///
+/// # Arguments
+/// * `url` - 要打开的URL地址
+///
+/// # Returns
+/// * `Result<(), String>` - 操作结果
+#[tauri::command]
+async fn open_url(url: String) -> Result<(), String> {
+    // 如果是本地文件路径，直接使用系统默认程序打开
+    if std::path::Path::new(&url).exists() {
+        match open::that(&url) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(format!("无法打开文件: {}", e)),
+        }
+    } else {
+        // 对于URL，使用系统默认浏览器打开
+        match open::that(&url) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(format!("无法打开URL: {}", e)),
+        }
+    }
+}
+
 /// Tauri应用程序运行函数
 /// 初始化并启动Tauri应用程序，配置插件和命令处理器
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -992,7 +1017,8 @@ pub fn run() {
             get_cli_args,
             start_file_watching,
             stop_file_watching,
-            check_file_external_changes
+            check_file_external_changes,
+            open_url
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

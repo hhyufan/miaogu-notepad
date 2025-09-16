@@ -15,6 +15,7 @@ import {shikiToMonaco} from '@shikijs/monaco';
 import {createHighlighter} from 'shiki';
 import {useEditor, useTheme} from '../hooks/redux';
 import tauriApi from '../utils/tauriApi';
+import { handleLinkClick } from '../utils/linkUtils';
 import MarkdownViewer from './MarkdownViewer';
 import extensionToLanguage from '../configs/file-extensions.json';
 import './CodeEditor.scss';
@@ -1163,7 +1164,33 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
           precondition: null
         });
 
-
+        // 添加鼠标点击事件处理器，用于处理超链接点击
+        editorRef.current.onMouseDown((e) => {
+          if (e.event.ctrlKey || e.event.metaKey) {
+            const position = e.target.position;
+            if (position) {
+              const model = editorRef.current.getModel();
+              const lineContent = model.getLineContent(position.lineNumber);
+              
+              // 检查点击位置是否在链接上
+              const linkRegex = /https?:\/\/[^\s\)]+|\.\/[^\s\)]+|\.\.\/[^\s\)]+|[a-zA-Z0-9_-]+\.(md|txt|js|jsx|ts|tsx|py|java|cpp|c|h|css|scss|html|json|xml|yaml|yml)/g;
+              let match;
+              
+              while ((match = linkRegex.exec(lineContent)) !== null) {
+                const startCol = match.index + 1;
+                const endCol = match.index + match[0].length + 1;
+                
+                if (position.column >= startCol && position.column <= endCol) {
+                  const linkText = match[0];
+                  
+                  // 使用linkUtils中的handleLinkClick函数处理链接
+                  handleLinkClick(linkText, currentFile?.path, fileManager.setOpenFile);
+                  break;
+                }
+              }
+            }
+          }
+        });
 
       } catch (error) {
       }
@@ -2019,6 +2046,7 @@ Filter: ${filterName}
               const pathParts = currentFile['path'].split(pathSeparator);
               return pathParts.slice(0, -1).join(pathSeparator);
             })()}
+            openFile={fileManager.setOpenFile}
           />
         </div>
       )}

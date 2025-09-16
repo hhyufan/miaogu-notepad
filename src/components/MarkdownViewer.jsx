@@ -18,7 +18,8 @@ import MermaidRenderer from './MermaidRenderer';
 import { useTheme } from '../hooks/redux';
 import { useI18n } from '../hooks/useI18n';
 import { convertFileSrc } from '@tauri-apps/api/core';
-import { splitPath, buildFullPath, normalizePath, resolvePath } from '../utils/pathUtils'
+import { splitPath, buildFullPath, normalizePath, resolvePath } from '../utils/pathUtils';
+import { handleLinkClick, attachLinkHandler } from '../utils/linkUtils';
 const { useToken } = theme;
 
 Prism.plugins.autoloader.languages_path =
@@ -75,11 +76,11 @@ const AutoTreeH1 = ({ titleText, isDarkMode, containerRef, children, currentFile
             }
           } catch (fetchError) {
             // 如果fetch失败，静默跳过这个文件
-            console.debug(`文件访问失败，跳过文件: ${fullPath}`, fetchError);
+            (`文件访问失败，跳过文件: ${fullPath}`, fetchError);
           }
         } catch (error) {
           // 静默处理错误，继续检查下一个路径
-          console.debug(`检查文件时出错: ${path}`, error);
+          (`检查文件时出错: ${path}`, error);
         }
       }
       // 没有找到有效文件，不显示任何内容
@@ -273,8 +274,7 @@ const LANGUAGE_DISPLAY_MAP = {
   mermaid: 'Mermaid'
 };
 
-const MarkdownRenderer = React.memo(({ content, currentFileName, currentFolder, isDarkMode }) => {
-  const containerRef = useRef(null);
+const MarkdownRenderer = React.memo(({ content, currentFileName, currentFolder, isDarkMode, containerRef, openFile }) => {
   const { token } = useToken();
   const { t } = useI18n();
 
@@ -422,16 +422,47 @@ const MarkdownRenderer = React.memo(({ content, currentFileName, currentFolder, 
             h4: ({ children }) => <h4 style={{ ...getHeadingStyle(token), fontSize: '1.125rem' }}>{children}</h4>,
             h5: ({ children }) => <h5 style={{ ...getHeadingStyle(token), fontSize: '1rem' }}>{children}</h5>,
             h6: ({ children }) => <h6 style={{ ...getHeadingStyle(token), fontSize: '0.875rem' }}>{children}</h6>,
-            p: ({ children }) => <p style={getTextStyle(token)}>{children}</p>,
+            p: ({ children }) => {
+              return <p style={getTextStyle(token)}>{children}</p>;
+            },
             blockquote: ({ children }) => <blockquote style={getQuoteStyle(token, isDarkMode)}>{children}</blockquote>,
             ul: ({ children }) => <ul style={getListStyle(token)}>{children}</ul>,
             ol: ({ children }) => <ol style={getListStyle(token)}>{children}</ol>,
             li: ({ children }) => <li style={getListItemStyle(token)}>{children}</li>,
-            a: ({ children, href }) => (
-              <a href={href} style={getLinkStyle(token)}>
-                {children}
-              </a>
-            ),
+            a: ({ children, href }) => {
+              const handleClick = async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+
+                if (href && openFile) {
+                  const success = await handleLinkClick(href, currentFolder, openFile);
+                  if (!success) {
+                    console.warn('无法处理链接:', href);
+                  }
+                }
+              };
+
+              return (
+                <span
+                  style={{
+                    ...getLinkStyle(token),
+                    cursor: 'pointer',
+                    textDecoration: 'underline'
+                  }}
+                  onClick={handleClick}
+                  title={href}
+                  role="link"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      handleClick(e);
+                    }
+                  }}
+                >
+                  {children}
+                </span>
+              );
+            },
             em: ({ children }) => <em style={getTextStyle(token)}>{children}</em>,
             strong: ({ children }) => <strong style={{ ...getTextStyle(token), fontWeight: 600 }}>{children}</strong>,
             hr: () => <hr style={getHrStyle(token)} />,
@@ -668,7 +699,7 @@ const MarkdownRenderer = React.memo(({ content, currentFileName, currentFolder, 
   );
 });
 
-const MarkdownViewer = ({ content, fileName, currentFolder, onClose }) => {
+const MarkdownViewer = ({ content, fileName, currentFolder, onClose, openFile }) => {
   const { theme: currentTheme } = useTheme();
   const localIsDarkMode = currentTheme === 'dark';
   const [zoomLevel, setZoomLevel] = useState(1); // 缩放级别，1为默认大小
@@ -731,6 +762,8 @@ const MarkdownViewer = ({ content, fileName, currentFolder, onClose }) => {
         currentFileName={fileName}
         currentFolder={currentFolder}
         isDarkMode={localIsDarkMode}
+        containerRef={containerRef}
+        openFile={openFile}
       />
     </div>
   );

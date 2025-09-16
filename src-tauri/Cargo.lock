@@ -2245,6 +2245,7 @@ dependencies = [
  "encoding_rs",
  "notify",
  "once_cell",
+ "open",
  "serde",
  "serde_json",
  "tauri",
