@@ -6,9 +6,10 @@
  */
 
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { Image, message } from 'antd';
+import { Typography, Image, message } from 'antd';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 import Prism from 'prismjs';
 import 'prismjs/plugins/autoloader/prism-autoloader';
 import { theme } from 'antd';
@@ -17,6 +18,7 @@ import MermaidRenderer from './MermaidRenderer';
 import { useTheme } from '../hooks/redux';
 import { useI18n } from '../hooks/useI18n';
 import { convertFileSrc } from '@tauri-apps/api/core';
+import { splitPath, buildFullPath, normalizePath, resolvePath } from '../utils/pathUtils'
 const { useToken } = theme;
 
 Prism.plugins.autoloader.languages_path =
@@ -37,10 +39,9 @@ const AutoTreeH1 = ({ titleText, isDarkMode, containerRef, children, currentFile
 
       for (const path of possiblePaths) {
         try {
-          let fullUrl;
+          let fullPath;
           if (currentFolder) {
             const separator = currentFolder.includes('\\') ? '\\' : '/';
-            let fullPath;
             // 去除path中可能存在的trees前缀，避免重复
             const cleanPath = path.startsWith('trees/') ? path.replace('trees/', '') : path;
             // 检查currentFolder是否已经包含trees目录，避免重复添加
@@ -49,40 +50,36 @@ const AutoTreeH1 = ({ titleText, isDarkMode, containerRef, children, currentFile
             } else {
               fullPath = `${currentFolder}${separator}trees${separator}${cleanPath}`;
             }
-            // 使用Tauri的convertFileSrc转换本地文件路径
-            try {
-              fullUrl = convertFileSrc(fullPath);
-            } catch (error) {
-              console.warn('Tauri路径转换失败:', error);
-              fullUrl = `file:///${fullPath.replace(/\\/g, '/')}`;
-            }
           } else {
-            // 如果没有目录信息，尝试相对路径
-            const relativePath = `trees/${path}`;
-            try {
-              fullUrl = convertFileSrc(relativePath);
-            } catch (error) {
-              console.warn('Tauri相对路径转换失败:', error);
-              fullUrl = `file:///${relativePath}`;
-            }
+            // 如果没有目录信息，跳过这个路径检查
+            continue;
           }
-          const response = await fetch(fullUrl);
 
-          if (response.ok) {
-            // 检查响应内容类型和实际内容
-            response.headers.get('content-type');
-            const text = await response.text();
+          // 使用Tauri API检查文件是否存在，而不是直接fetch
+          try {
+            const { exists } = await import('@tauri-apps/plugin-fs');
+            const fileExists = await exists(fullPath);
 
-            // 确保不是HTML错误页面，且有实际内容
-            if (text.trim().length > 0 && !text.includes('<!DOCTYPE') && !text.includes('<html')) {
-              // 如果文件在trees目录下，只传递文件名给TreeViewer
-              const fileName = path.startsWith('trees/') ? path.replace('trees/', '') : path;
-              setTreeFilePath(fileName);
-              return;
+            if (fileExists) {
+              // 文件存在，读取内容
+              const { readTextFile } = await import('@tauri-apps/plugin-fs');
+              const text = await readTextFile(fullPath);
+
+              // 确保有实际内容
+              if (text.trim().length > 0) {
+                // 如果文件在trees目录下，只传递文件名给TreeViewer
+                const fileName = path.startsWith('trees/') ? path.replace('trees/', '') : path;
+                setTreeFilePath(fileName);
+                return;
+              }
             }
+          } catch (fsError) {
+            // 如果Tauri FS API不可用，静默跳过这个文件
+            console.debug(`Tauri FS API不可用，跳过文件: ${fullPath}`, fsError);
           }
         } catch (error) {
-          // 继续检查下一个路径
+          // 静默处理错误，继续检查下一个路径
+          console.debug(`检查文件时出错: ${path}`, error);
         }
       }
       // 没有找到有效文件，不显示任何内容
@@ -402,6 +399,7 @@ const MarkdownRenderer = React.memo(({ content, currentFileName, currentFolder, 
       {React.useMemo(() => (
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
+          rehypePlugins={[rehypeRaw]}
           skipHtml={false}
           components={{
             h1: ({ children }) => {
@@ -476,26 +474,21 @@ const MarkdownRenderer = React.memo(({ content, currentFileName, currentFolder, 
               try {
                 decodedSrc = decodeURIComponent(src);
 
+
               } catch (e) {
                 console.warn('URL解码失败:', e);
               }
 
               if (decodedSrc && !decodedSrc.startsWith('http') && !decodedSrc.startsWith('https') && !decodedSrc.startsWith('data:')) {
+
+
+
+
                 // 相对路径处理：基于当前md文件所在目录
                 if (currentFolder && currentFileName) {
-                  // 检查currentFolder是否是绝对路径（Windows: C:\ 或 Unix: /）
-                  const isAbsolutePath = /^[A-Za-z]:\\/.test(currentFolder) || currentFolder.startsWith('/');
+                  // 使用新的路径解析函数处理相对路径，支持../父级目录引用
+                  const fullPath = resolvePath(currentFolder, decodedSrc);
 
-                  let fullPath;
-                  if (isAbsolutePath) {
-                    // 绝对路径：直接拼接
-                    const separator = currentFolder.includes('\\') ? '\\' : '/';
-                    fullPath = `${currentFolder}${separator}${decodedSrc}`;
-                  } else {
-                    // 相对路径：添加前缀
-                    const basePath = currentFolder.startsWith('/') ? currentFolder : `/${currentFolder}`;
-                    fullPath = `${basePath}/${decodedSrc}`;
-                  }
 
                   // 使用Tauri的convertFileSrc转换本地文件路径
                   try {
@@ -504,28 +497,40 @@ const MarkdownRenderer = React.memo(({ content, currentFileName, currentFolder, 
                   } catch (error) {
                     console.warn('Tauri路径转换失败:', error);
                     imageSrc = fullPath;
+
                   }
                 } else {
+
                   // 如果没有目录信息，尝试相对于根目录
                   const rootPath = `/${decodedSrc}`;
+
                   try {
                     imageSrc = convertFileSrc(rootPath);
 
                   } catch (error) {
                     console.warn('Tauri根目录路径转换失败:', error);
                     imageSrc = rootPath;
+
                   }
                 }
               } else if (decodedSrc?.startsWith('images/')) {
+
                 const rootPath = `/${decodedSrc}`;
+
                 try {
                   imageSrc = convertFileSrc(rootPath);
+
                 } catch (error) {
                   imageSrc = rootPath;
+
                 }
               } else {
+
                 imageSrc = decodedSrc;
               }
+
+
+
 
               return (
                 <Image

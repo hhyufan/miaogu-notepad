@@ -112,3 +112,68 @@ export const normalizePath = (path, separator = null) => {
 
   return path.replace(/[\\/]/g, separator)
 }
+
+/**
+ * 解析相对路径，支持../父级目录引用
+ * @param {string} basePath - 基础路径（当前文件所在目录）
+ * @param {string} relativePath - 相对路径
+ * @returns {string} 解析后的绝对路径
+ */
+export const resolvePath = (basePath, relativePath) => {
+  if (!basePath || !relativePath) {
+    return relativePath || ''
+  }
+
+  // 如果相对路径已经是绝对路径，直接返回
+  if (relativePath.startsWith('http') || relativePath.startsWith('https') || 
+      relativePath.startsWith('data:') || /^[A-Za-z]:\\/.test(relativePath) || 
+      relativePath.startsWith('/')) {
+    return relativePath
+  }
+
+  // 规范化路径分隔符 - 统一使用 / 进行处理
+  const normalizedBase = basePath.replace(/\\/g, '/')
+  const normalizedRelative = relativePath.replace(/\\/g, '/')
+
+  // 分割路径为段
+  let baseSegments = normalizedBase.split('/').filter(Boolean)
+  const relativeSegments = normalizedRelative.split('/').filter(Boolean)
+
+  // 对于Windows路径，需要特殊处理盘符
+  let driveLetter = ''
+  if (/^[A-Za-z]:/.test(basePath)) {
+    driveLetter = baseSegments[0] // 例如 "C:"
+    baseSegments = baseSegments.slice(1) // 移除盘符段
+  }
+
+  // 处理相对路径段
+  const resultSegments = [...baseSegments]
+  
+  for (const segment of relativeSegments) {
+    if (segment === '..') {
+      // 返回上级目录
+      if (resultSegments.length > 0) {
+        resultSegments.pop()
+      }
+    } else if (segment !== '.') {
+      // 添加当前段（忽略.当前目录）
+      resultSegments.push(segment)
+    }
+  }
+
+  // 重新构建路径
+  let resolvedPath
+  
+  // 如果原始基础路径是Windows绝对路径
+  if (driveLetter) {
+    resolvedPath = driveLetter + '\\' + resultSegments.join('\\')
+  } else if (basePath.startsWith('/')) {
+    // Unix/Linux绝对路径
+    resolvedPath = '/' + resultSegments.join('/')
+  } else {
+    // 相对路径
+    resolvedPath = resultSegments.join('/')
+  }
+
+  return resolvedPath
+}
