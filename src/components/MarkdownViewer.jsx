@@ -24,7 +24,7 @@ const { useToken } = theme;
 
 Prism.plugins.autoloader.languages_path =
   'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/';
-Prism.languages.vue = Prism.languages.html; // 提前注册扩展语言
+Prism.languages.vue = Prism.languages.html;
 
 const AutoTreeH1 = ({ titleText, isDarkMode, containerRef, children, currentFileName, currentFolder }) => {
   const [treeFilePath, setTreeFilePath] = useState(null);

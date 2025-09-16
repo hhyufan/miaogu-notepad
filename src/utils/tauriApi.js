@@ -25,7 +25,6 @@ const initStore = async () => {
 
     if (typeof window !== 'undefined' && window.__TAURI_INTERNALS__ !== undefined) {
 
-      // 由于 Tauri Store API 存在兼容性问题，暂时使用 localStorage
       useLocalStorage = true;
       storeInitialized = true;
     } else {
@@ -475,7 +474,6 @@ export const appApi = {
         const args = await invoke('get_cli_args');
         return args;
       } else {
-        // 在开发环境中，从URL参数或localStorage获取模拟的文件路径
         const urlParams = new URLSearchParams(window.location.search);
         const fileParam = urlParams.get('file');
 
@@ -495,7 +493,6 @@ export const appApi = {
   }
 };
 
-// 导出所有 API
 export default {
   file: fileApi,
   settings: settingsApi,

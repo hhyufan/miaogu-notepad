@@ -8,15 +8,15 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
-  theme: 'light', // 'light' | 'dark'
+  theme: 'light',
   fontSize: 20,
   fontFamily: 'JetBrains Mono',
   lineHeight: 1.2,
   backgroundImage: '',
   backgroundEnabled: true,
   backgroundTransparency: {
-    dark: 80,  // 深色主题透明度 (0-100)
-    light: 80  // 浅色主题透明度 (0-100)
+    dark: 80,
+    light: 80
   },
 };
 

@@ -194,7 +194,7 @@ const EditorStatusBar = ({ fileManager }) => {
         const containerWidth = containerRect.width
         const maxScroll = scrollState.scrollWidth - scrollState.clientWidth
 
-        const sensitivity = 2.0 // 灵敏度倍数
+        const sensitivity = 2.0
         const scrollDelta = (deltaX / containerWidth) * maxScroll * sensitivity
         breadcrumbRef.current.scrollLeft = Math.max(
             0,
@@ -238,7 +238,6 @@ const EditorStatusBar = ({ fileManager }) => {
         }
     }
 
-    // 使用公共的buildFullPath函数
     const buildPath = useCallback((index) => {
         return buildFullPath(pathSegments, index)
     }, [pathSegments])

@@ -5,7 +5,7 @@ const host = process.env.TAURI_DEV_HOST;
 
 /**
  * Vite 配置文件
- * @see https://vite.dev/config/
+ * @see https:
  */
 export default defineConfig(async () => ({
   plugins: [react()],
@@ -28,9 +28,9 @@ export default defineConfig(async () => ({
     include: ['monaco-editor'],
   },
 
-  clearScreen: false, // 防止 Vite 遮盖 Rust 错误
+  clearScreen: false,
   server: {
-    port: 1420, // Tauri 需要固定端口
+    port: 1420,
     strictPort: true,
     host: host || false,
     hmr: host
@@ -41,7 +41,7 @@ export default defineConfig(async () => ({
         }
       : undefined,
     watch: {
-      ignored: ["**/src-tauri/**"], // 忽略 src-tauri 目录监听
+      ignored: ["**/src-tauri/**"],
     },
   },
 }));

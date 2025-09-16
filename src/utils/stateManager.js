@@ -75,7 +75,6 @@ class StateManager {
     }
 
     try {
-      // Tauri settings API 没有直接的清空所有方法
       const keysToDelete = [
         'expandedSections',
         'currentFile',

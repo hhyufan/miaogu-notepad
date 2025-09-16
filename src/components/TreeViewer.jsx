@@ -46,10 +46,6 @@ const parseTreeText = (text, rootTitle = 'Root') => {
 
     const cleanLine = trimmedLine.replace(/[\r\n]/g, '');
 
-    // 1. >java[1] - 指定索引
-    // 2. >java++ - 递增（上一个+1）
-    // 3. >java - 同上一个索引
-    // 4. >java+=n - 跳跃增加（上一个+n）
     const jumpMatchExplicit = cleanLine.match(/>([a-zA-Z]+)\[(\d+)]/);
     const jumpMatchIncrement = cleanLine.match(/>([a-zA-Z]+)\+\+/);
     const jumpMatchJump = cleanLine.match(/>([a-zA-Z]+)\+=(\d+)/);
@@ -405,7 +401,6 @@ const TreeViewer = ({ treeFilePath, treeContent, className = '', onJumpToCode, c
     saveExpandedState(expandedKeysValue, currentFileName);
   };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const onToggleExpand = (nodeKey, isCurrentlyExpanded) => {
     let newKeys;
     if (isCurrentlyExpanded) {
@@ -442,12 +437,6 @@ const TreeViewer = ({ treeFilePath, treeContent, className = '', onJumpToCode, c
     saveExpandedState([], currentFileName);
   };
 
-  //     <div className={`tree-viewer ${className} ${isDarkMode ? 'dark' : ''}`}>
-  //       <div className="tree-viewer-loading">
-  //         <Spin size="large" />
-  //         <div>加载中...</div>
-  //       </div>
-  //     </div>
 
   if (error) {
     return (

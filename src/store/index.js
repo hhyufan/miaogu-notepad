@@ -17,8 +17,8 @@ import persistenceMiddleware from './middleware/persistenceMiddleware';
 const persistConfig = {
   key: 'miaogu-ide',
   storage,
-  whitelist: ['theme', 'editor', 'file'], // 只持久化主题、编辑器设置和文件状态
-  blacklist: ['ui'], // UI状态不持久化（如窗口大小等）
+  whitelist: ['theme', 'editor', 'file'],
+  blacklist: ['ui'],
 };
 
 const rootReducer = combineReducers({

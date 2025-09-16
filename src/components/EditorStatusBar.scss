@@ -66,7 +66,7 @@
     min-width: 0;
     overflow: hidden;
     position: relative;
-    padding-top: 4px; // 为上方滚动条留出空间
+    padding-top: 4px;
 
     &::after {
       content: '...';
@@ -170,7 +170,7 @@
         max-width: none;
         padding: 0;
         margin: 0;
-        min-width: max-content; // 确保内容不被压缩
+        min-width: max-content;
       }
 
       li {
@@ -181,7 +181,7 @@
         white-space: nowrap;
 
         &:last-child {
-          flex-shrink: 0; // 最后一个项也不收缩
+          flex-shrink: 0;
         }
       }
 

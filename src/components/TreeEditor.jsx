@@ -59,14 +59,10 @@ const parseTreeText = (text, knowledgeMapTitle = 'Knowledge Map', newNodeText = 
     const trimmedLine = line.trim();
     if (!trimmedLine) return;
 
-    const level = line.length - line.trimStart().length; // 假设每个缩进是1个tab或若干空格
+    const level = line.length - line.trimStart().length;
 
     const cleanLine = trimmedLine.replace(/[\r\n]/g, "");
 
-    // 1. >java[1] - 指定索引
-    // 2. >java++ - 递增（上一个+1）
-    // 3. >java - 同上一个索引
-    // 4. >java+=n - 跳跃增加（上一个+n）
     const jumpMatchExplicit = cleanLine.match(/>([a-zA-Z]+)\[(\d+)]/);
     const jumpMatchJump = cleanLine.match(/>([a-zA-Z]+)\+=(\d+)/);
     const jumpMatchSame = cleanLine.match(/>([a-zA-Z]+)(?!\[|\+|=)\s*$/);
@@ -102,16 +98,16 @@ const parseTreeText = (text, knowledgeMapTitle = 'Knowledge Map', newNodeText = 
     } else if (jumpMatchSame) {
       hasJump = true;
       jumpLanguage = jumpMatchSame[1];
-      jumpIndex = lastJumpIndex[jumpLanguage] || 1; // 如果没有上一个，默认为1
+      jumpIndex = lastJumpIndex[jumpLanguage] || 1;
     }
 
     let cleanTitle = cleanLine;
     if (hasJump) {
       cleanTitle = cleanTitle
-        .replace(/\s*>([a-zA-Z]+)\[(\d+)]\s*$/, "") // >java[1]
-        .replace(/\s*>([a-zA-Z]+)\+=(\d+)\s*$/, "") // >java+=n
-        .replace(/\s*>([a-zA-Z]+)\+\+\s*$/, "") // >java++
-        .replace(/\s*>([a-zA-Z]+)\s*$/, "") // >java
+        .replace(/\s*>([a-zA-Z]+)\[(\d+)]\s*$/, "")
+        .replace(/\s*>([a-zA-Z]+)\+=(\d+)\s*$/, "")
+        .replace(/\s*>([a-zA-Z]+)\+\+\s*$/, "")
+        .replace(/\s*>([a-zA-Z]+)\s*$/, "")
         .trim();
     }
 
@@ -190,7 +186,7 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
   const [isInternalOperation, setIsInternalOperation] = useState(false);
   const [hoveredNode, setHoveredNode] = useState(null);
   const [isComposing, setIsComposing] = useState(false);
-  const [zoomLevel, setZoomLevel] = useState(1); // 缩放级别，1为默认大小
+  const [zoomLevel, setZoomLevel] = useState(1);
   const inputRef = useRef(null);
 
   const { currentFile, updateCode } = fileManager;
@@ -239,7 +235,7 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
     const handleWheel = (e) => {
       if (e.ctrlKey) {
         e.preventDefault();
-        const delta = e.deltaY > 0 ? -0.1 : 0.1; // 向下滚动缩小，向上滚动放大
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
         setZoomLevel(prev => {
           const newZoom = prev + delta;
           return Math.max(0.5, Math.min(3, newZoom));
@@ -286,7 +282,7 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
       jumpLanguage = null,
       jumpIndex = null,
       hasJump = false,
-      originalText = value; // 保持原始输入格式
+      originalText = value;
 
     if (jumpMatchExplicit) {
       title = jumpMatchExplicit[1].trim();
@@ -318,7 +314,7 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
             hasJump,
             jumpLanguage,
             jumpIndex,
-            originalText, // 保存原始文本格式
+            originalText,
           };
         }
         if (node.children) {
@@ -366,7 +362,7 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
       hasJump: false,
       jumpLanguage: null,
       jumpIndex: null,
-      originalText: "", // 添加originalText属性
+      originalText: "",
       children: [],
     };
 

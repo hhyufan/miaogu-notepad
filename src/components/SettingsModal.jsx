@@ -229,7 +229,6 @@ const SettingsModal = ({ visible, onClose }) => {
     try {
       const result = await fileApi.selectImageDialog(t);
       if (result) {
-        // result 已经是完整的 data URL 格式
         updateLocalSetting('backgroundImage', result);
         updateLocalSetting('backgroundEnabled', true);
         message.success(t('settings.backgroundSuccess'));
@@ -248,7 +247,7 @@ const SettingsModal = ({ visible, onClose }) => {
         message.success(t('settings.backgroundUploadSuccess'));
       };
       reader.readAsDataURL(file);
-      return false; // 阻止默认上传行为
+      return false;
     } catch (error) {
       message.error(t('settings.backgroundUploadError'));
       return false;

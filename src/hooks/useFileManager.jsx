@@ -191,7 +191,7 @@ export const useFileManager = () => {
     const { t } = useI18n()
     const handleError = createHandleError(t)
     const [currentFilePath, setCurrentFilePath] = useState('')
-    const [openedFiles, setOpenedFiles] = useState([]) // 结构：{ path: string, name: string, isTemporary: boolean, isModified: boolean, content: string, originalContent: string }[]
+    const [openedFiles, setOpenedFiles] = useState([])
     const [editorCode, setEditorCode] = useState('')
     const [defaultFileName, setDefaultFileName] = useState(() => t('common.untitled') + '.js')
     const defaultFileNameRef = useRef(defaultFileName)
@@ -291,7 +291,6 @@ export const useFileManager = () => {
 
                 window.dispatchEvent(new CustomEvent('tauri-drag-leave'));
 
-                // Tauri 2.0 的拖拽事件payload结构: {paths: Array, position: Object}
                 const { paths } = event.payload;
                 if (Array.isArray(paths) && paths.length > 0) {
                     for (const path of paths) {
@@ -355,12 +354,11 @@ export const useFileManager = () => {
             return fileFromMap;
         }
 
-        // 对于临时文件，尝试从currentFilePath中提取文件名
         let fileName = defaultFileName;
         if (currentFilePath && currentFilePath.startsWith('temp://')) {
             const tempFileName = currentFilePath.split('temp://')[1];
             if (tempFileName && tempFileName.includes('-')) {
-                fileName = tempFileName.split('-')[0]; // 移除时间戳部分
+                fileName = tempFileName.split('-')[0];
             }
         }
 
@@ -370,7 +368,7 @@ export const useFileManager = () => {
             isTemporary: true,
             isModified: false,
             content: editorCode,
-            originalContent: '', // 临时文件的原始内容为空
+            originalContent: '',
             encoding: 'UTF-8',
             lineEnding: 'LF'
         }
@@ -538,7 +536,7 @@ export const useFileManager = () => {
                 path: tempPath,
                 name: finalFileName,
                 isTemporary: true,
-                isModified: initialContent !== '', // 如果有初始内容，标记为已修改
+                isModified: initialContent !== '',
                 content: initialContent,
                 originalContent: '',
                 encoding: 'UTF-8',
@@ -649,7 +647,7 @@ export const useFileManager = () => {
     }, [currentFilePath, updateDefaultFileName, throttledEditorUpdate, createFile])
 
     const saveFile = useCallback(async (saveAs = false) => {
-        let targetPath = null // 初始化targetPath
+        let targetPath = null
 
         try {
             const contentToSave = editorCode
@@ -693,10 +691,10 @@ export const useFileManager = () => {
                                 path: targetPath,
                                 name: fileName,
                                 isTemporary: false,
-                                encoding: saveResult.encoding || fileEncoding, // 使用保存后返回的编码
+                                encoding: saveResult.encoding || fileEncoding,
                                 isModified: false,
-                                content: contentToSave, // 更新文件内容
-                                originalContent: contentToSave // 更新原始内容
+                                content: contentToSave,
+                                originalContent: contentToSave
                             }
                             : file
                     )
@@ -708,8 +706,8 @@ export const useFileManager = () => {
                     isTemporary: false,
                     isModified: false,
                     content: contentToSave,
-                    originalContent: contentToSave, // 保存原始内容
-                    encoding: saveResult.encoding || fileEncoding, // 使用保存后返回的编码
+                    originalContent: contentToSave,
+                    encoding: saveResult.encoding || fileEncoding,
                     lineEnding: saveResult['line_ending'] || 'LF'
                 }
                 setOpenedFiles((prev) => [...prev, newFile])
@@ -829,7 +827,7 @@ export const useFileManager = () => {
                                 name: targetPath.split(/[\/\\]/).pop() || 'unknown',
                                 isTemporary: false,
                                 isModified: false,
-                                encoding: saveResult.encoding || fileEncoding, // 使用保存后返回的编码
+                                encoding: saveResult.encoding || fileEncoding,
                                 lineEnding: saveResult['line_ending'] || f.lineEnding || 'LF'
                             }
                             : f
@@ -872,7 +870,6 @@ export const useFileManager = () => {
                 return { success: true, newPath: newTempPath }
             }
 
-            // 对于实际文件，使用文件系统API
             if (!oldPath || oldPath.trim() === '') {
                 handleError('invalidFilePath', '')
                 return { success: false, message: '未提供有效的文件路径' }

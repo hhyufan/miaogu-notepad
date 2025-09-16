@@ -232,7 +232,6 @@ const AppHeader = ({ fileManager }) => {
     };
 
     const getCurrentFileName = () => {
-        // 优先使用name属性（不含时间戳），只有在name不存在时才从path提取
         if (currentFile?.name) {
             return currentFile['name'];
         }

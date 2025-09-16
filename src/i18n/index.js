@@ -24,11 +24,11 @@ const resources = {
 };
 
 i18n
-  .use(LanguageDetector) // 自动检测用户语言
-  .use(initReactI18next) // 绑定react-i18next
+  .use(LanguageDetector)
+  .use(initReactI18next)
   .init({
     resources,
-    fallbackLng: 'zh-CN', // 默认语言
+    fallbackLng: 'zh-CN',
     debug: process.env.NODE_ENV === 'development',
 
     detection: {
@@ -38,7 +38,7 @@ i18n
     },
 
     interpolation: {
-      escapeValue: false // React已经处理了XSS
+      escapeValue: false
     },
 
     defaultNS: 'translation',

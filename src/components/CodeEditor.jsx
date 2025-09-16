@@ -38,7 +38,7 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
   const { t } = useTranslation();
   const editorRef = useRef(null);
   const containerRef = useRef(null);
-  const isInternalChange = useRef(false); // 防止循环更新
+  const isInternalChange = useRef(false);
   const [highlighterReady, setHighlighterReady] = useState(false);
   const [internalShowMarkdownPreview, setInternalShowMarkdownPreview] = useState(false);
 
@@ -63,13 +63,12 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
   const cursorTimerRef = useRef(null);
   const isCompletionActiveRef = useRef(false);
 
-  // API请求节流相关状态
   const apiRequestCountRef = useRef(0);
   const apiRequestResetTimerRef = useRef(null);
   const lastRequestTimeRef = useRef(0);
-  const firstRequestTimeRef = useRef(0); // 记录第一次请求的时间
-  const DEBOUNCE_DELAY = 2000; // 2秒防抖
-  const MAX_REQUESTS_PER_MINUTE = 6; // 10秒内最多6次请求
+  const firstRequestTimeRef = useRef(0);
+  const DEBOUNCE_DELAY = 2000;
+  const MAX_REQUESTS_PER_MINUTE = 6;
 
   const isMarkdownFile = useCallback(() => {
     let displayFileName = '';
@@ -111,15 +110,15 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
   const handleCloseMarkdownPreview = useCallback(() => {
     setInternalShowMarkdownPreview(false);
   }, []);
-  const REQUEST_RESET_INTERVAL = 10000; // 10秒重置计数器
+  const REQUEST_RESET_INTERVAL = 10000;
 
   const retrySuggestionRef = useRef(null);
 
-  const ghostTextsRef = useRef(new Map()); // 存储幽灵文本 {id: {text, range, decorationId}}
-  const ghostTextCounterRef = useRef(0); // 幽灵文本ID计数器
-  const triggerTimeoutRef = useRef(null); // 触发延迟管理
-  const pendingGhostTextsRef = useRef([]); // 待创建的幽灵文本缓存
-  const createGhostTimeoutRef = useRef(null); // 创建幽灵文本的防抖定时器
+  const ghostTextsRef = useRef(new Map());
+  const ghostTextCounterRef = useRef(0);
+  const triggerTimeoutRef = useRef(null);
+  const pendingGhostTextsRef = useRef([]);
+  const createGhostTimeoutRef = useRef(null);
 
   const loadAiSettings = useCallback(async () => {
     try {
@@ -293,8 +292,8 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
       text: text,
       originalRange: range,
       currentPosition: position,
-      originalPosition: { ...position }, // 保存原始位置
-      originalText: text // 保存原始文本用于匹配
+      originalPosition: { ...position },
+      originalText: text
     });
 
     const provider = {
@@ -365,9 +364,9 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
 
           if (ghost.originalPos.lineNumber === position.lineNumber &&
             ghost.originalPos.column <= position.column) {
-            score += 100; // 同行且位置合适的幽灵文本优先级最高
+            score += 100;
           } else if (ghost.originalPos.lineNumber < position.lineNumber) {
-            score += 50; // 前面行的幽灵文本次优先级
+            score += 50;
           }
 
           const inputLength = ghost.userInput.length;
@@ -438,7 +437,7 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
           const ghostPos = ghostData.originalPosition;
           if (ghostPos.lineNumber === pending.range.startLineNumber &&
             ghostPos.column === pending.range.startColumn &&
-            pending.range.startColumn === pending.range.endColumn) { // 确保是插入操作，不是替换操作
+            pending.range.startColumn === pending.range.endColumn) {
             ghostData.text = ghostData.text + pending.text;
             ghostData.originalText = ghostData.originalText + pending.text;
             foundExistingGhost = true;
@@ -469,7 +468,7 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
       for (const { text, range } of mergedTexts) {
         createGhostText(text, range);
       }
-    }, 100); // 优化防抖延迟从300ms减少到100ms
+    }, 100);
   }, []);
 
   const addToPendingGhostTexts = useCallback((text, range) => {
@@ -891,7 +890,6 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
 
 
 
-        // 过滤掉_comment字段，只使用有效的语言标识符
         const validLanguages = Object.entries(extensionToLanguage)
           .filter(([key]) => !key.startsWith('_'))
           .map(([, value]) => value);
@@ -913,7 +911,6 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
       } catch (error) {
         console.error('Failed to initialize Shiki highlighter:', error);
         if (mounted) {
-          // 即使失败也设置为ready，使用Monaco默认主题
           setHighlighterReady(true);
         }
       }
@@ -959,7 +956,7 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
           roundedSelection: false,
           readOnly: false,
           cursorSmoothCaretAnimation: 'on',
-          contextmenu: false, // 禁用默认右键菜单
+          contextmenu: false,
           mouseWheelZoom: true,
           smoothScrolling: true,
           multiCursorModifier: 'ctrlCmd',
@@ -967,7 +964,7 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
           inlineSuggest: {
             enabled: true,
             mode: 'prefix',
-            suppressSuggestions: true, // 禁用默认建议，避免与自定义幽灵文本冲突
+            suppressSuggestions: true,
             fontFamily: 'inherit',
             keepOnBlur: true,
             showToolbar: 'onHover'
@@ -1297,7 +1294,6 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
         clearTimeout(cursorTimerRef.current);
         cursorTimerRef.current = null;
       }
-      // 清理API节流定时器
       if (apiRequestResetTimerRef.current) {
         clearTimeout(apiRequestResetTimerRef.current);
         apiRequestResetTimerRef.current = null;
@@ -1364,7 +1360,6 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
             });
 
             if (hasGhostTextAtCursor) {
-              // 当前位置已有幽灵文本，跳过API调用以优化访问次数
               isCompletionActiveRef.current = false;
               return { items: [] };
             }
@@ -1373,7 +1368,6 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
               isCompletionActiveRef.current = false;
               return { items: [] };
             }
-            // API请求节流检查
             const now = Date.now();
 
             if (apiRequestCountRef.current > 0 && now - lastRequestTimeRef.current > 10000) {
@@ -1393,7 +1387,6 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
               return { items: [] };
             }
 
-            // 增加API请求计数
             apiRequestCountRef.current++;
             lastRequestTimeRef.current = now;
 
@@ -1521,8 +1514,8 @@ If no good completion exists, return empty string.
 For code implementations, multi-line completions are encouraged when appropriate.`
                 }
               ],
-              temperature: 0.05, // 更低的温度以提高一致性
-              max_tokens: 1000,  // 不受限制的token数量，支持长代码补全
+              temperature: 0.05,
+              max_tokens: 1000,
               stream: false
             };
 
@@ -1545,7 +1538,6 @@ For code implementations, multi-line completions are encouraged when appropriate
             unsub?.dispose?.();
 
             if (!res.ok) {
-              // 静默处理API错误，避免频繁弹窗
               isCompletionActiveRef.current = false;
               return { items: [] };
             }
@@ -1554,8 +1546,8 @@ For code implementations, multi-line completions are encouraged when appropriate
             const text = data?.choices?.[0]?.message?.content ?? '';
 
             let insert = (text || '')
-              .replace(/^```[\s\S]*?\n|```$/g, '') // 移除代码块标记
-              .replace(/\r/g, '') // 移除回车符
+              .replace(/^```[\s\S]*?\n|```$/g, '')
+              .replace(/\r/g, '')
               .trim();
 
             if (!insert || insert.length < 1) {
@@ -1721,8 +1713,8 @@ Filter: ${filterName}
             }
 
             if (trimmedBeforeCursor.length >= 3 && trimmedInsert.length >= 3) {
-              const beforeEnd = trimmedBeforeCursor.slice(-8).toLowerCase(); // 检查最后8个字符
-              const insertStart = trimmedInsert.slice(0, 8).toLowerCase();   // 检查前8个字符
+              const beforeEnd = trimmedBeforeCursor.slice(-8).toLowerCase();
+              const insertStart = trimmedInsert.slice(0, 8).toLowerCase();
 
               for (let len = Math.min(beforeEnd.length, insertStart.length); len >= 4; len--) {
                 if (beforeEnd.slice(-len) === insertStart.slice(0, len)) {
@@ -1801,7 +1793,7 @@ Filter: ${filterName}
 
             if (isCommentLine && trimmedInsert.length > 3) {
               const similarity = calculateTextSimilarity(currentLine.toLowerCase(), trimmedInsert.toLowerCase());
-              if (similarity > 0.3) { // 更严格的阈值
+              if (similarity > 0.3) {
                 const rejectionReason = `语义相似性过高 (${similarity.toFixed(2)})，建议内容与当前行过于相似`;
 
                 scheduleRetryWithReason(rejectionReason, 'Super Filter 6');
@@ -1916,7 +1908,6 @@ Filter: ${filterName}
 
     return () => {
       disposables.forEach(d => d?.dispose?.());
-      // 清理API节流相关定时器
       if (apiRequestResetTimerRef.current) {
         clearTimeout(apiRequestResetTimerRef.current);
         apiRequestResetTimerRef.current = null;
@@ -1954,7 +1945,6 @@ Filter: ${filterName}
 
       } catch (error) {
         console.error('Failed to set theme:', error);
-        // 回退到默认主题
         monaco.editor.setTheme(isDarkMode ? 'vs-dark' : 'vs');
       }
     }

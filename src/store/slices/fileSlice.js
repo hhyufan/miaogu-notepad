@@ -64,7 +64,7 @@ const fileSlice = createSlice({
       const { name, content = '' } = action.payload;
 
       const newFile = {
-        path: '', // 新文件暂时没有路径
+        path: '',
         name,
         content,
         originalContent: content,

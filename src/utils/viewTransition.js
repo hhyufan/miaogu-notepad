@@ -21,7 +21,6 @@ export const isViewTransitionSupported = () => {
  */
 export const withViewTransition = async (updateFunction, transitionName = '') => {
   if (!isViewTransitionSupported()) {
-    // 如果不支持 View Transition API，直接执行更新
     updateFunction();
     return Promise.resolve();
   }

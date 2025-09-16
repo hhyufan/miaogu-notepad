@@ -91,7 +91,7 @@ const MermaidRenderer = ({ code, isDarkMode = false }) => {
         setError(err.message || 'Failed to render Mermaid diagram');
         setLoading(false);
       }
-    }, 500); // 500ms延迟，参考miaogu-markdown
+    }, 500);
 
     return () => {
       clearTimeout(timer);
