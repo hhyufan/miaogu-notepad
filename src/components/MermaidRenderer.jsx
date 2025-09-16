@@ -6,7 +6,7 @@
  */
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Spin, Alert, Skeleton } from 'antd';
+import { Alert, Skeleton } from 'antd';
 import mermaid from 'mermaid';
 import { useI18n } from '../hooks/useI18n';
 import './MermaidRenderer.css';
@@ -82,7 +82,7 @@ const MermaidRenderer = ({ code, isDarkMode = false }) => {
           fontFamily: 'JetBrains Mono, Consolas, Monaco, monospace'
         });
 
-        const id = `mermaid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const id = `mermaid-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 
         const { svg } = await mermaid.render(id, code);
         setSvgContent(svg);

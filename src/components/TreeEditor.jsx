@@ -20,24 +20,20 @@ import {
 } from "antd";
 import {
   PlusOutlined,
-  DeleteOutlined,
   FolderOpenOutlined,
   FolderOutlined,
   FileTextOutlined,
   ExpandAltOutlined,
   ShrinkOutlined,
   CloseCircleOutlined,
-  MoonFilled,
-  SunOutlined,
   CodeOutlined,
-  CameraOutlined,
   ZoomInOutlined,
   ZoomOutOutlined,
   OneToOneOutlined,
 } from "@ant-design/icons";
 import "./TreeEditor.scss";
 
-const { Text, Title } = Typography;
+const { Text } = Typography;
 
 /**
  * 解析树形文本为树形数据结构
@@ -65,7 +61,7 @@ const parseTreeText = (text, knowledgeMapTitle = 'Knowledge Map', newNodeText = 
 
     const jumpMatchExplicit = cleanLine.match(/>([a-zA-Z]+)\[(\d+)]/);
     const jumpMatchJump = cleanLine.match(/>([a-zA-Z]+)\+=(\d+)/);
-    const jumpMatchSame = cleanLine.match(/>([a-zA-Z]+)(?!\[|\+|=)\s*$/);
+    const jumpMatchSame = cleanLine.match(/>([a-zA-Z]+)(?![\[+=])\s*$/);
 
     let jumpMatchIncrement = null;
     if (cleanLine.includes("++")) {
@@ -185,7 +181,7 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
   const [editValue, setEditValue] = useState("");
   const [isInternalOperation, setIsInternalOperation] = useState(false);
   const [hoveredNode, setHoveredNode] = useState(null);
-  const [isComposing, setIsComposing] = useState(false);
+  const [_, setIsComposing] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
   const inputRef = useRef(null);
 
@@ -252,7 +248,7 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
     }
   }, []);
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (_) => {
   };
 
   const startEditNode = (node) => {
@@ -419,10 +415,8 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
       const deleteNodeRecursive = (nodes) => {
         return nodes
           .filter((node) => {
-            if (node.key === nodeKey) {
-              return false;
-            }
-            return true;
+            return node.key !== nodeKey;
+
           })
           .map((node) => {
             if (node.children) {
@@ -513,8 +507,6 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
       const hasChildren = node.children && node.children.length > 0;
       const isExpanded = expandedSections.includes(node.key);
       const isClickable = node.hasJump;
-      const isHovered = hoveredNode === node.key;
-
       return {
         key: node.key,
         title: (
@@ -607,7 +599,7 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
                   tabIndex={-1}
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleAddNode(node.key);
+                    handleAddNode(node.key).catch();
                   }}
                 />
               </Tooltip>
@@ -620,7 +612,7 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
                   tabIndex={-1}
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleDeleteNode(node.key);
+                    handleDeleteNode(node.key).then();
                   }}
                 />
               </Tooltip>

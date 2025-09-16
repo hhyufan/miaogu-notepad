@@ -7,7 +7,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { Button, Card, Space, Spin, Tooltip, Tree, Typography } from 'antd';
+import { Button, Card, Space, Tooltip, Tree, Typography } from 'antd';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import {
   CodeOutlined,
@@ -20,7 +20,7 @@ import {
 import { useI18n } from '../hooks/useI18n';
 import './TreeViewer.scss';
 
-const { Text, Title } = Typography;
+const { Text } = Typography;
 
 /**
  * 解析树形文本为树形数据结构
@@ -49,7 +49,7 @@ const parseTreeText = (text, rootTitle = 'Root') => {
     const jumpMatchExplicit = cleanLine.match(/>([a-zA-Z]+)\[(\d+)]/);
     const jumpMatchIncrement = cleanLine.match(/>([a-zA-Z]+)\+\+/);
     const jumpMatchJump = cleanLine.match(/>([a-zA-Z]+)\+=(\d+)/);
-    const jumpMatchSame = cleanLine.match(/>([a-zA-Z]+)(?!\[|\+)/);
+    const jumpMatchSame = cleanLine.match(/>([a-zA-Z]+)(?![\[+])/);
 
     let isClickable = false;
     let jumpLanguage = null;
@@ -83,7 +83,7 @@ const parseTreeText = (text, rootTitle = 'Root') => {
         .replace(/\s*>([a-zA-Z]+)\[(\d+)]\s*$/, '')
         .replace(/\s*>([a-zA-Z]+)\+\+\s*$/, '')
         .replace(/\s*>([a-zA-Z]+)\+=(\d+)\s*$/, '')
-        .replace(/\s*>([a-zA-Z]+)(?!\[|\+)\s*$/, '')
+        .replace(/\s*>([a-zA-Z]+)(?![\[+])\s*$/, '')
         .trim();
     }
 
@@ -230,19 +230,18 @@ const renderTreeNode = (node, onJumpToCode, isDarkMode, expandedKeys, onToggleEx
  * @param {Object} props - 组件属性
  * @param {string} props.treeFilePath - 树形文件路径
  * @param {string} props.treeContent - 树形内容文本
- * @param {string} props.className - 自定义CSS类名
  * @param {Function} props.onJumpToCode - 代码跳转回调函数
  * @param {string} props.currentFileName - 当前文件名
  * @param {string} props.currentFolder - 当前文件夹路径
  * @param {number} props.fontSize - 字体大小，默认为16
  * @returns {JSX.Element} 树形视图组件
  */
-const TreeViewer = ({ treeFilePath, treeContent, className = '', onJumpToCode, currentFileName, currentFolder, fontSize = 16 }) => {
+const TreeViewer = ({ treeFilePath, treeContent, onJumpToCode, currentFileName, currentFolder, fontSize = 16 }) => {
   const { t } = useI18n();
 
   const [treeData, setTreeData] = useState([]);
   const [expandedKeys, setExpandedKeys] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [_, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [currentFileKey, setCurrentFileKey] = useState(null);
   // 直接从document.documentElement读取主题，与editor保持一致

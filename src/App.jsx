@@ -256,7 +256,7 @@ const MainApp = () => {
     e.stopPropagation();
     setIsDragOver(false);
 
-    const hasTauri = typeof window !== 'undefined' && window.__TAURI_INTERNALS__ !== undefined;
+    const hasTauri = typeof window !== 'undefined' && window['__TAURI_INTERNALS__'] !== undefined;
 
     if (!hasTauri) {
       const files = Array.from(e.dataTransfer.files);
@@ -310,7 +310,7 @@ const MainApp = () => {
       setTheme(newTheme);
     });
 
-    if (window.__TAURI__) {
+    if (window['__TAURI__']) {
       settingsApi.set('theme', newTheme).catch(() => {});
     } else {
       localStorage.setItem('theme', newTheme);
@@ -326,7 +326,7 @@ const MainApp = () => {
   };
 
   const setDebugFile = (filePath) => {
-    if (!window.__TAURI__) {
+    if (!window['__TAURI__']) {
       localStorage.setItem('miaogu-notepad-debug-file', filePath);
     }
   };
@@ -408,7 +408,7 @@ const MainApp = () => {
           }
         } catch (error) {}
 
-        if (!window.__TAURI__) {
+        if (!window['__TAURI__']) {
           const debugFile = localStorage.getItem('miaogu-notepad-debug-file');
           if (debugFile) {
             try {
@@ -431,7 +431,7 @@ const MainApp = () => {
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        if (window.__TAURI__) {
+        if (window['__TAURI__']) {
           const savedTheme = await settingsApi.get('theme', 'light');
           const savedFontSize = await settingsApi.get('fontSize', 14);
           const savedFontFamily = await settingsApi.get('fontFamily', 'Consolas, Monaco, monospace');

@@ -195,7 +195,7 @@ export const useFileManager = () => {
     const [editorCode, setEditorCode] = useState('')
     const [defaultFileName, setDefaultFileName] = useState(() => t('common.untitled') + '.js')
     const defaultFileNameRef = useRef(defaultFileName)
-    const [fileWatchers, setFileWatchers] = useState(new Map())
+    const [fileWatchers, _] = useState(new Map())
 
     const userSavingFiles = useRef(new Set())
 
@@ -278,13 +278,13 @@ export const useFileManager = () => {
             }
         }
 
-        const hasTauri = typeof window !== 'undefined' && window.__TAURI_INTERNALS__ !== undefined;
+        const hasTauri = typeof window !== 'undefined' && window['__TAURI_INTERNALS__'] !== undefined;
         if (hasTauri) {
 
 
             const unlistenOpenFile = listen('open-file', (event) => {
 
-                handleFileOpen(event.payload)
+                handleFileOpen(event.payload).catch()
             })
 
             const unlistenFileDrop = listen('tauri://drag-drop', async (event) => {
@@ -321,12 +321,12 @@ export const useFileManager = () => {
                 }
             })
 
-            const unlistenDragEnter = listen('tauri://drag-enter', (event) => {
+            const unlistenDragEnter = listen('tauri://drag-enter', (_) => {
 
                 window.dispatchEvent(new CustomEvent('tauri-drag-enter'));
             })
 
-            const unlistenDragLeave = listen('tauri://drag-leave', (event) => {
+            const unlistenDragLeave = listen('tauri://drag-leave', (_) => {
 
                 window.dispatchEvent(new CustomEvent('tauri-drag-leave'));
             })
@@ -342,7 +342,7 @@ export const useFileManager = () => {
         }
 
         return () => {
-            if (!window.__TAURI__) {
+            if (!window['__TAURI__']) {
                 delete window.debugOpenFile
             }
         }
@@ -390,7 +390,7 @@ export const useFileManager = () => {
         }
     }, [openedFiles])
 
-    const cleanupEmptyTempFiles = useCallback(() => {
+    useCallback(() => {
         setOpenedFiles((prev) => {
             const emptyTempFiles = prev.filter(file =>
                 file.isTemporary &&
@@ -435,34 +435,34 @@ export const useFileManager = () => {
                 return
             }
 
-            if (openedFilesMap.has(filePath) && !options.forceReload) {
+            if (openedFilesMap.has(filePath) && !options['forceReload']) {
                 setCurrentFilePath(filePath)
                 const file = openedFilesMap.get(filePath)
                 throttledEditorUpdate(file.content)
                 return
             }
 
-            if (openedFilesMap.has(filePath) && options.forceReload) {
+            if (openedFilesMap.has(filePath) && options['forceReload']) {
                 setOpenedFiles(prev => prev.filter(f => f.path !== filePath))
             }
 
             const existingFileIndex = openedFiles.findIndex(f => f.path === filePath)
-            if (existingFileIndex !== -1 && !options.forceReload) {
+            if (existingFileIndex !== -1 && !options['forceReload']) {
                 setCurrentFilePath(filePath)
                 const existingFile = openedFiles[existingFileIndex]
                 throttledEditorUpdate(existingFile.content)
                 return
             }
 
-            if (existingFileIndex !== -1 && options.forceReload) {
+            if (existingFileIndex !== -1 && options['forceReload']) {
                 setOpenedFiles(prev => prev.filter((f, index) => index !== existingFileIndex))
             }
 
             closeEmptyCurrentTempFile()
 
             let fileContent = content
-            let fileEncoding = options.encoding || 'UTF-8'
-            let fileLineEnding = options.lineEnding || 'LF'
+            let fileEncoding = options['encoding'] || 'UTF-8'
+            let fileLineEnding = options['lineEnding'] || 'LF'
 
             if (fileContent === null) {
                 const result = await fileApi.readFileContent(filePath)
@@ -606,7 +606,7 @@ export const useFileManager = () => {
 
         if (!key.startsWith('temp://')) {
             try {
-                fileApi.stopFileWatching(key)
+                fileApi.stopFileWatching(key).then()
             } catch (error) {
                 console.warn('Failed to stop file watching:', error)
             }
@@ -633,7 +633,7 @@ export const useFileManager = () => {
                     setEditorCode('')
                     throttledEditorUpdate('')
                     setTimeout(() => {
-                        createFile()
+                        createFile().then()
                     }, 0)
                 } else {
                     const firstFile = newFiles[0]
@@ -756,7 +756,7 @@ export const useFileManager = () => {
             setEditorCode(target.content)
 
             throttledEditorUpdate(target.content)
-        })
+        }).then()
     }, [openedFilesMap, openedFiles, throttledEditorUpdate])
 
     const getUnsavedFiles = useCallback(() => {
@@ -1099,7 +1099,7 @@ export const useFileManager = () => {
         activeConflictModals.current.add(filePath)
 
         return new Promise((resolve) => {
-            const fileName = filePath.split(/[\/]/).pop()
+            const fileName = filePath.split(/\//).pop()
 
             try {
                 Modal.confirm({
@@ -1270,7 +1270,7 @@ export const useFileManager = () => {
             }
         }
 
-        setupListener()
+        setupListener().then()
 
         return () => {
             if (unlisten) {

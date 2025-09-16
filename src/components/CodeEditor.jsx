@@ -6,25 +6,24 @@
  * @version 1.2.0
  */
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Empty, message } from 'antd';
-import { useTranslation } from 'react-i18next';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
+import {Empty, message} from 'antd';
+import {useTranslation} from 'react-i18next';
 import '../monaco-worker';
 import * as monaco from 'monaco-editor';
-import { shikiToMonaco } from '@shikijs/monaco';
-import { createHighlighter } from 'shiki';
-import { useEditor, useTheme } from '../hooks/redux';
+import {shikiToMonaco} from '@shikijs/monaco';
+import {createHighlighter} from 'shiki';
+import {useEditor, useTheme} from '../hooks/redux';
 import tauriApi from '../utils/tauriApi';
 import MarkdownViewer from './MarkdownViewer';
+import extensionToLanguage from '../configs/file-extensions.json';
+import './CodeEditor.scss';
 
 const { file: fileApi, settings: settingsApi } = tauriApi;
 
 const themes = {
   'One': ['one-dark-pro', 'one-light']
 };
-
-import extensionToLanguage from '../configs/file-extensions.json';
-import './CodeEditor.scss';
 
 /**
  * Monaco代码编辑器组件
@@ -67,7 +66,7 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
   const apiRequestResetTimerRef = useRef(null);
   const lastRequestTimeRef = useRef(0);
   const firstRequestTimeRef = useRef(0);
-  const DEBOUNCE_DELAY = 2000;
+
   const MAX_REQUESTS_PER_MINUTE = 6;
 
   const isMarkdownFile = useCallback(() => {
@@ -90,8 +89,7 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
     }
 
     const extension = displayFileName.toLowerCase().split('.').pop();
-    const isMarkdown = ['md', 'markdown', 'mgtree'].includes(extension);
-    return isMarkdown;
+    return ['md', 'markdown', 'mgtree'].includes(extension);
   }, []);
 
   const handleToggleMarkdownPreview = useCallback(() => {
@@ -149,21 +147,6 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
     window.addEventListener('ai-settings-changed', handler);
     return () => window.removeEventListener('ai-settings-changed', handler);
   }, [loadAiSettings]);
-
-  const calculateGhostEndPosition = (startPos, text) => {
-    const lines = text.split('\n');
-    if (lines.length === 1) {
-      return {
-        lineNumber: startPos.lineNumber,
-        column: startPos.column + text.length
-      };
-    } else {
-      return {
-        lineNumber: startPos.lineNumber + lines.length - 1,
-        column: lines[lines.length - 1].length + 1
-      };
-    }
-  };
 
   const createGhostText = useCallback((text, range) => {
     if (!editorRef.current) return;
@@ -273,8 +256,8 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
 
       text = mergedText;
       range = new monaco.Range(
-        mergedPosition.lineNumber, mergedPosition.column,
-        mergedPosition.lineNumber, mergedPosition.column
+        mergedPosition?.lineNumber, mergedPosition?.column,
+        mergedPosition?.lineNumber, mergedPosition?.column
       );
     } else {
       editorRef.current.executeEdits('ghost-text-creation', [{
@@ -295,12 +278,12 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
       originalPosition: { ...position },
       originalText: text
     });
-
+// -------
     const provider = {
-      provideInlineCompletions: async (model, position, context, token) => {
+      provideInlineCompletions: async (model, position, context, _) => {
         const relevantGhosts = [];
 
-        for (const [id, ghostData] of ghostTextsRef.current) {
+        for (const [_, ghostData] of ghostTextsRef.current) {
           const originalPos = ghostData.originalPosition;
 
           const isInGhostArea = position.lineNumber > originalPos.lineNumber ||
@@ -397,11 +380,9 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
       handleItemDidShow: () => { },
       handlePartialAccept: () => { }
     };
-
+// -------
     const currentLanguage = model.getLanguageId() || 'plaintext';
-    const disposable = monaco.languages.registerInlineCompletionsProvider(currentLanguage, provider);
-
-    ghostTextsRef.current.get(ghostId).providerDisposable = disposable;
+    ghostTextsRef.current.get(ghostId).providerDisposable = monaco.languages.registerInlineCompletionsProvider(currentLanguage, provider);
 
     if (triggerTimeoutRef.current) {
       clearTimeout(triggerTimeoutRef.current);
@@ -433,7 +414,7 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
       const mergedTexts = [];
       for (const pending of pendingTexts) {
         let foundExistingGhost = false;
-        for (const [ghostId, ghostData] of ghostTextsRef.current) {
+        for (const [_, ghostData] of ghostTextsRef.current) {
           const ghostPos = ghostData.originalPosition;
           if (ghostPos.lineNumber === pending.range.startLineNumber &&
             ghostPos.column === pending.range.startColumn &&
@@ -471,7 +452,7 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
     }, 100);
   }, []);
 
-  const addToPendingGhostTexts = useCallback((text, range) => {
+  useCallback((text, range) => {
     const shouldCreateGhost = () => {
       const hasPendingAtSamePosition = pendingGhostTextsRef.current.some(pending =>
         pending.range.startLineNumber === range.startLineNumber &&
@@ -484,7 +465,7 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
         return false;
       }
 
-      for (const [id, ghostData] of ghostTextsRef.current) {
+      for (const [_, ghostData] of ghostTextsRef.current) {
         const ghostPos = ghostData.originalPosition;
         if (ghostPos.lineNumber === range.startLineNumber &&
           Math.abs(ghostPos.column - range.startColumn) <= 1) {
@@ -527,7 +508,7 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
   const clearAllGhostTexts = useCallback(() => {
     if (!editorRef.current) return;
 
-    ghostTextsRef.current.forEach((ghostData, ghostId) => {
+    ghostTextsRef.current.forEach((ghostData, _) => {
       if (ghostData.providerDisposable) {
         ghostData.providerDisposable.dispose();
       }
@@ -562,7 +543,7 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
 
     const edits = [];
 
-    ghostTextsRef.current.forEach((ghostData, ghostId) => {
+    ghostTextsRef.current.forEach((ghostData, _) => {
       edits.push({
         range: new monaco.Range(
           ghostData.currentPosition.lineNumber,
@@ -581,7 +562,6 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
 
     editorRef.current.executeEdits('ghost-text-restoration', edits);
 
-    const count = ghostTextsRef.current.size;
     ghostTextsRef.current.clear();
 
   }, []);
@@ -798,7 +778,7 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
     }
 
     try {
-      const result = await fileApi.executeFile(currentFile['path']);
+      await fileApi.executeFile(currentFile['path']);
     } catch (error) {
       message.error(t('message.error.executionFailed', { error }));
     }
@@ -811,7 +791,7 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
     }
 
     try {
-      const result = await fileApi.openInTerminal(currentFile['path']);
+      await fileApi.openInTerminal(currentFile['path']);
     } catch (error) {
       message.error(t('message.error.openTerminalFailed', { error }));
     }
@@ -824,13 +804,13 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
     }
 
     try {
-      const result = await fileApi.showInExplorer(currentFile['path']);
+      await fileApi.showInExplorer(currentFile['path']);
     } catch (error) {
       message.error(t('message.error.openExplorerFailed', { error }));
     }
   }, [currentFile, t]);
 
-  const getLanguageFromExtension = useCallback((fileName) => {
+  useCallback((fileName) => {
     if (!fileName) return '';
     return fileName.split('.').pop()?.toLowerCase() || '';
   }, []);
@@ -1262,7 +1242,7 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
       cursorPositionRef.current = newPosition;
 
       if (ghostTextsRef.current.size > 0) {
-        for (const [id, ghostData] of ghostTextsRef.current) {
+        for (const [_, ghostData] of ghostTextsRef.current) {
           const originalPos = ghostData.originalPosition;
           const isAtGhostPosition = newPosition.lineNumber === originalPos.lineNumber &&
             newPosition.column <= originalPos.column;
@@ -2033,9 +2013,7 @@ Filter: ${filterName}
               if (!currentFile?.path) return '';
               const pathSeparator = currentFile['path'].includes('\\') ? '\\' : '/';
               const pathParts = currentFile['path'].split(pathSeparator);
-              const folderPath = pathParts.slice(0, -1).join(pathSeparator);
-
-              return folderPath;
+              return pathParts.slice(0, -1).join(pathSeparator);
             })()}
           />
         </div>

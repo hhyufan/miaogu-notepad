@@ -6,7 +6,7 @@
  */
 
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { Typography, Image, message } from 'antd';
+import { Image, message } from 'antd';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Prism from 'prismjs';
@@ -16,10 +16,7 @@ import TreeViewer from './TreeViewer';
 import MermaidRenderer from './MermaidRenderer';
 import { useTheme } from '../hooks/redux';
 import { useI18n } from '../hooks/useI18n';
-import tauriApi from '../utils/tauriApi';
 import { convertFileSrc } from '@tauri-apps/api/core';
-const { settings: settingsApi } = tauriApi;
-
 const { useToken } = theme;
 
 Prism.plugins.autoloader.languages_path =
@@ -73,7 +70,7 @@ const AutoTreeH1 = ({ titleText, isDarkMode, containerRef, children, currentFile
 
           if (response.ok) {
             // 检查响应内容类型和实际内容
-            const contentType = response.headers.get('content-type');
+            response.headers.get('content-type');
             const text = await response.text();
 
             // 确保不是HTML错误页面，且有实际内容
@@ -93,7 +90,7 @@ const AutoTreeH1 = ({ titleText, isDarkMode, containerRef, children, currentFile
     };
 
     if (titleText) {
-      checkTreeFile();
+      checkTreeFile().catch();
     } else {
       setTreeFilePath(null);
     }
@@ -163,7 +160,7 @@ const AutoTreeH1 = ({ titleText, isDarkMode, containerRef, children, currentFile
 
 // 基础样式函数，接收token参数
 const getBaseStyle = (token) => ({
-  color: token.colorText,
+  color: token['colorText'],
   fontFamily: "'Poppins', sans-serif"
 });
 
@@ -181,7 +178,7 @@ const getHeadingStyle = (token) => ({
 
 const getQuoteStyle = (token, isDarkMode) => ({
   ...getBaseStyle(token),
-  borderLeft: `4px solid ${token.colorPrimary}`,
+  borderLeft: `4px solid ${token['colorPrimary']}`,
   paddingLeft: '1rem',
   margin: '1rem 0',
   fontStyle: 'normal',
@@ -205,14 +202,14 @@ const getListItemStyle = (token) => ({
 
 const getLinkStyle = (token) => ({
   ...getBaseStyle(token),
-  color: token.colorPrimary,
+  color: token['colorPrimary'],
   textDecoration: 'underline'
 });
 
 const getHrStyle = (token) => ({
   ...getBaseStyle(token),
   border: 0,
-  borderTop: `1px solid ${token.colorBorder}`,
+  borderTop: `1px solid ${token['colorBorder']}`,
   margin: '1.5rem 0'
 });
 
@@ -374,7 +371,7 @@ const MarkdownRenderer = React.memo(({ content, currentFileName, currentFolder, 
 
       // 添加点击事件
       tag.addEventListener('click', () => {
-        handleCopyToClipboard(code.textContent);
+        handleCopyToClipboard(code.textContent).catch();
       });
 
       // 设置pre的相对定位
@@ -473,10 +470,8 @@ const MarkdownRenderer = React.memo(({ content, currentFileName, currentFolder, 
               </th>
             ),
             img: ({ src, alt, ...props }) => {
-              // 处理图片路径，基于当前md文件的路径
-              let imageSrc = src;
+              let imageSrc;
 
-              // URL解码处理
               let decodedSrc = src;
               try {
                 decodedSrc = decodeURIComponent(src);
@@ -542,8 +537,8 @@ const MarkdownRenderer = React.memo(({ content, currentFileName, currentFolder, 
                     width: 'auto',
                     height: 'auto',
                     borderRadius: '4px',
-                    boxShadow: token.boxShadow,
-                    border: `1px solid ${token.colorBorder}`,
+                    boxShadow: token['boxShadow'],
+                    border: `1px solid ${token['colorBorder']}`,
                     margin: '1rem 0',
                     display: 'block',
                     objectFit: 'contain'
@@ -598,7 +593,7 @@ const MarkdownRenderer = React.memo(({ content, currentFileName, currentFolder, 
                     }
                   } else {
 
-                    message.error(`未找到${jumpLanguage}代码示例#${jumpIndex}`);
+                    message.error(`未找到${jumpLanguage}代码示例#${jumpIndex}`).then();
                   }
                 };
 
@@ -670,7 +665,6 @@ const MarkdownRenderer = React.memo(({ content, currentFileName, currentFolder, 
 
 const MarkdownViewer = ({ content, fileName, currentFolder, onClose }) => {
   const { theme: currentTheme } = useTheme();
-  const { t } = useI18n();
   const localIsDarkMode = currentTheme === 'dark';
   const [zoomLevel, setZoomLevel] = useState(1); // 缩放级别，1为默认大小
   const containerRef = useRef(null);

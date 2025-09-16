@@ -8,7 +8,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Modal, Menu, Button, InputNumber, Select, Switch, Slider, Card, Typography, Space, App, Input } from 'antd';
 import { UploadOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
-import { useTheme, useEditor } from '../hooks/redux';
+import { useTheme } from '../hooks/redux';
 import { useI18n } from '../hooks/useI18n';
 import tauriApi from '../utils/tauriApi';
 
@@ -222,7 +222,7 @@ const SettingsModal = ({ visible, onClose }) => {
       aiApiKey: '',
       aiModel: '',
     });
-    message.success(t('settings.resetSuccess'));
+    message.success(t('settings.resetSuccess')).then();
   }, [resetTheme]);
 
   const handleSelectBackground = useCallback(async () => {
