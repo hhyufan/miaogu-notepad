@@ -32,9 +32,10 @@ const themes = {
  * @param {boolean} props.isDarkMode - 是否为暗色主题
  * @param {Object} props.fileManager - 文件管理器实例
  * @param {boolean} [props.showMarkdownPreview=false] - 是否显示Markdown预览
+ * @param {Object} [props.languageRef] - 语言设置的ref，用于动态获取当前文件的语言类型
  * @returns {JSX.Element} 代码编辑器组件
  */
-function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
+function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false, languageRef }) {
   const { t } = useTranslation();
   const editorRef = useRef(null);
   const containerRef = useRef(null);
@@ -909,13 +910,9 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
     if (containerRef.current && !editorRef.current && highlighterReady) {
       // 创建编辑器实例
       try {
-        // 根据当前文件确定初始语言，如果没有文件则使用plaintext
-        const initialLanguage = currentFile ? getFileLanguage(currentFile['name']) : 'plaintext';
-        const initialValue = currentFile ? currentFile['content'] : '// Monaco Editor is working!\nconsole.log("Hello World");';
-        
         editorRef.current = monaco.editor.create(containerRef.current, {
-          value: initialValue,
-          language: initialLanguage,
+          value: '// Monaco Editor is working!\nconsole.log("Hello World");',
+          language: languageRef?.current || 'javascript',
           theme: highlighterReady ? getEditorTheme() : (isDarkMode ? 'vs-dark' : 'vs'),
           fontSize: fontSize,
           fontFamily: fontFamily,
@@ -1171,18 +1168,18 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
             if (position) {
               const model = editorRef.current.getModel();
               const lineContent = model.getLineContent(position.lineNumber);
-              
+
               // 检查点击位置是否在链接上
               const linkRegex = /https?:\/\/[^\s\)]+|\.\/[^\s\)]+|\.\.\/[^\s\)]+|[a-zA-Z0-9_-]+\.(md|txt|js|jsx|ts|tsx|py|java|cpp|c|h|css|scss|html|json|xml|yaml|yml)/g;
               let match;
-              
+
               while ((match = linkRegex.exec(lineContent)) !== null) {
                 const startCol = match.index + 1;
                 const endCol = match.index + match[0].length + 1;
-                
+
                 if (position.column >= startCol && position.column <= endCol) {
                   const linkText = match[0];
-                  
+
                   // 使用linkUtils中的handleLinkClick函数处理链接
                   handleLinkClick(linkText, currentFile?.path, fileManager.setOpenFile);
                   break;
@@ -1212,7 +1209,7 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
         editorRef.current = null;
       }
     };
-  }, [highlighterReady, createGhostText, restoreAllGhostTexts, acceptCurrentLineGhostText, currentFile, getFileLanguage]);
+  }, [highlighterReady, createGhostText, restoreAllGhostTexts, acceptCurrentLineGhostText]);
 
   useEffect(() => {
     if (!editorRef.current || isInternalChange.current) return;
@@ -1223,7 +1220,7 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false }) {
       monaco.editor.setModelLanguage(editorRef.current.getModel(), language);
     } else {
       editorRef.current.setValue('// Monaco Editor is working!\nconsole.log("Hello World");');
-      monaco.editor.setModelLanguage(editorRef.current.getModel(), 'plaintext');
+      monaco.editor.setModelLanguage(editorRef.current.getModel(), 'javascript');
     }
   }, [currentFile, getFileLanguage]);
 

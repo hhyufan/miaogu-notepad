@@ -152,6 +152,7 @@ const AppContent = ({ isDarkMode, toggleTheme, fileManager }) => {
               isDarkMode={isDarkMode}
               fileManager={fileManager}
               showMarkdownPreview={isMarkdownFile && editorMode === EDITOR_MODES.MARKDOWN}
+              languageRef={fileManager.appHeaderRef?.languageRef}
             />
           </div>
           {isMgtreeFile && (

@@ -1313,7 +1313,10 @@ export const useFileManager = () => {
         updateDefaultFileName,
         updateFileLineEnding,
         setOpenFile,
-        updateFileContent
+        updateFileContent,
+
+        // AppHeader的ref引用，用于CodeEditor获取语言设置
+        appHeaderRef: null
     }
 }
 

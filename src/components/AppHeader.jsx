@@ -48,6 +48,7 @@ import './AppHeader.scss';
 import { useState, useEffect, useRef } from 'react';
 import { useI18n } from '../hooks/useI18n';
 import SettingsModal from './SettingsModal';
+import extensionToLanguage from '../configs/file-extensions.json';
 
 const { Header } = Layout;
 const { Title, Text } = Typography;
@@ -60,6 +61,18 @@ const { Title, Text } = Typography;
  */
 const getFileNameFromPath = (path, t) => {
     return path.split(/[\/\\]/).pop() || t('common.untitled');
+};
+
+/**
+ * 根据文件名推断编程语言
+ * @param {string} fileName - 文件名
+ * @returns {string} 编程语言标识符
+ */
+const getLanguageFromFileName = (fileName) => {
+    if (!fileName) return 'plaintext';
+    
+    const extension = fileName.toLowerCase().split('.').pop();
+    return extensionToLanguage[extension] || 'plaintext';
 };
 
 /**
@@ -82,6 +95,16 @@ const AppHeader = ({ fileManager }) => {
     const [selectedFiles, setSelectedFiles] = useState([]);
     const selectedFilesRef = useRef([]);
     const fileNameInputRef = useRef(null);
+    
+    // 创建语言设置的ref，供CodeEditor使用
+    const languageRef = useRef('plaintext');
+
+    // 将languageRef暴露给fileManager，供其他组件使用
+    useEffect(() => {
+        if (fileManager) {
+            fileManager.appHeaderRef = { languageRef };
+        }
+    }, [fileManager]);
 
     const {
         currentFile,
@@ -240,6 +263,13 @@ const AppHeader = ({ fileManager }) => {
         }
         return t('common.untitled');
     };
+
+    // 监听文件变化，更新语言设置
+    useEffect(() => {
+        const fileName = getCurrentFileName();
+        const language = getLanguageFromFileName(fileName);
+        languageRef.current = language;
+    }, [currentFile]);
 
     const handleFileRename = async () => {
         if (editedFileName.trim() && editedFileName !== getCurrentFileName()) {
