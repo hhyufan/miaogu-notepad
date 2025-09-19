@@ -6,18 +6,20 @@
  * @version 1.2.0
  */
 
-import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {Empty, message} from 'antd';
-import {useTranslation} from 'react-i18next';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Empty, message } from 'antd';
+import { useTranslation } from 'react-i18next';
 import '../monaco-worker';
 import * as monaco from 'monaco-editor';
-import {shikiToMonaco} from '@shikijs/monaco';
-import {createHighlighter} from 'shiki';
-import {useEditor, useTheme} from '../hooks/redux';
+import { shikiToMonaco } from '@shikijs/monaco';
+import { createHighlighter } from 'shiki';
+import { useEditor, useTheme } from '../hooks/redux';
 import tauriApi from '../utils/tauriApi';
 import { handleLinkClick } from '../utils/linkUtils';
 import MarkdownViewer from './MarkdownViewer';
 import extensionToLanguage from '../configs/file-extensions.json';
+import { mgtreeLanguageConfig, mgtreeThemeConfig } from '../configs/mgtree-language';
+import { mgtreeTextMateGrammar, mgtreeShikiTheme } from '../configs/mgtree-textmate';
 import './CodeEditor.scss';
 
 const { file: fileApi, settings: settingsApi } = tauriApi;
@@ -280,7 +282,7 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false, lang
       originalPosition: { ...position },
       originalText: text
     });
-// -------
+    // -------
     const provider = {
       provideInlineCompletions: async (model, position, context, _) => {
         const relevantGhosts = [];
@@ -382,7 +384,7 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false, lang
       handleItemDidShow: () => { },
       handlePartialAccept: () => { }
     };
-// -------
+    // -------
     const currentLanguage = model.getLanguageId() || 'plaintext';
     ghostTextsRef.current.get(ghostId).providerDisposable = monaco.languages.registerInlineCompletionsProvider(currentLanguage, provider);
 
@@ -818,8 +820,13 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false, lang
   }, []);
 
   const getEditorTheme = useCallback(() => {
-    return isDarkMode ? 'one-dark-pro' : 'one-light';
-  }, [isDarkMode]);
+    // 如果当前文件是mgtree文件，使用Monaco自定义主题
+    if (currentFile?.name?.endsWith('.mgtree')) {
+      return isDarkMode ? 'mgtree-dark' : 'mgtree-light';
+    }
+    // 其他文件使用带前缀的Shiki主题
+    return isDarkMode ? 'shiki-one-dark-pro' : 'shiki-one-light';
+  }, [isDarkMode, currentFile]);
 
   const getFileLanguage = useCallback((fileName) => {
     if (!fileName) return 'plaintext';
@@ -858,7 +865,7 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false, lang
       'ini': 'ini',
       'conf': 'ini',
       'txt': 'plaintext',
-      'mgtree': 'plaintext'
+      'mgtree': 'mgtree'
     };
 
     return languageMap[ext] || 'plaintext';
@@ -867,38 +874,135 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false, lang
   useEffect(() => {
     let mounted = true;
 
-    const initializeHighlighter = async () => {
+    const initializeThemesAndHighlighter = async () => {
       try {
+        // 第一步：立即定义所有必需的Monaco原生主题，确保编辑器初始化时可用
+        console.log('Defining Monaco themes...');
 
+        // 定义mgtree主题（独立于Shiki主题系统）
+        try {
+          monaco.editor.defineTheme('mgtree-dark', mgtreeThemeConfig.dark);
+          monaco.editor.defineTheme('mgtree-light', mgtreeThemeConfig.light);
+          console.log('mgtree themes defined successfully');
+        } catch (themeError) {
+          console.error('Failed to define mgtree themes:', themeError);
+        }
 
-
+        // 第二步：初始化Shiki高亮器（包含自定义语言和标准语言）
+        console.log('Initializing Shiki highlighter...');
         const validLanguages = Object.entries(extensionToLanguage)
           .filter(([key]) => !key.startsWith('_'))
           .map(([, value]) => value);
 
+        console.log('Valid languages:', validLanguages);
+        console.log('Themes to load:', Object.values(themes).flat());
+
+        // 创建自定义主题对象，符合Shiki主题格式
+        const mgtreeThemes = [
+          {
+            name: 'mgtree-light',
+            type: 'light',
+            colors: mgtreeShikiTheme.light.colors,
+            tokenColors: mgtreeShikiTheme.light.tokenColors
+          },
+          {
+            name: 'mgtree-dark',
+            type: 'dark',
+            colors: mgtreeShikiTheme.dark.colors,
+            tokenColors: mgtreeShikiTheme.dark.tokenColors
+          }
+        ];
+
         const highlighter = await createHighlighter({
-          themes: Object.values(themes).flat(),
+          themes: [...Object.values(themes).flat(), ...mgtreeThemes],
           langs: [...new Set(validLanguages)]
         });
 
+        // 第三步：加载mgtree自定义语言到Shiki
+        console.log('Loading mgtree custom language into Shiki...');
+        try {
+          await highlighter.loadLanguage(mgtreeTextMateGrammar);
+          console.log('mgtree language loaded into Shiki successfully');
+        } catch (error) {
+          console.warn('Failed to load mgtree language into Shiki:', error);
+        }
 
+        // 第四步：注册Monaco语言ID（为了Monaco编辑器识别）
+        if (!monaco.languages.getLanguages().find(lang => lang.id === mgtreeLanguageConfig.id)) {
+          monaco.languages.register({
+            id: mgtreeLanguageConfig.id,
+            extensions: mgtreeLanguageConfig.extensions,
+            aliases: mgtreeLanguageConfig.aliases
+          });
 
-        shikiToMonaco(highlighter, monaco);
+          // 设置语言配置
+          monaco.languages.setLanguageConfiguration(mgtreeLanguageConfig.id, mgtreeLanguageConfig.configuration);
+          console.log('mgtree language registered in Monaco successfully');
+        }
 
+        console.log('Shiki highlighter created successfully');
+        console.log('Available Shiki themes:', highlighter.getLoadedThemes());
+
+        // 使用shikiToMonaco函数注册主题，这是官方推荐的方式
+        console.log('Registering Shiki themes using shikiToMonaco...');
+
+        try {
+          // 使用官方的shikiToMonaco函数注册主题
+          shikiToMonaco(highlighter, monaco);
+          console.log('Successfully registered Shiki themes using shikiToMonaco');
+
+          // 验证主题是否已注册
+          const registeredThemes = highlighter.getLoadedThemes();
+          console.log('Available Shiki themes after registration:', registeredThemes);
+        } catch (error) {
+          console.error('Failed to register Shiki themes using shikiToMonaco:', error);
+
+          // 降级到手动注册
+          const shikiThemes = highlighter.getLoadedThemes();
+          console.log('Fallback: Manual theme registration for:', shikiThemes);
+
+          shikiThemes.forEach(themeName => {
+            try {
+              const themeData = highlighter.getTheme(themeName);
+
+              monaco.editor.defineTheme(themeName, {
+                base: themeData.type === 'dark' ? 'vs-dark' : 'vs',
+                inherit: true,
+                rules: themeData.tokenColors?.map(rule => ({
+                  token: rule.scope?.join?.(' ') || rule.scope || '',
+                  foreground: rule.settings?.foreground?.replace('#', '') || '',
+                  background: rule.settings?.background?.replace('#', '') || '',
+                  fontStyle: rule.settings?.fontStyle || ''
+                })) || [],
+                colors: themeData.colors || {}
+              });
+              console.log(`Manually registered theme: ${themeName}`);
+            } catch (error) {
+              console.warn(`Failed to manually register theme ${themeName}:`, error);
+            }
+          });
+        }
+
+        // 第五步：注册mgtree自定义主题（已经在Shiki中加载，无需重复注册）
+        console.log('mgtree themes already loaded in Shiki highlighter');
+        console.log('Available themes:', highlighter.getLoadedThemes());
+
+        console.log('Shiki themes registered successfully');
+        console.log('Theme registration completed');
 
         if (mounted) {
-
           setHighlighterReady(true);
         }
       } catch (error) {
-        console.error('Failed to initialize Shiki highlighter:', error);
+        console.error('Failed to initialize themes and highlighter:', error);
         if (mounted) {
+          // 即使Shiki失败，也要设置为就绪，使用基础主题
           setHighlighterReady(true);
         }
       }
     };
 
-    initializeHighlighter().catch(console.error);
+    initializeThemesAndHighlighter().catch(console.error);
 
     return () => {
       mounted = false;
@@ -913,7 +1017,7 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false, lang
         editorRef.current = monaco.editor.create(containerRef.current, {
           value: '// Monaco Editor is working!\nconsole.log("Hello World");',
           language: languageRef?.current || 'javascript',
-          theme: highlighterReady ? getEditorTheme() : (isDarkMode ? 'vs-dark' : 'vs'),
+          theme: 'vs-dark', // 使用基础主题初始化
           fontSize: fontSize,
           fontFamily: fontFamily,
           lineHeight: lineHeight,
@@ -1945,18 +2049,62 @@ Filter: ${filterName}
   }, [currentFile, getFileLanguage, showMarkdownPreview]);
 
   useEffect(() => {
-    if (editorRef.current && highlighterReady) {
+    if (editorRef.current) {
       const theme = getEditorTheme();
 
       try {
-        monaco.editor.setTheme(theme);
+        // 完全分离两个主题系统
+        if (currentFile?.name?.endsWith('.mgtree')) {
+          // mgtree文件使用Monaco原生主题系统
+          const mgtreeTheme = isDarkMode ? 'mgtree-dark' : 'mgtree-light';
 
+          // 确保主题存在后再设置
+          try {
+            monaco.editor.setTheme(mgtreeTheme);
+            console.log(`Applied mgtree theme: ${mgtreeTheme}`);
+          } catch (setError) {
+            console.warn(`Failed to set ${mgtreeTheme}, trying to redefine:`, setError);
+            // 如果设置失败，重新定义主题
+            try {
+              monaco.editor.defineTheme('mgtree-dark', mgtreeThemeConfig.dark);
+              monaco.editor.defineTheme('mgtree-light', mgtreeThemeConfig.light);
+              monaco.editor.setTheme(mgtreeTheme);
+              console.log(`Redefined and applied mgtree theme: ${mgtreeTheme}`);
+            } catch (redefineError) {
+              console.error('Failed to redefine mgtree theme:', redefineError);
+              // 最后降级到基础主题
+              monaco.editor.setTheme(isDarkMode ? 'vs-dark' : 'vs');
+            }
+          }
+        } else {
+          // 其他文件使用Shiki主题：直接使用 one-dark-pro 和 one-light
+          const shikiTheme = isDarkMode ? 'one-dark-pro' : 'one-light';
+          console.log(`Applying Shiki theme: ${shikiTheme} (isDarkMode: ${isDarkMode})`);
+
+          try {
+            // 设置Shiki主题（不带前缀）
+            monaco.editor.setTheme(shikiTheme);
+            console.log(`✓ Successfully applied Shiki theme: ${shikiTheme}`);
+          } catch (shikiError) {
+            console.error(`✗ Failed to set Shiki theme ${shikiTheme}:`, shikiError);
+            // 降级到基础主题
+            const basicTheme = isDarkMode ? 'vs-dark' : 'vs';
+            monaco.editor.setTheme(basicTheme);
+            console.log(`Fallback to basic theme: ${basicTheme}`);
+          }
+        }
       } catch (error) {
         console.error('Failed to set theme:', error);
-        monaco.editor.setTheme(isDarkMode ? 'vs-dark' : 'vs');
+        // 主题设置失败时降级到最基础的主题
+        try {
+          monaco.editor.setTheme('vs-dark');
+          console.log('Applied fallback theme: vs-dark');
+        } catch (fallbackError) {
+          console.error('Even fallback theme failed:', fallbackError);
+        }
       }
     }
-  }, [getEditorTheme, highlighterReady, isDarkMode]);
+  }, [getEditorTheme, highlighterReady, isDarkMode, currentFile]);
 
   useEffect(() => {
     if (editorRef.current) {
