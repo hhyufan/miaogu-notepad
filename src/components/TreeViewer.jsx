@@ -16,7 +16,8 @@ import {
   FileTextOutlined,
   FolderOpenOutlined,
   FolderOutlined,
-  ShrinkOutlined
+  ShrinkOutlined,
+  SwitcherOutlined
 } from '@ant-design/icons';
 import { useI18n } from '../hooks/useI18n';
 import './TreeViewer.scss';
@@ -235,9 +236,11 @@ const renderTreeNode = (node, onJumpToCode, isDarkMode, expandedKeys, onToggleEx
  * @param {string} props.currentFileName - 当前文件名
  * @param {string} props.currentFolder - 当前文件夹路径
  * @param {number} props.fontSize - 字体大小，默认为16
+ * @param {boolean} props.isAutoTree - 是否为autoTreeH1渲染的自动树
+ * @param {Function} props.onOpenMgtree - 打开mgtree文件的回调函数
  * @returns {JSX.Element} 树形视图组件
  */
-const TreeViewer = ({ treeFilePath, treeContent, onJumpToCode, currentFileName, currentFolder, fontSize = 16 }) => {
+const TreeViewer = ({ treeFilePath, treeContent, onJumpToCode, currentFileName, currentFolder, fontSize = 16, isAutoTree = false, onOpenMgtree }) => {
   const { t } = useI18n();
 
   const [treeData, setTreeData] = useState([]);
@@ -446,6 +449,25 @@ const TreeViewer = ({ treeFilePath, treeContent, onJumpToCode, currentFileName, 
     saveExpandedState([], currentFileName);
   };
 
+  // 打开mgtree文件
+  const handleOpenMgtree = () => {
+    if (onOpenMgtree && treeFilePath) {
+      // 构建完整的mgtree文件路径
+      let fullPath;
+      if (currentFolder) {
+        const separator = currentFolder.includes('\\') ? '\\' : '/';
+        if (currentFolder.endsWith('trees') || currentFolder.endsWith('trees/') || currentFolder.endsWith('trees\\')) {
+          fullPath = `${currentFolder}${separator}${treeFilePath}`;
+        } else {
+          fullPath = `${currentFolder}${separator}trees${separator}${treeFilePath}`;
+        }
+      } else {
+        fullPath = `trees/${treeFilePath}`;
+      }
+      onOpenMgtree(fullPath);
+    }
+  };
+
 
   if (error) {
     return (
@@ -485,6 +507,16 @@ const TreeViewer = ({ treeFilePath, treeContent, onJumpToCode, currentFileName, 
                onClick={collapseAll}
              />
            </Tooltip>
+           {isAutoTree && treeFilePath && onOpenMgtree && (
+             <Tooltip title={t('tree.openMgtreeFile')}>
+               <Button
+                 type="text"
+                 size="small"
+                icon={<SwitcherOutlined />}
+                 onClick={handleOpenMgtree}
+               />
+             </Tooltip>
+           )}
          </Space>
       </div>
       {/* 树形内容区域 */}

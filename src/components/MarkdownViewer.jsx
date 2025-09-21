@@ -27,7 +27,7 @@ Prism.plugins.autoloader.languages_path =
   'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/';
 Prism.languages.vue = Prism.languages.html;
 
-const AutoTreeH1 = ({ titleText, isDarkMode, containerRef, children, currentFileName, currentFolder }) => {
+const AutoTreeH1 = ({ titleText, isDarkMode, containerRef, children, currentFileName, currentFolder, onOpenFile }) => {
   const [treeFilePath, setTreeFilePath] = useState(null);
 
   useEffect(() => {
@@ -144,6 +144,8 @@ const AutoTreeH1 = ({ titleText, isDarkMode, containerRef, children, currentFile
             onJumpToCode={handleJumpToCode}
             currentFileName={currentFileName}
             currentFolder={currentFolder}
+            isAutoTree={true}
+            onOpenMgtree={onOpenFile}
           />
         </div>
       )}
@@ -407,6 +409,7 @@ const MarkdownRenderer = React.memo(({ content, currentFileName, currentFolder, 
                   containerRef={containerRef}
                   currentFileName={currentFileName}
                   currentFolder={currentFolder}
+                  onOpenFile={openFile}
                 >
                   {children}
                 </AutoTreeH1>

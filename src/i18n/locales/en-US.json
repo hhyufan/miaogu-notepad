@@ -307,6 +307,7 @@
     "addRootNode": "Add Root Node",
     "expandAll": "Expand All",
     "collapseAll": "Collapse All",
+    "openMgtreeFile": "Open mgtree file",
     "addChildNode": "Add Child Node",
     "deleteNode": "Delete Node",
     "zoomIn": "Zoom In",
