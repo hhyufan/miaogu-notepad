@@ -245,9 +245,32 @@ const MainApp = () => {
       }
     };
 
+    // 监听窗口状态变化，当窗口不是最大化时自动显示AppHeader
+    const checkWindowState = async () => {
+      if (typeof window !== 'undefined' && window['__TAURI_INTERNALS__']) {
+        try {
+          const { getCurrentWindow } = await import('@tauri-apps/api/window');
+          const appWindow = getCurrentWindow();
+          
+          const isMaximized = await appWindow.isMaximized();
+          
+          // 如果当前Header是隐藏的，但窗口不是最大化状态，则显示Header
+          if (!isHeaderVisible && !isMaximized) {
+            setIsHeaderVisible(true);
+          }
+        } catch (error) {
+          console.error('检查窗口状态失败:', error);
+        }
+      }
+    };
+
+    // 定期检查窗口状态
+    const intervalId = setInterval(checkWindowState, 500);
+
     document.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
+      clearInterval(intervalId);
     };
   }, [isHeaderVisible]);
 
