@@ -7,7 +7,8 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Empty, message } from 'antd';
+import { Empty, message, FloatButton } from 'antd';
+import { VerticalAlignTopOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import '../monaco-worker';
 import * as monaco from 'monaco-editor';
@@ -37,13 +38,14 @@ const themes = {
  * @param {Object} [props.languageRef] - 语言设置的ref，用于动态获取当前文件的语言类型
  * @returns {JSX.Element} 代码编辑器组件
  */
-function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false, languageRef }) {
+function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false, languageRef, isHeaderVisible = true }) {
   const { t } = useTranslation();
   const editorRef = useRef(null);
   const containerRef = useRef(null);
   const isInternalChange = useRef(false);
   const [highlighterReady, setHighlighterReady] = useState(false);
   const [internalShowMarkdownPreview, setInternalShowMarkdownPreview] = useState(false);
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
   const actualShowMarkdownPreview = showMarkdownPreview || internalShowMarkdownPreview;
   const { fontSize, fontFamily, lineHeight } = useTheme();
@@ -74,27 +76,16 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false, lang
   const MAX_REQUESTS_PER_MINUTE = 6;
 
   const isMarkdownFile = useCallback(() => {
-    let displayFileName = '';
-
-    try {
-      const element = document.querySelector('h4.ant-typography');
-      if (element && element.textContent && element.textContent.trim()) {
-        displayFileName = element.textContent.trim();
-
-      }
-    } catch (error) {
-
-      return false;
-    }
+    // 直接使用currentFile.name获取文件名，不依赖AppHeader中的DOM元素
+    const displayFileName = currentFile?.name;
 
     if (!displayFileName) {
-
       return false;
     }
 
     const extension = displayFileName.toLowerCase().split('.').pop();
     return ['md', 'markdown', 'mgtree'].includes(extension);
-  }, []);
+  }, [currentFile?.name]);
 
   const handleToggleMarkdownPreview = useCallback(() => {
     if (!currentFile) {
@@ -877,25 +868,25 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false, lang
     const initializeThemesAndHighlighter = async () => {
       try {
         // 第一步：立即定义所有必需的Monaco原生主题，确保编辑器初始化时可用
-        console.log('Defining Monaco themes...');
+
 
         // 定义mgtree主题（独立于Shiki主题系统）
         try {
           monaco.editor.defineTheme('mgtree-dark', mgtreeThemeConfig.dark);
           monaco.editor.defineTheme('mgtree-light', mgtreeThemeConfig.light);
-          console.log('mgtree themes defined successfully');
+
         } catch (themeError) {
           console.error('Failed to define mgtree themes:', themeError);
         }
 
         // 第二步：初始化Shiki高亮器（包含自定义语言和标准语言）
-        console.log('Initializing Shiki highlighter...');
+
         const validLanguages = Object.entries(extensionToLanguage)
           .filter(([key]) => !key.startsWith('_'))
           .map(([, value]) => value);
 
-        console.log('Valid languages:', validLanguages);
-        console.log('Themes to load:', Object.values(themes).flat());
+
+
 
         // 创建自定义主题对象，符合Shiki主题格式
         const mgtreeThemes = [
@@ -919,10 +910,10 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false, lang
         });
 
         // 第三步：加载mgtree自定义语言到Shiki
-        console.log('Loading mgtree custom language into Shiki...');
+
         try {
           await highlighter.loadLanguage(mgtreeTextMateGrammar);
-          console.log('mgtree language loaded into Shiki successfully');
+
         } catch (error) {
           console.warn('Failed to load mgtree language into Shiki:', error);
         }
@@ -937,29 +928,29 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false, lang
 
           // 设置语言配置
           monaco.languages.setLanguageConfiguration(mgtreeLanguageConfig.id, mgtreeLanguageConfig.configuration);
-          console.log('mgtree language registered in Monaco successfully');
+
         }
 
-        console.log('Shiki highlighter created successfully');
-        console.log('Available Shiki themes:', highlighter.getLoadedThemes());
+
+
 
         // 使用shikiToMonaco函数注册主题，这是官方推荐的方式
-        console.log('Registering Shiki themes using shikiToMonaco...');
+
 
         try {
           // 使用官方的shikiToMonaco函数注册主题
           shikiToMonaco(highlighter, monaco);
-          console.log('Successfully registered Shiki themes using shikiToMonaco');
+
 
           // 验证主题是否已注册
           const registeredThemes = highlighter.getLoadedThemes();
-          console.log('Available Shiki themes after registration:', registeredThemes);
+
         } catch (error) {
           console.error('Failed to register Shiki themes using shikiToMonaco:', error);
 
           // 降级到手动注册
           const shikiThemes = highlighter.getLoadedThemes();
-          console.log('Fallback: Manual theme registration for:', shikiThemes);
+
 
           shikiThemes.forEach(themeName => {
             try {
@@ -976,7 +967,7 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false, lang
                 })) || [],
                 colors: themeData.colors || {}
               });
-              console.log(`Manually registered theme: ${themeName}`);
+
             } catch (error) {
               console.warn(`Failed to manually register theme ${themeName}:`, error);
             }
@@ -984,11 +975,11 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false, lang
         }
 
         // 第五步：注册mgtree自定义主题（已经在Shiki中加载，无需重复注册）
-        console.log('mgtree themes already loaded in Shiki highlighter');
-        console.log('Available themes:', highlighter.getLoadedThemes());
 
-        console.log('Shiki themes registered successfully');
-        console.log('Theme registration completed');
+
+
+
+
 
         if (mounted) {
           setHighlighterReady(true);
@@ -1291,6 +1282,11 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false, lang
               }
             }
           }
+        });
+
+        // 添加滚动监听器来控制返回顶部按钮的显示
+        editorRef.current.onDidScrollChange((e) => {
+          setShowBackToTop(e.scrollTop > 300);
         });
 
       } catch (error) {
@@ -2061,7 +2057,7 @@ Filter: ${filterName}
           // 确保主题存在后再设置
           try {
             monaco.editor.setTheme(mgtreeTheme);
-            console.log(`Applied mgtree theme: ${mgtreeTheme}`);
+
           } catch (setError) {
             console.warn(`Failed to set ${mgtreeTheme}, trying to redefine:`, setError);
             // 如果设置失败，重新定义主题
@@ -2069,7 +2065,7 @@ Filter: ${filterName}
               monaco.editor.defineTheme('mgtree-dark', mgtreeThemeConfig.dark);
               monaco.editor.defineTheme('mgtree-light', mgtreeThemeConfig.light);
               monaco.editor.setTheme(mgtreeTheme);
-              console.log(`Redefined and applied mgtree theme: ${mgtreeTheme}`);
+
             } catch (redefineError) {
               console.error('Failed to redefine mgtree theme:', redefineError);
               // 最后降级到基础主题
@@ -2079,18 +2075,18 @@ Filter: ${filterName}
         } else {
           // 其他文件使用Shiki主题：直接使用 one-dark-pro 和 one-light
           const shikiTheme = isDarkMode ? 'one-dark-pro' : 'one-light';
-          console.log(`Applying Shiki theme: ${shikiTheme} (isDarkMode: ${isDarkMode})`);
+
 
           try {
             // 设置Shiki主题（不带前缀）
             monaco.editor.setTheme(shikiTheme);
-            console.log(`✓ Successfully applied Shiki theme: ${shikiTheme}`);
+
           } catch (shikiError) {
             console.error(`✗ Failed to set Shiki theme ${shikiTheme}:`, shikiError);
             // 降级到基础主题
             const basicTheme = isDarkMode ? 'vs-dark' : 'vs';
             monaco.editor.setTheme(basicTheme);
-            console.log(`Fallback to basic theme: ${basicTheme}`);
+
           }
         }
       } catch (error) {
@@ -2098,7 +2094,7 @@ Filter: ${filterName}
         // 主题设置失败时降级到最基础的主题
         try {
           monaco.editor.setTheme('vs-dark');
-          console.log('Applied fallback theme: vs-dark');
+
         } catch (fallbackError) {
           console.error('Even fallback theme failed:', fallbackError);
         }
@@ -2192,6 +2188,7 @@ Filter: ${filterName}
               return pathParts.slice(0, -1).join(pathSeparator);
             })()}
             openFile={fileManager.setOpenFile}
+            isHeaderVisible={isHeaderVisible}
           />
         </div>
       )}
@@ -2208,6 +2205,45 @@ Filter: ${filterName}
           display: actualShowMarkdownPreview ? 'none' : 'block'
         }}
       />
+
+      {/* 返回顶部悬浮按钮 */}
+      {showBackToTop && currentFile && !actualShowMarkdownPreview && (
+        <FloatButton
+          icon={<VerticalAlignTopOutlined />}
+          onClick={() => {
+            if (editorRef.current) {
+              // 使用自定义的平滑滚动实现更慢的动画效果
+              const editor = editorRef.current;
+              const currentScrollTop = editor.getScrollTop();
+              const duration = 800; // 动画持续时间800ms
+              const startTime = performance.now();
+              
+              const animateScroll = (currentTime) => {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                // 使用easeOutCubic缓动函数，让动画更自然
+                const easeOutCubic = 1 - Math.pow(1 - progress, 3);
+                const scrollTop = currentScrollTop * (1 - easeOutCubic);
+                
+                editor.setScrollTop(scrollTop);
+                
+                if (progress < 1) {
+                  requestAnimationFrame(animateScroll);
+                }
+              };
+              
+              requestAnimationFrame(animateScroll);
+            }
+          }}
+          style={{
+            position: 'absolute',
+            right: 20,
+            bottom: 16,
+            zIndex: 1000
+          }}
+        />
+      )}
     </div>
   );
 }

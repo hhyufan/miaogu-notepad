@@ -43,7 +43,7 @@ const EDITOR_MODES = {
  * @param {Function} props.toggleTheme - 主题切换函数
  * @param {Object} props.fileManager - 文件管理器实例
  */
-const AppContent = ({ isDarkMode, toggleTheme, fileManager }) => {
+const AppContent = ({ isDarkMode, toggleTheme, fileManager, isHeaderVisible }) => {
   const { t } = useI18n();
   const [isTreeMode, setIsTreeMode] = useState(false);
   const [editorMode, setEditorMode] = useState(EDITOR_MODES.MONACO);
@@ -153,6 +153,7 @@ const AppContent = ({ isDarkMode, toggleTheme, fileManager }) => {
               fileManager={fileManager}
               showMarkdownPreview={isMarkdownFile && editorMode === EDITOR_MODES.MARKDOWN}
               languageRef={fileManager.appHeaderRef?.languageRef}
+              isHeaderVisible={isHeaderVisible}
             />
           </div>
           {isMgtreeFile && (
@@ -163,6 +164,7 @@ const AppContent = ({ isDarkMode, toggleTheme, fileManager }) => {
               <TreeEditor
                 isDarkMode={isDarkMode}
                 fileManager={fileManager}
+                isHeaderVisible={isHeaderVisible}
               />
             </div>
           )}
@@ -189,6 +191,7 @@ const MainApp = () => {
   const { t } = useI18n();
   const [loading, setLoading] = useState(true);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
 
   useEffect(() => {
     const handleTauriDragEnter = () => {
@@ -207,6 +210,46 @@ const MainApp = () => {
       window.removeEventListener('tauri-drag-leave', handleTauriDragLeave);
     };
   }, []);
+
+  // F11键切换全屏模式（隐藏AppHeader并最大化窗口）
+  useEffect(() => {
+    const handleKeyDown = async (event) => {
+      if (event.key === 'F11') {
+        event.preventDefault();
+        const newHeaderVisible = !isHeaderVisible;
+        setIsHeaderVisible(newHeaderVisible);
+        
+        // 检查是否在Tauri环境中
+        if (typeof window !== 'undefined' && window['__TAURI_INTERNALS__']) {
+          try {
+            const { getCurrentWindow } = await import('@tauri-apps/api/window');
+            const appWindow = getCurrentWindow();
+            
+            // 获取当前窗口状态
+            const isMaximized = await appWindow.isMaximized();
+            
+            if (newHeaderVisible) {
+              // 显示Header时，保持当前窗口状态不变
+              // 不做任何窗口大小调整
+            } else {
+              // 隐藏Header时，如果窗口未最大化则最大化
+              if (!isMaximized) {
+                await appWindow.maximize();
+              }
+              // 如果已经最大化，则保持最大化状态
+            }
+          } catch (error) {
+            console.error('F11全屏切换失败:', error);
+          }
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isHeaderVisible]);
 
   const { isRestoring, restoreError } = useSessionRestore();
   const { backgroundEnabled, backgroundImage } = useSelector((state) => state.theme);
@@ -556,7 +599,7 @@ const MainApp = () => {
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
-          <AppHeader fileManager={fileManager} />
+          {isHeaderVisible && <AppHeader fileManager={fileManager} />}
           <TabBar fileManager={fileManager} />
           <Layout className="main-layout">
             <Content className="app-content">
@@ -564,6 +607,7 @@ const MainApp = () => {
                 isDarkMode={currentTheme === 'dark'}
                 toggleTheme={toggleTheme}
                 fileManager={fileManager}
+                isHeaderVisible={isHeaderVisible}
               />
             </Content>
             <EditorStatusBar fileManager={fileManager} />

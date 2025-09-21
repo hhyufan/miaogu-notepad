@@ -70,7 +70,7 @@ const getFileNameFromPath = (path, t) => {
  */
 const getLanguageFromFileName = (fileName) => {
     if (!fileName) return 'plaintext';
-    
+
     const extension = fileName.toLowerCase().split('.').pop();
     return extensionToLanguage[extension] || 'plaintext';
 };
@@ -95,7 +95,7 @@ const AppHeader = ({ fileManager }) => {
     const [selectedFiles, setSelectedFiles] = useState([]);
     const selectedFilesRef = useRef([]);
     const fileNameInputRef = useRef(null);
-    
+
     // 创建语言设置的ref，供CodeEditor使用
     const languageRef = useRef('plaintext');
 

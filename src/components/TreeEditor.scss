@@ -66,6 +66,8 @@
     flex-direction: column;
     flex: 1;
     padding: calc(var(--tree-font-size, var(--editor-font-size, 16px)) * 1);
+    overflow-y: auto; /* 确保ant-card-body可以滚动 */
+    min-height: 0; /* 允许flex子元素收缩 */
   }
 
   &.with-background .ant-tree {

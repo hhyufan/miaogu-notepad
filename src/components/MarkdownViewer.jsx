@@ -6,7 +6,8 @@
  */
 
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { Typography, Image, message } from 'antd';
+import { Image, message, FloatButton } from 'antd';
+import { VerticalAlignTopOutlined } from '@ant-design/icons';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -18,8 +19,8 @@ import MermaidRenderer from './MermaidRenderer';
 import { useTheme } from '../hooks/redux';
 import { useI18n } from '../hooks/useI18n';
 import { convertFileSrc } from '@tauri-apps/api/core';
-import { splitPath, buildFullPath, normalizePath, resolvePath } from '../utils/pathUtils';
-import { handleLinkClick, attachLinkHandler } from '../utils/linkUtils';
+import { resolvePath } from '../utils/pathUtils';
+import { handleLinkClick } from '../utils/linkUtils';
 const { useToken } = theme;
 
 Prism.plugins.autoloader.languages_path =
@@ -56,27 +57,21 @@ const AutoTreeH1 = ({ titleText, isDarkMode, containerRef, children, currentFile
             continue;
           }
 
-          // 使用convertFileSrc + fetch方式检查文件是否存在
+          // 使用readTextFile直接读取文件，避免convertFileSrc的500错误
           try {
-            const { convertFileSrc } = await import('@tauri-apps/api/core');
-            const assetUrl = convertFileSrc(fullPath);
-            const response = await fetch(assetUrl);
+            const { readTextFile } = await import('@tauri-apps/plugin-fs');
+            const text = await readTextFile(fullPath);
 
-            if (response.ok) {
-              // 文件存在，读取内容
-              const text = await response.text();
-
-              // 确保有实际内容
-              if (text.trim().length > 0) {
-                // 如果文件在trees目录下，只传递文件名给TreeViewer
-                const fileName = path.startsWith('trees/') ? path.replace('trees/', '') : path;
-                setTreeFilePath(fileName);
-                return;
-              }
+            // 确保有实际内容
+            if (text.trim().length > 0) {
+              // 如果文件在trees目录下，只传递文件名给TreeViewer
+              const fileName = path.startsWith('trees/') ? path.replace('trees/', '') : path;
+              setTreeFilePath(fileName);
+              return;
             }
           } catch (fetchError) {
-            // 如果fetch失败，静默跳过这个文件
-            (`文件访问失败，跳过文件: ${fullPath}`, fetchError);
+            // 如果readTextFile失败，静默跳过这个文件
+
           }
         } catch (error) {
           // 静默处理错误，继续检查下一个路径
@@ -699,13 +694,14 @@ const MarkdownRenderer = React.memo(({ content, currentFileName, currentFolder, 
   );
 });
 
-const MarkdownViewer = ({ content, fileName, currentFolder, onClose, openFile }) => {
+const MarkdownViewer = ({ content, fileName, currentFolder, onClose, openFile, isHeaderVisible = true }) => {
   const { theme: currentTheme } = useTheme();
   const localIsDarkMode = currentTheme === 'dark';
   const [zoomLevel, setZoomLevel] = useState(1); // 缩放级别，1为默认大小
+  const [showBackToTop, setShowBackToTop] = useState(false);
   const containerRef = useRef(null);
 
-  // 鼠标滚轮缩放功能
+  // 鼠标滚轮缩放功能和滚动监听
   useEffect(() => {
     const handleWheel = (e) => {
       if (e.ctrlKey) {
@@ -717,15 +713,31 @@ const MarkdownViewer = ({ content, fileName, currentFolder, onClose, openFile })
           return Math.max(0.5, Math.min(3, newZoom));
         });
       }
+      // 对于非Ctrl+滚轮事件，不阻止默认行为，让浏览器处理
+    };
+
+    const handleScroll = () => {
+      // 检查容器的滚动位置
+      const element = containerRef.current;
+      if (element) {
+        const scrollTop = element.scrollTop;
+        setShowBackToTop(scrollTop > 300);
+      }
     };
 
     const element = containerRef.current;
     if (element) {
+      // 使用passive: false是因为需要preventDefault来阻止缩放时的默认滚动行为
       element.addEventListener('wheel', handleWheel, { passive: false });
-      return () => {
-        element.removeEventListener('wheel', handleWheel);
-      };
+      element.addEventListener('scroll', handleScroll, { passive: true });
     }
+
+    return () => {
+      if (element) {
+        element.removeEventListener('wheel', handleWheel);
+        element.removeEventListener('scroll', handleScroll);
+      }
+    };
   }, []);
 
   // 监听Ctrl + /快捷键关闭预览
@@ -749,12 +761,13 @@ const MarkdownViewer = ({ content, fileName, currentFolder, onClose, openFile })
       className="markdown-viewer-container"
       style={{
         width: '100%',
-        minHeight: '100vh',
+        height: '100%', // 改为100%，让父容器控制高度
         backgroundColor: 'transparent',
         padding: '24px',
-        paddingTop: '60px', // 为主题切换按钮留出空间
+        paddingTop: isHeaderVisible ? '40px' : '16px', // 减少顶部间距，避免显示过低
         paddingRight: '80px', // 为主题切换按钮留出空间
-        zoom: zoomLevel // 应用缩放
+        zoom: zoomLevel, // 应用缩放
+        overflow: 'auto' // 添加滚动
       }}
     >
       <MarkdownRenderer
@@ -765,6 +778,23 @@ const MarkdownViewer = ({ content, fileName, currentFolder, onClose, openFile })
         containerRef={containerRef}
         openFile={openFile}
       />
+      {showBackToTop && content && (
+        <FloatButton
+          icon={<VerticalAlignTopOutlined />}
+          onClick={() => {
+            const element = containerRef.current;
+            if (element) {
+              element.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+          }}
+          style={{
+            position: 'fixed',
+            bottom: '40px',
+            right: '20px',
+            zIndex: 1000
+          }}
+        />
+      )}
     </div>
   );
 };

@@ -17,6 +17,7 @@ import {
   message,
   Tooltip,
   Card,
+  FloatButton,
 } from "antd";
 import {
   PlusOutlined,
@@ -30,6 +31,7 @@ import {
   ZoomInOutlined,
   ZoomOutOutlined,
   OneToOneOutlined,
+  VerticalAlignTopOutlined,
 } from "@ant-design/icons";
 import "./TreeEditor.scss";
 
@@ -170,7 +172,7 @@ const treeToText = (nodes, level = 0, newNodeText = '[新节点]') => {
  * @param {boolean} props.isDarkMode - 是否为暗色主题
  * @returns {JSX.Element} 树形编辑器组件
  */
-const TreeEditor = ({ fileManager, isDarkMode }) => {
+const TreeEditor = ({ fileManager, isDarkMode, isHeaderVisible }) => {
   const { t } = useTranslation();
   const { backgroundEnabled, backgroundImage, fontSize } = useSelector((state) => state.theme);
   const hasBackground = backgroundEnabled && backgroundImage;
@@ -184,6 +186,15 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
   const [_, setIsComposing] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
   const inputRef = useRef(null);
+  const treeContainerRef = useRef(null);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  const [debugMode, setDebugMode] = useState(false); // 调试模式硬编码为false
+  const [debugInfo, setDebugInfo] = useState({
+    lastScrollEvent: null,
+    scrollEvents: [],
+    showBackToTopState: false,
+    currentFileState: false
+  });
 
   const { currentFile, updateCode } = fileManager;
 
@@ -227,26 +238,120 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
     }
   }, [currentFile?.content, isInternalOperation]);
 
+  // 滚动监听和返回顶部按钮
   useEffect(() => {
-    const handleWheel = (e) => {
-      if (e.ctrlKey) {
-        e.preventDefault();
-        const delta = e.deltaY > 0 ? -0.1 : 0.1;
-        setZoomLevel(prev => {
-          const newZoom = prev + delta;
-          return Math.max(0.5, Math.min(3, newZoom));
-        });
+    if (!currentFile) return;
+
+
+
+    // 找到真正的滚动容器 - code-editor-container
+    const codeEditorContainer = document.querySelector('.code-editor-container');
+
+    if (!codeEditorContainer) {
+      console.warn('TreeEditor: 未找到 .code-editor-container 元素');
+      return;
+    }
+
+
+
+
+    // 创建滚动处理函数
+    const handleScroll = (event) => {
+      try {
+        const scrollTop = event.target.scrollTop || 0;
+
+
+
+        // 更新调试信息
+        const eventInfo = {
+          time: new Date().toLocaleTimeString(),
+          container: 'code-editor-container',
+          scrollTop: scrollTop,
+          threshold: scrollTop > 100
+        };
+
+        setDebugInfo(prev => ({
+          ...prev,
+          lastScrollEvent: eventInfo,
+          scrollEvents: [...prev.scrollEvents.slice(-4), eventInfo],
+          showBackToTopState: scrollTop > 100,
+          currentFileState: !!currentFile
+        }));
+
+        // 更新按钮显示状态
+        if (scrollTop > 100) {
+
+          setShowBackToTop(true);
+        } else {
+
+          setShowBackToTop(false);
+        }
+      } catch (error) {
+        console.error('TreeEditor: 滚动处理错误', error);
       }
     };
 
-    const treeContainer = document.querySelector('.tree-container');
-    if (treeContainer) {
-      treeContainer.addEventListener('wheel', handleWheel, { passive: false });
-      return () => {
-        treeContainer.removeEventListener('wheel', handleWheel);
+    // 绑定滚动事件
+    codeEditorContainer.addEventListener('scroll', handleScroll, { passive: true });
+
+
+    // 检查初始滚动位置
+    const initialScrollTop = codeEditorContainer.scrollTop || 0;
+
+
+    if (initialScrollTop > 100) {
+
+      setShowBackToTop(true);
+
+      // 更新初始调试信息
+      const initialEventInfo = {
+        time: new Date().toLocaleTimeString(),
+        container: 'code-editor-container (初始)',
+        scrollTop: initialScrollTop,
+        threshold: true
       };
+
+      setDebugInfo(prev => ({
+        ...prev,
+        lastScrollEvent: initialEventInfo,
+        scrollEvents: [initialEventInfo],
+        showBackToTopState: true,
+        currentFileState: !!currentFile
+      }));
     }
-  }, []);
+
+    // 绑定缩放功能的滚轮事件
+    const container = treeContainerRef.current;
+    const scrollListeners = [];
+    if (container) {
+      const handleWheel = (e) => {
+        if (e.ctrlKey) {
+          e.preventDefault();
+          const delta = e.deltaY > 0 ? -0.1 : 0.1;
+          setZoomLevel(prev => {
+            const newZoom = prev + delta;
+            return Math.max(0.5, Math.min(3, newZoom));
+          });
+        }
+      };
+
+      container.addEventListener('wheel', handleWheel, { passive: false });
+      scrollListeners.push({ element: container, handler: handleWheel, isWheel: true });
+    }
+
+    // 清理函数
+    return () => {
+
+      codeEditorContainer.removeEventListener('scroll', handleScroll);
+      scrollListeners.forEach(({ element, handler, isWheel }) => {
+        if (isWheel) {
+          element.removeEventListener('wheel', handler);
+        } else {
+          element.removeEventListener('scroll', handler);
+        }
+      });
+    };
+  }, [currentFile, treeData]); // 添加treeData依赖，确保树数据加载后重新绑定
 
   const handleInputChange = (_) => {
   };
@@ -727,6 +832,7 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
 
       <div
         className="tree-container"
+        ref={treeContainerRef}
         style={{
           zoom: zoomLevel
         }}
@@ -771,6 +877,44 @@ const TreeEditor = ({ fileManager, isDarkMode }) => {
           </div>
         )}
       </div>
+
+      {/* 返回顶部悬浮按钮 - F11模式下也显示 */}
+      
+      {showBackToTop && currentFile && (
+        <FloatButton
+          icon={<VerticalAlignTopOutlined />}
+          onClick={() => {
+            // 直接使用我们确认的正确滚动容器
+            const codeEditorContainer = document.querySelector('.code-editor-container');
+            if (codeEditorContainer) {
+
+
+
+              // 平滑滚动到顶部
+              codeEditorContainer.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+              });
+
+              // 备用方案：直接设置scrollTop
+              setTimeout(() => {
+                if (codeEditorContainer.scrollTop > 0) {
+                  codeEditorContainer.scrollTop = 0;
+
+                }
+              }, 100);
+            } else {
+              console.warn('TreeEditor: 未找到 .code-editor-container 滚动容器');
+            }
+          }}
+          style={{
+            position: 'fixed', // 改为fixed定位，相对于视口定位
+            right: 20,
+            bottom: 40, // F11模式下调整位置
+            zIndex: 1000
+          }}
+        />
+      )}
     </Card>
   );
 };
