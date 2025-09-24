@@ -205,6 +205,15 @@ body {
   font-size: 0.9rem;
 }
 
+/* 脚注文本颜色 - 明暗主题不同的灰色 */
+[data-theme='dark'] .markdown-viewer-container .footnotes {
+  color: #9ca3af; /* 暗主题使用较亮的灰色 */
+}
+
+[data-theme='light'] .markdown-viewer-container .footnotes {
+  color: #6b7280; /* 明主题使用较暗的灰色 */
+}
+
 /* 隐藏脚注标题 */
 .markdown-viewer-container .footnotes h2 {
   display: none;
@@ -229,7 +238,7 @@ body {
 }
 
 .markdown-viewer-container .footnote-ref:hover {
-  text-decoration: underline;
+  text-decoration: none;
 }
 
 .markdown-viewer-container .footnote-backref {
@@ -240,7 +249,7 @@ body {
 }
 
 .markdown-viewer-container .footnote-backref:hover {
-  text-decoration: underline;
+  text-decoration: none;
 }
 
 /* 脚注高亮效果 */

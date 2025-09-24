@@ -480,7 +480,13 @@ const MarkdownRenderer = React.memo(({ content, currentFileName, currentFolder, 
               // 对于脚注span，确保内容能正确渲染Markdown
               if (id && id.startsWith('fn-')) {
                 return (
-                  <span id={id} {...props}>
+                  <span 
+                    id={id} 
+                    style={{
+                      color: isDarkMode ? '#9ca3af' : '#6b7280' // 明暗主题不同的灰色
+                    }}
+                    {...props}
+                  >
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       rehypePlugins={[rehypeRaw]}
@@ -497,7 +503,7 @@ const MarkdownRenderer = React.memo(({ content, currentFileName, currentFolder, 
                           ) : (
                             <code style={{
                               backgroundColor: isDarkMode ? '#201f1b' : '#e6f3ff',
-                              color: isDarkMode ? '#d1d5db' : '#374151',
+                              color: isDarkMode ? '#9ca3af' : '#6b7280', // 使用与脚注文本相同的灰色
                               padding: '3px 6px',
                               margin: '0 6px',
                               borderRadius: '4px',
@@ -531,7 +537,7 @@ const MarkdownRenderer = React.memo(({ content, currentFileName, currentFolder, 
                                 style={{
                                   ...getLinkStyle(token),
                                   cursor: 'pointer',
-                                  textDecoration: 'underline'
+                                  textDecoration: 'none'
                                 }}
                                 onClick={handleClick}
                                 {...props}
@@ -549,7 +555,7 @@ const MarkdownRenderer = React.memo(({ content, currentFileName, currentFolder, 
                         },
                       }}
                     >
-                      {typeof children === 'string' ? children : children}
+                      {typeof children === 'string' ? children : String(children || '')}
                     </ReactMarkdown>
                   </span>
                 );
@@ -567,7 +573,7 @@ const MarkdownRenderer = React.memo(({ content, currentFileName, currentFolder, 
                     style={{
                       ...getLinkStyle(token),
                       cursor: 'pointer',
-                      textDecoration: 'underline'
+                      textDecoration: 'none'
                     }}
                     title={href}
                     {...props}
