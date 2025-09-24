@@ -11,6 +11,7 @@ import { VerticalAlignTopOutlined } from '@ant-design/icons';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
+import rehypeSanitize from 'rehype-sanitize';
 import Prism from 'prismjs';
 import 'prismjs/plugins/autoloader/prism-autoloader';
 import { theme } from 'antd';
@@ -21,6 +22,7 @@ import { useI18n } from '../hooks/useI18n';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { resolvePath } from '../utils/pathUtils';
 import { handleLinkClick } from '../utils/linkUtils';
+import { parseFootnotes, addFootnoteJumpHandlers } from '../utils/footnoteParser';
 const { useToken } = theme;
 
 Prism.plugins.autoloader.languages_path =
@@ -241,6 +243,30 @@ const getTableHeaderStyle = (token, isDarkMode) => ({
   textAlign: 'left'
 });
 
+// 代码块样式函数
+const getCodeStyle = (token) => ({
+  ...getBaseStyle(token),
+  backgroundColor: token['colorBgContainer'],
+  border: `1px solid ${token['colorBorder']}`,
+  borderRadius: '4px',
+  padding: '0.5rem',
+  fontSize: '0.9rem',
+  fontFamily: "'Fira Code', 'Monaco', 'Consolas', monospace"
+});
+
+// 内联代码样式函数
+const getInlineCodeStyle = (token) => ({
+  ...getBaseStyle(token),
+  backgroundColor: token['colorBgContainer'],
+  border: `1px solid ${token['colorBorder']}`,
+  borderRadius: '3px',
+  padding: '0.2rem 0.4rem',
+  margin: '0 0.2rem',
+  fontSize: '0.85rem',
+  fontFamily: "'Fira Code', 'Monaco', 'Consolas', monospace",
+  color: token['colorPrimary']
+});
+
 // 语言显示名称映射表
 const LANGUAGE_DISPLAY_MAP = {
   html: 'HTML',
@@ -273,6 +299,19 @@ const LANGUAGE_DISPLAY_MAP = {
 
 const MarkdownRenderer = React.memo(({ content, currentFileName, currentFolder, isDarkMode, containerRef, openFile }) => {
   const { token } = useToken();
+
+  // 处理脚注解析
+  const processedContent = useMemo(() => {
+    if (!content) return '';
+    const result = parseFootnotes(content);
+
+
+
+
+
+
+    return result.content;
+  }, [content]);
   const { t } = useI18n();
 
   // 使用useMemo来稳定content，避免不必要的重新渲染
@@ -382,14 +421,22 @@ const MarkdownRenderer = React.memo(({ content, currentFileName, currentFolder, 
     addLanguageLabels();
   }, [addLanguageLabels]);
 
-  // 在内容更新后高亮代码
+  // 添加脚注跳转功能
+  const addFootnoteJumpHandlersCallback = useCallback(() => {
+    if (!containerRef?.current) return;
+    // 使用自定义脚注跳转处理器
+    addFootnoteJumpHandlers(containerRef.current);
+  }, []);
+
+  // 在内容更新后高亮代码并添加脚注跳转功能
   useEffect(() => {
     const timer = setTimeout(() => {
       highlightCode();
+      addFootnoteJumpHandlersCallback();
     }, 100);
 
     return () => clearTimeout(timer);
-  }, [memoizedContent, highlightCode]);
+  }, [processedContent, highlightCode, addFootnoteJumpHandlersCallback]);
 
   return (
     <div ref={containerRef}>
@@ -397,7 +444,9 @@ const MarkdownRenderer = React.memo(({ content, currentFileName, currentFolder, 
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           rehypePlugins={[rehypeRaw]}
+          remarkRehypeOptions={{ allowDangerousHtml: true }}
           skipHtml={false}
+          children={processedContent}
           components={{
             h1: ({ children }) => {
               const titleText = typeof children === 'string' ? children :
@@ -427,7 +476,107 @@ const MarkdownRenderer = React.memo(({ content, currentFileName, currentFolder, 
             ul: ({ children }) => <ul style={getListStyle(token)}>{children}</ul>,
             ol: ({ children }) => <ol style={getListStyle(token)}>{children}</ol>,
             li: ({ children }) => <li style={getListItemStyle(token)}>{children}</li>,
-            a: ({ children, href }) => {
+            span: ({ children, id, ...props }) => {
+              // 对于脚注span，确保内容能正确渲染Markdown
+              if (id && id.startsWith('fn-')) {
+                return (
+                  <span id={id} {...props}>
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeRaw]}
+                      remarkRehypeOptions={{ allowDangerousHtml: true }}
+                      skipHtml={false}
+                      components={{
+                        p: ({ children }) => <>{children}</>,
+                        code: ({ children, className, ...props }) => {
+                          const match = /language-(\w+)/.exec(className || '');
+                          return match ? (
+                            <code className={className} style={getCodeStyle(token)} {...props}>
+                              {children}
+                            </code>
+                          ) : (
+                            <code style={{
+                              backgroundColor: isDarkMode ? '#201f1b' : '#e6f3ff',
+                              color: isDarkMode ? '#d1d5db' : '#374151',
+                              padding: '3px 6px',
+                              margin: '0 6px',
+                              borderRadius: '4px',
+                              fontSize: '0.9em',
+                              fontFamily: "'JetBrains Mono', 'Fira Code', 'Fira Mono', Consolas, Menlo, Courier, monospace",
+                              fontWeight: '500',
+                              border: `1px solid ${isDarkMode ? '#2563eb' : '#93c5fd'}`
+                            }} {...props}>
+                              {children}
+                            </code>
+                          );
+                        },
+                        a: ({ children, href, ...props }) => {
+                          // 处理脚注回引链接
+                          if (href && href.startsWith('#')) {
+                            const handleClick = (e) => {
+                              e.preventDefault();
+                              const targetId = href.substring(1);
+                              const targetElement = containerRef.current?.querySelector('#' + targetId);
+                              if (targetElement) {
+                                targetElement.scrollIntoView({
+                                  behavior: 'smooth',
+                                  block: 'center'
+                                });
+                              }
+                            };
+
+                            return (
+                              <a
+                                href={href}
+                                style={{
+                                  ...getLinkStyle(token),
+                                  cursor: 'pointer',
+                                  textDecoration: 'underline'
+                                }}
+                                onClick={handleClick}
+                                {...props}
+                              >
+                                {children}
+                              </a>
+                            );
+                          }
+
+                          return (
+                            <a href={href} style={getLinkStyle(token)} {...props}>
+                              {children}
+                            </a>
+                          );
+                        },
+                      }}
+                    >
+                      {typeof children === 'string' ? children : children}
+                    </ReactMarkdown>
+                  </span>
+                );
+              }
+              return <span id={id} {...props}>{children}</span>;
+            },
+            a: ({ children, href, id, className, ...props }) => {
+              // 如果是锚点链接（以#开头），使用默认的链接行为
+              if (href && href.startsWith('#')) {
+                return (
+                  <a
+                    id={id}
+                    href={href}
+                    className={className}
+                    style={{
+                      ...getLinkStyle(token),
+                      cursor: 'pointer',
+                      textDecoration: 'underline'
+                    }}
+                    title={href}
+                    {...props}
+                  >
+                    {children}
+                  </a>
+                );
+              }
+
               const handleClick = async (event) => {
                 event.preventDefault();
                 event.stopPropagation();
@@ -690,9 +839,9 @@ const MarkdownRenderer = React.memo(({ content, currentFileName, currentFolder, 
             }
           }}
         >
-          {memoizedContent}
+          {processedContent}
         </ReactMarkdown>
-      ), [memoizedContent, token, isDarkMode, currentFileName, currentFolder])}
+      ), [processedContent, token, isDarkMode, currentFileName, currentFolder])}
     </div>
   );
 });

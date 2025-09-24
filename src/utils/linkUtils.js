@@ -17,6 +17,9 @@ import { resolvePath } from './pathUtils';
 export const isExternalLink = (href) => {
   if (!href) return false;
   
+  // 锚点链接不是外部链接
+  if (href.startsWith('#')) return false;
+  
   // 检查是否为HTTP/HTTPS链接
   if (href.startsWith('http://') || href.startsWith('https://')) {
     return true;
@@ -74,6 +77,11 @@ export const handleLinkClick = async (href, currentFolder, openFile) => {
   if (!href) return false;
   
   try {
+    // 锚点链接应该由浏览器默认处理，不在这里处理
+    if (href.startsWith('#')) {
+      return false; // 让调用方知道这不是我们处理的链接类型
+    }
+    
     // 检查是否为外部链接
     if (isExternalLink(href)) {
       // 使用系统默认浏览器打开外部链接

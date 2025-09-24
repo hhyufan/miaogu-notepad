@@ -197,6 +197,60 @@ body {
   background-color: transparent !important;
 }
 
+/* 脚注样式 */
+.markdown-viewer-container .footnotes {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border, #d9d9d9);
+  font-size: 0.9rem;
+}
+
+/* 隐藏脚注标题 */
+.markdown-viewer-container .footnotes h2 {
+  display: none;
+}
+
+.markdown-viewer-container .footnotes ol {
+  padding-left: 1rem;
+}
+
+.markdown-viewer-container .footnotes li {
+  margin: 0.5rem 0;
+  line-height: 1.5;
+}
+
+.markdown-viewer-container .footnote-ref {
+  color: var(--color-primary, #1890ff);
+  text-decoration: none;
+  font-size: 0.8em;
+  vertical-align: super;
+  margin: 0 2px;
+  cursor: pointer;
+}
+
+.markdown-viewer-container .footnote-ref:hover {
+  text-decoration: underline;
+}
+
+.markdown-viewer-container .footnote-backref {
+  color: var(--color-primary, #1890ff);
+  text-decoration: none;
+  margin-left: 0.5rem;
+  cursor: pointer;
+}
+
+.markdown-viewer-container .footnote-backref:hover {
+  text-decoration: underline;
+}
+
+/* 脚注高亮效果 */
+.markdown-viewer-container .footnote-highlight {
+  border: 2px solid #1890ff !important;
+  border-radius: 4px !important;
+  transition: all 0.3s ease !important;
+  background-color: rgba(24, 144, 255, 0.1) !important;
+}
+
 /* MarkdownViewer 图片样式优化 */
 .markdown-viewer-container .ant-image {
   max-width: 100% !important;
