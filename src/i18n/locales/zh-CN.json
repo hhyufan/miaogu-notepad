@@ -63,6 +63,9 @@
     "closeOthers": "关闭其他",
     "closeAll": "关闭全部"
   },
+  "breadcrumb": {
+    "openInExplorer": "在资源管理器中打开"
+  },
   "editor": {
     "placeholder": "开始编写您的代码...",
     "lineEnding": {

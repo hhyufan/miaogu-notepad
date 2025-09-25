@@ -309,6 +309,27 @@ const EditorStatusBar = ({ fileManager }) => {
         }))
     }, [directoryContents, handleFileClick])
 
+    // 处理右键菜单点击
+    const handleContextMenuClick = useCallback(async (index) => {
+        const dirPath = buildPath(index)
+        if (!dirPath) return
+
+        try {
+            await fileApi.showInExplorer(dirPath)
+        } catch (error) {
+            console.error('打开资源管理器失败:', error)
+        }
+    }, [buildFullPath, pathSegments])
+
+    // 生成右键菜单项
+    const getContextMenuItems = useCallback((index) => [
+        {
+            key: 'openInExplorer',
+            label: t('breadcrumb.openInExplorer'),
+            onClick: () => handleContextMenuClick(index)
+        }
+    ], [handleContextMenuClick, t])
+
     // 生成面包屑items
     const breadcrumbItems = useMemo(() => {
         return pathSegments.map((segment, index) => ({
@@ -327,13 +348,19 @@ const EditorStatusBar = ({ fileManager }) => {
                         })
                     }}
                 >
-                    <span style={{ cursor: 'pointer' }}>
-                        {/^[A-Z]:\\$/i.test(segment) ? segment.substring(0, 2) : segment}
-                    </span>
+                    <Dropdown
+                        menu={{ items: getContextMenuItems(index) }}
+                        trigger={['contextMenu']}
+                        placement="bottomLeft"
+                    >
+                        <span style={{ cursor: 'pointer' }}>
+                            {/^[A-Z]:\\$/i.test(segment) ? segment.substring(0, 2) : segment}
+                        </span>
+                    </Dropdown>
                 </Dropdown>
             )
         }))
-    }, [pathSegments, getDropdownItems, handleBreadcrumbClick])
+    }, [pathSegments, getDropdownItems, handleBreadcrumbClick, getContextMenuItems])
 
 
 
