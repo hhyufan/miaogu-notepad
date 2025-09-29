@@ -6,11 +6,30 @@
  */
 
 import './TabBar.scss'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react'
 import { useSelector } from 'react-redux'
 import { EditOutlined, FileAddOutlined } from '@ant-design/icons'
 import { Tabs, Dropdown } from 'antd'
 import { useI18n } from '../hooks/useI18n'
+import extensionToLanguage from '../configs/file-extensions.json'
+
+/**
+ * 根据文件名推断编程语言
+ * @param {string} fileName - 文件名
+ * @returns {string} 编程语言标识符
+ */
+const getLanguageFromFileName = (fileName) => {
+    if (!fileName) return 'plaintext';
+    const extension = fileName.toLowerCase().split('.').pop();
+
+    // 🔥 特殊处理：对于.mgtree文件，返回mgtree而不是plaintext
+    if (extension === 'mgtree') {
+
+        return 'mgtree';
+    }
+
+    return extensionToLanguage[extension] || 'plaintext';
+};
 
 /**
  * 标签页组件
@@ -30,6 +49,100 @@ const TabBar = ({ fileManager }) => {
     const { theme, backgroundEnabled, backgroundImage } = useSelector(state => state.theme)
     const hasBackground = backgroundEnabled && backgroundImage
     const [contextMenu, setContextMenu] = useState({ visible: false, tabKey: null })
+
+    // 创建语言设置的ref，供CodeEditor使用
+    const languageRef = useRef('plaintext');
+
+    // 从DOM标签页获取当前活动标签页的文件名和语言
+    const getLanguageFromActiveTab = useCallback(() => {
+      try {
+        // 查找aria-selected="true"的标签页按钮
+        const activeTabBtn = document.querySelector('.ant-tabs-tab-btn[aria-selected="true"]');
+        if (activeTabBtn) {
+          // 获取按钮内的span元素
+          const spanElement = activeTabBtn.querySelector('span');
+          if (spanElement) {
+            const fileName = spanElement.textContent || spanElement.innerText || '';
+
+            if (fileName.trim()) {
+              return getLanguageFromFileName(fileName.trim());
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to get current tab file name from DOM:', error);
+      }
+      return 'plaintext';
+    }, []);
+
+    // 更新languageRef的值
+    const updateLanguageRef = useCallback(() => {
+        const language = getLanguageFromActiveTab();
+        if (languageRef.current !== language) {
+
+            languageRef.current = language;
+        }
+    }, [getLanguageFromActiveTab]);
+  useEffect(() => {
+    updateLanguageRef()
+  });
+    // 监听标签页变化并更新语言
+    useEffect(() => {
+        // 初始更新
+        updateLanguageRef();
+
+        // 创建MutationObserver监听DOM变化
+        const observer = new MutationObserver((mutations) => {
+            let shouldUpdate = false;
+            mutations.forEach((mutation) => {
+                // 监听aria-selected属性变化
+                if (mutation.type === 'attributes' && mutation.attributeName === 'aria-selected') {
+                    shouldUpdate = true;
+                }
+                // 监听class变化（ant-tabs-tab-active）
+                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                    const target = mutation.target;
+                    if (target.classList && (target.classList.contains('ant-tabs-tab') || target.classList.contains('ant-tabs-tab-btn'))) {
+                        shouldUpdate = true;
+                    }
+                }
+                // 监听标签页内容变化
+                if (mutation.type === 'childList') {
+                    const target = mutation.target;
+                    if (target.classList && (target.classList.contains('ant-tabs-tab') || target.classList.contains('ant-tabs-tab-btn'))) {
+                        shouldUpdate = true;
+                    }
+                }
+            });
+
+            if (shouldUpdate) {
+                // 延迟更新，确保DOM已完全更新
+                setTimeout(updateLanguageRef, 10);
+            }
+        });
+
+        // 开始观察标签页容器
+        const tabsContainer = document.querySelector('.ant-tabs-nav');
+        if (tabsContainer) {
+            observer.observe(tabsContainer, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['aria-selected', 'class']
+            });
+        }
+
+        return () => {
+            observer.disconnect();
+        };
+    }, [updateLanguageRef]);
+
+    // 将languageRef暴露给fileManager，供其他组件使用
+    useEffect(() => {
+        if (fileManager) {
+            fileManager.tabBarRef = { languageRef };
+        }
+    }, [fileManager]);
 
     const onChange = useCallback((activeKey) => {
         switchToFile(activeKey)
@@ -120,7 +233,7 @@ const TabBar = ({ fileManager }) => {
     })), [openedFiles, getFileKey, contextMenuItems])
 
     useEffect(() => {
-        if (openedFiles.length === 0 || (openedFiles.length === 1 && openedFiles[0].isTemporary)) {
+        if (openedFiles.length === 0) {
             document.documentElement.style.setProperty('--tab-bar-height', '0px')
         } else {
             document.documentElement.style.setProperty('--tab-bar-height', '40px')
@@ -129,9 +242,9 @@ const TabBar = ({ fileManager }) => {
         return () => {
             document.documentElement.style.setProperty('--tab-bar-height', '0px')
         }
-    }, [openedFiles.length, openedFiles])
+    }, [openedFiles.length])
 
-    if (openedFiles.length === 0 || (openedFiles.length === 1 && openedFiles[0].isTemporary)) {
+    if (openedFiles.length === 0) {
         return null
     }
 

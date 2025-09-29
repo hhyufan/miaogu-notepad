@@ -5,14 +5,14 @@
  * @version 1.2.0
  */
 
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
-import { Modal } from 'antd'
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react'
+import {Modal} from 'antd'
 import tauriApi from '../utils/tauriApi';
+import {useI18n} from './useI18n'
+import {listen} from '@tauri-apps/api/event'
+import {withFileTransition} from '../utils/viewTransition'
 
 const { file: fileApi } = tauriApi;
-import { useI18n } from './useI18n'
-import { listen } from '@tauri-apps/api/event'
-import { withFileTransition } from '../utils/viewTransition'
 
 /**
  * 防抖函数 - 延迟执行函数调用
@@ -199,6 +199,9 @@ export const useFileManager = () => {
 
     const userSavingFiles = useRef(new Set())
 
+    // 获取编辑器实时内容的方法，由CodeEditor组件设置
+    const getEditorContent = useRef(null)
+
     const openedFilesMap = useMemo(() => {
         const map = new Map()
         openedFiles.forEach(file => map.set(file.path, file))
@@ -354,6 +357,28 @@ export const useFileManager = () => {
             return fileFromMap;
         }
 
+        // 如果没有在map中找到文件，但openedFiles中有文件且currentFilePath匹配，直接返回该文件
+        if (currentFilePath && openedFiles.length > 0) {
+            const fileFromArray = openedFiles.find(f => f.path === currentFilePath);
+            if (fileFromArray) {
+                return fileFromArray;
+            }
+        }
+
+        // 如果没有当前文件路径，返回空对象
+        if (!currentFilePath) {
+            return {
+                path: '',
+                name: '',
+                isTemporary: false,
+                isModified: false,
+                content: '',
+                originalContent: '',
+                encoding: 'UTF-8',
+                lineEnding: 'LF'
+            }
+        }
+
         let fileName = defaultFileName;
         if (currentFilePath && currentFilePath.startsWith('temp://')) {
             const tempFileName = currentFilePath.split('temp://')[1];
@@ -362,17 +387,41 @@ export const useFileManager = () => {
             }
         }
 
-        return {
+        // 当没有打开的文件时，创建临时文件
+        // 如果是初始化状态且没有编辑器内容，使用默认内容
+        let content = editorCode || '';
+        // 对于临时文件，确保内容与编辑器同步
+        if (currentFilePath && currentFilePath.startsWith('temp://') && editorCode !== undefined) {
+            content = editorCode;
+        }
+
+        const hasEditorContent = content && content.trim() !== ''
+
+        const tempFile = {
             path: currentFilePath || '',
             name: fileName,
             isTemporary: true,
-            isModified: false,
-            content: editorCode,
+            isModified: hasEditorContent,
+            content: content,
             originalContent: '',
             encoding: 'UTF-8',
             lineEnding: 'LF'
         }
-    }, [openedFilesMap, currentFilePath, defaultFileName, editorCode])
+
+        // 确保临时文件被添加到openedFiles中
+        if (currentFilePath && currentFilePath.startsWith('temp://')) {
+            setOpenedFiles((prev) => {
+                const existingIndex = prev.findIndex(f => f.path === currentFilePath);
+                if (existingIndex === -1) {
+                    // 如果临时文件不存在，添加它
+                    return [...prev, tempFile];
+                }
+                return prev;
+            });
+        }
+
+        return tempFile;
+    }, [openedFilesMap, currentFilePath, defaultFileName, editorCode, openedFiles])
 
     const currentCode = useMemo(() => {
         if (currentFile['isTemporary']) {
@@ -419,13 +468,18 @@ export const useFileManager = () => {
     }, [currentFilePath, throttledEditorUpdate])
 
     const closeEmptyCurrentTempFile = useCallback(() => {
-        if (currentFile && currentFile['isTemporary'] && !currentFile['isModified'] &&
-            (currentFile['content'] === '' || currentFile['content'] === currentFile['originalContent'])) {
-            setOpenedFiles((prev) => prev.filter(f => f.path !== currentFile['path']))
-            return true
+        if (currentFile && currentFile['isTemporary']) {
+            // 检查编辑器中的实际内容，而不仅仅依赖文件的isModified状态
+            const actualContent = editorCode || currentFile['content'] || ''
+            const isEmpty = actualContent.trim() === '' || actualContent === currentFile['originalContent']
+
+            if (!currentFile['isModified'] && isEmpty) {
+                setOpenedFiles((prev) => prev.filter(f => f.path !== currentFile['path']))
+                return true
+            }
         }
         return false
-    }, [currentFile])
+    }, [currentFile, editorCode])
 
     const setOpenFile = useCallback(async (filePath, content = null, options = {}) => {
         try {
@@ -527,6 +581,24 @@ export const useFileManager = () => {
 
     const createFile = useCallback(async (fileName = null, initialContent = '') => {
         try {
+            // 在创建新文件之前，保存当前编辑器的内容到当前文件
+            if (currentFile && currentFile['isTemporary'] && editorCode && editorCode.trim() !== '') {
+                // 更新当前临时文件的内容，避免内容丢失
+                setOpenedFiles((prev) => {
+                    const targetIndex = prev.findIndex(file => file.path === currentFile.path)
+                    if (targetIndex !== -1) {
+                        const newFiles = [...prev]
+                        newFiles[targetIndex] = {
+                            ...currentFile,
+                            content: editorCode,
+                            isModified: true
+                        }
+                        return newFiles
+                    }
+                    return prev
+                })
+            }
+
             closeEmptyCurrentTempFile()
 
             const finalFileName = fileName || defaultFileName
@@ -545,7 +617,7 @@ export const useFileManager = () => {
 
             setOpenedFiles((prev) => [...prev, newFile])
             setCurrentFilePath(tempPath)
-            throttledEditorUpdate(initialContent)
+            setEditorCode(initialContent)
 
             if (!fileName) {
                 const match = defaultFileName.match(/(.*?)(\d*)$/)
@@ -558,7 +630,7 @@ export const useFileManager = () => {
         } catch (error) {
             handleError('createTempFileFailed', error)
         }
-    }, [closeEmptyCurrentTempFile, throttledEditorUpdate])
+    }, [closeEmptyCurrentTempFile, currentFile, editorCode])
 
     const updateCode = useCallback((newCode) => {
         if (editorCode === newCode) return
@@ -567,13 +639,19 @@ export const useFileManager = () => {
 
         setOpenedFiles((prev) => {
             const targetIndex = prev.findIndex(file => file.path === currentFilePath)
-            if (targetIndex === -1) return prev
+
+            // 如果没有找到对应的文件，直接返回，不进行任何更新
+            if (targetIndex === -1) {
+                console.warn('updateCode: 未找到对应文件', currentFilePath)
+                return prev
+            }
 
             const targetFile = prev[targetIndex]
             const isModified = targetFile.originalContent !== undefined
                 ? targetFile.originalContent !== newCode
                 : targetFile.content !== newCode
 
+            // 如果内容和修改状态都没有变化，直接返回
             if (targetFile.content === newCode && targetFile.isModified === isModified) {
                 return prev
             }
@@ -591,9 +669,7 @@ export const useFileManager = () => {
         if (currentFile && currentFile['isTemporary'] && currentFilePath) {
             debouncedAutoSave(currentFilePath, newCode)
         }
-
-        throttledEditorUpdate(newCode)
-    }, [editorCode, currentFilePath, currentFile, debouncedAutoSave, throttledEditorUpdate])
+    }, [editorCode, currentFilePath, currentFile, debouncedAutoSave])
 
     const updateDefaultFileName = useCallback((newName) => {
         if (!newName.trim()) return false
@@ -629,12 +705,13 @@ export const useFileManager = () => {
                 setCurrentFilePath(newCurrentPath)
 
                 if (newFiles.length === 0) {
-                    updateDefaultFileName(t('common.untitled'))
+                    // 当关闭最后一个文件时，清空编辑器
+                    setCurrentFilePath('')
                     setEditorCode('')
                     throttledEditorUpdate('')
-                    setTimeout(() => {
-                        createFile().then()
-                    }, 0)
+
+                    // 返回空数组，不自动创建临时文件
+                    return []
                 } else {
                     const firstFile = newFiles[0]
                     setEditorCode(firstFile.content)
@@ -650,7 +727,16 @@ export const useFileManager = () => {
         let targetPath = null
 
         try {
-            const contentToSave = editorCode
+            // 总是优先从编辑器获取实时内容，确保保存的是最新的编辑器内容
+            let contentToSave
+            if (getEditorContent.current && typeof getEditorContent.current === 'function') {
+                // 直接从编辑器获取实时内容
+                contentToSave = getEditorContent.current()
+            } else {
+                // 如果编辑器引用不可用，回退到文件状态或editorCode
+                contentToSave = currentFile?.content || editorCode
+            }
+
             const hasNoOpenFile = !currentFilePath || currentFilePath.startsWith('temp://')
 
             if (saveAs || hasNoOpenFile) {
@@ -658,19 +744,20 @@ export const useFileManager = () => {
 
                 if (!result) return { success: false, canceled: true }
                 targetPath = result
+
+                // 只有在用户选择了保存路径后才检查重复文件
+                const duplicateOpenedFile = openedFiles.find(
+                    (f) => f.path !== currentFilePath && f.path === targetPath
+                )
+
+                if (duplicateOpenedFile) {
+                    closeFile(duplicateOpenedFile.path)
+                }
             } else {
                 targetPath = currentFilePath
             }
 
             userSavingFiles.current.add(targetPath)
-
-            const duplicateOpenedFile = openedFiles.find(
-                (f) => f.path !== currentFilePath && f.path === targetPath
-            )
-
-            if (duplicateOpenedFile) {
-                closeFile(duplicateOpenedFile.path)
-            }
 
             const fileEncoding = currentFile['encoding'] || 'UTF-8'
             const saveResult = await fileApi.saveFile(targetPath, contentToSave, fileEncoding)
@@ -851,21 +938,76 @@ export const useFileManager = () => {
             if (oldPath.startsWith('temp://')) {
                 const newTempPath = `temp://${newName}`
 
-                setOpenedFiles((prev) =>
-                    prev.map((file) =>
-                        file.path === oldPath
-                            ? {
-                                ...file,
-                                path: newTempPath,
-                                name: newName
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                // 测试getEditorContent.current是否能正常工作
+                if (getEditorContent?.current) {
+                    try {
+                        const editorRealContent = getEditorContent.current()
+
+
+
+                    } catch (error) {
+                        console.error('获取编辑器实时内容时出错:', error)
+                    }
+                }
+
+                setOpenedFiles((prev) => {
+
+                  return prev.map((file) => {
+                      if (file.path === oldPath) {
+                        // 获取当前文件的实际内容
+                        let actualContent = file.content
+
+                        // 如果是当前正在编辑的文件，优先使用编辑器的实时内容
+                        if (oldPath === currentFilePath) {
+                          // 尝试从编辑器获取实时内容
+                          if (getEditorContent.current) {
+                            try {
+                              actualContent = getEditorContent.current()
+
+                            } catch (error) {
+                              console.warn('获取编辑器实时内容失败，使用editorCode:', error)
+                              actualContent = (editorCode !== undefined && editorCode !== null) ? editorCode : file.content
                             }
-                            : file
-                    )
-                )
+                          } else {
+                            // 如果getEditorContent不可用，使用editorCode
+                            actualContent = (editorCode !== undefined && editorCode !== null) ? editorCode : file.content
+
+                          }
+                        }
+
+                        return {
+                          ...file,
+                          path: newTempPath,
+                          name: newName,
+                          content: actualContent,
+                          isModified: oldPath === currentFilePath ?
+                            (actualContent !== file.originalContent) :
+                            file.isModified
+                        }
+                      }
+                      return file
+                    })
+                })
 
                 if (currentFilePath === oldPath) {
                     setCurrentFilePath(newTempPath)
+
                 }
+
 
                 return { success: true, newPath: newTempPath }
             }
@@ -1280,13 +1422,10 @@ export const useFileManager = () => {
         }
     }, [])
 
-    // 在编辑器启动时重置默认文件名
+    // 移除自动创建临时文件的逻辑，让编辑器在没有文件时显示欢迎界面
     useEffect(() => {
-        // 当编辑器初始化时，如果没有打开的文件，重置默认文件名
-        if (openedFiles.length === 0) {
-            updateDefaultFileName(t('common.untitled'))
-            throttledEditorUpdate('')
-        }
+        // 只更新默认文件名，不自动创建文件
+        updateDefaultFileName(t('common.untitled'))
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []) // 空依赖数组确保只在组件挂载时执行一次
 
@@ -1300,6 +1439,7 @@ export const useFileManager = () => {
         // 操作函数
         openFile,
         createFile,
+        newFile: createFile, // 添加newFile别名，指向createFile函数
         saveFile,
         closeFile,
         switchFile,
@@ -1316,7 +1456,10 @@ export const useFileManager = () => {
         updateFileContent,
 
         // AppHeader的ref引用，用于CodeEditor获取语言设置
-        appHeaderRef: null
+        appHeaderRef: null,
+
+        // 编辑器内容获取引用，用于CodeEditor设置获取实时内容的方法
+        getEditorContent
     }
 }
 

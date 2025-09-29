@@ -1,13 +1,13 @@
 /**
- * @fileoverview 编辑器状态栏组件 - 显示文件信息、编码、行尾符等状态信息
- * 提供文件路径导航、编码切换、行尾符设置、字体大小调节等功能
+ * @fileoverview 编辑器状态栏组件 - 显示文件路径、编码信息、光标位置和字符统计
+ * 提供文件路径面包屑导航、编码选择、实时光标位置和字符数统计功能
  * @author hhyufan
  * @version 1.2.0
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Breadcrumb, Button, Divider, Dropdown, Tooltip } from 'antd'
-import { FileOutlined, FolderOutlined, ZoomInOutlined, ZoomOutOutlined } from '@ant-design/icons'
+import { FileOutlined, FolderOutlined } from '@ant-design/icons'
 import { useCurrentFile, useFileActions } from '../hooks/useFileManager.jsx'
 import { useTheme } from '../hooks/redux'
 import { useI18n } from '../hooks/useI18n'
@@ -38,12 +38,15 @@ function standardizeEncodingName(encoding) {
  * 显示当前文件的状态信息，包括路径、编码、行尾符等，并提供相关操作
  * @param {Object} props - 组件属性
  * @param {Object} props.fileManager - 文件管理器实例
+ * @param {Object} props.cursorPosition - 光标位置信息 {lineNumber, column}
+ * @param {number} props.characterCount - 字符数统计
+ * @param {boolean} props.hasOpenFiles - 是否有打开的文件
  * @returns {JSX.Element} 状态栏组件
  */
-const EditorStatusBar = ({ fileManager }) => {
+const EditorStatusBar = ({ fileManager, cursorPosition = { lineNumber: 1, column: 1 }, characterCount = 0, hasOpenFiles }) => {
     const currentFile = useCurrentFile(fileManager)
     const { updateFileLineEnding } = useFileActions(fileManager)
-    const { fontSize, setFontSize, backgroundEnabled, backgroundImage } = useTheme()
+    const { backgroundEnabled, backgroundImage } = useTheme()
     const { t } = useI18n()
     const hasBackground = backgroundEnabled && backgroundImage
     const [pathSegments, setPathSegments] = useState([])
@@ -226,18 +229,6 @@ const EditorStatusBar = ({ fileManager }) => {
         updateScrollState()
     }, [updateScrollState])
 
-    const handleFontSizeChange = async (newSize) => {
-        const validSize = Math.max(10, Math.min(30, newSize))
-        setFontSize(validSize)
-
-        if (window['__TAURI__']) {
-            try {
-                await settingsApi.set('fontSize', validSize)
-            } catch (error) {
-            }
-        }
-    }
-
     const buildPath = useCallback((index) => {
         return buildFullPath(pathSegments, index)
     }, [pathSegments])
@@ -371,18 +362,10 @@ const EditorStatusBar = ({ fileManager }) => {
         }
     }, [updateFileLineEnding, currentFile['path']])
 
-    // 加载字体大小设置
-    useEffect(() => {
-        const loadFontSize = async () => {
-            try {
-                const fontSize = await settingsApi.get('fontSize', 14)
-                setFontSize(fontSize)
-            } catch (error) {
-                // 静默处理字体大小加载错误
-            }
-        }
-        loadFontSize().catch()
-    }, [])
+    // 当没有打开文件时隐藏状态栏
+    if (!hasOpenFiles) {
+        return null;
+    }
 
     return (
         <div className={`editor-status-bar ${hasBackground ? 'with-background' : ''}`}>
@@ -432,32 +415,16 @@ const EditorStatusBar = ({ fileManager }) => {
                 )}
             </div>
             <div className="status-right">
-                {/* 字体大小控制 */}
-                <Tooltip title={t('editor.decreaseFontSize')}>
-                    <Button
-                        type="text"
-                        size="small"
-                        className="status-item"
-                        onClick={() => handleFontSizeChange(fontSize - 1)}
-                        icon={<ZoomOutOutlined />}
-                    />
-                </Tooltip>
+                {/* 行列信息和字符数 */}
+                <div className="status-item cursor-info">
+                    行 {cursorPosition?.lineNumber || 1},&nbsp;&nbsp;列 {cursorPosition?.column || 1}
+                </div>
 
-                <Tooltip title={t('editor.fontSize')}>
-                    <Button type="text" size="small" className="status-item font-size-control">
-                        {fontSize}px
-                    </Button>
-                </Tooltip>
+                <Divider type="vertical" />
 
-                <Tooltip title={t('editor.increaseFontSize')}>
-                    <Button
-                        type="text"
-                        size="small"
-                        className="status-item"
-                        onClick={() => handleFontSizeChange(fontSize + 1)}
-                        icon={<ZoomInOutlined />}
-                    />
-                </Tooltip>
+                <div className="status-item character-count">
+                    {characterCount || 0}个字符
+                </div>
 
                 <Divider type="vertical" />
 

@@ -18,7 +18,6 @@ import {
 } from '../store/slices/fileSlice';
 import {
   setTheme,
-  setFontSize,
   setFontFamily,
   setLineHeight,
   setBackgroundImage,
@@ -89,9 +88,6 @@ export const useSessionRestore = () => {
 
       if (themeSettings.theme) {
         dispatch(setTheme(themeSettings.theme));
-      }
-      if (themeSettings.fontSize) {
-        dispatch(setFontSize(themeSettings.fontSize));
       }
       if (themeSettings.fontFamily) {
         dispatch(setFontFamily(themeSettings.fontFamily));
@@ -189,6 +185,8 @@ export const useSessionRestore = () => {
         dispatch(updateEditorContent(editorContent));
       }
 
+      let hasRestoredFiles = false;
+
       if (openedFiles && openedFiles.length > 0) {
         for (const fileInfo of openedFiles) {
           try {
@@ -214,6 +212,7 @@ export const useSessionRestore = () => {
                     content,
                     originalContent: content
                   }));
+                  hasRestoredFiles = true;
                 }
               } catch (timeoutError) {}
             } else if (fileInfo.isTemporary) {
@@ -222,14 +221,17 @@ export const useSessionRestore = () => {
                 content: fileInfo.content || '',
                 originalContent: ''
               }));
+              hasRestoredFiles = true;
             }
           } catch (error) {}
         }
 
-        if (currentFilePath) {
+        if (currentFilePath && hasRestoredFiles) {
           dispatch(switchFile(currentFilePath));
         }
       }
+
+      // 不再自动创建初始临时文件，让应用显示欢迎界面
     } catch (error) {}
   };
 

@@ -64,6 +64,13 @@
   "breadcrumb": {
     "openInExplorer": "Open in Explorer"
   },
+  "welcome": {
+    "title": "Welcome to Miaogu IDE",
+    "description": "Start your programming journey, create new files or open existing projects",
+    "newFile": "New File",
+    "openFile": "Open File",
+    "tip": "Tip: You can also drag and drop files here to open them"
+  },
   "editor": {
     "placeholder": "Start writing your code...",
     "lineEnding": {
@@ -76,15 +83,12 @@
     "language": "Language",
     "position": "Position",
     "selection": "Selection",
-    "fontSize": "Font Size",
     "fontFamily": "Font Family",
     "lineHeight": "Line Height",
     "wordWrap": "Word Wrap",
     "minimap": "Minimap",
     "lineNumbers": "Line Numbers",
     "unsavedFile": "Unsaved File",
-    "decreaseFontSize": "Decrease Font Size",
-    "increaseFontSize": "Increase Font Size",
     "lineColumn": "Line {{line}}, Column {{column}}",
     "switchToCodeEditor": "Switch to Code Editor",
     "switchToTreeEditor": "Switch to Tree Editor",
@@ -126,7 +130,6 @@
       "title": "Editor",
       "font": {
         "title": "Font Settings",
-        "size": "Font Size",
         "family": "Font Family",
         "lineHeight": "Line Height"
       }

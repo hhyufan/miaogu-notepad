@@ -6,7 +6,7 @@
  */
 
 import { useDispatch, useSelector } from 'react-redux';
-import { setTheme, setFontSize, setFontFamily, setLineHeight, setBackgroundImage, setBackgroundEnabled, setBackgroundTransparency, resetTheme } from '../store/slices/themeSlice';
+import { setTheme, setFontFamily, setLineHeight, setBackgroundImage, setBackgroundEnabled, setBackgroundTransparency, resetTheme } from '../store/slices/themeSlice';
 
 /**
  * 类型化的dispatch hook
@@ -30,7 +30,6 @@ export const useTheme = () => {
   return {
     ...theme,
     setTheme: (value) => dispatch(setTheme(value)),
-    setFontSize: (value) => dispatch(setFontSize(value)),
     setFontFamily: (value) => dispatch(setFontFamily(value)),
     setLineHeight: (value) => dispatch(setLineHeight(value)),
     setBackgroundImage: (value) => dispatch(setBackgroundImage(value)),

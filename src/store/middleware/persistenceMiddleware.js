@@ -18,7 +18,6 @@ const persistenceMiddleware = (store) => (next) => (action) => {
 
   const persistableActions = [
     'theme/setTheme',
-    'theme/setFontSize',
     'theme/setFontFamily',
     'theme/setLineHeight',
     'theme/setBackgroundImage',

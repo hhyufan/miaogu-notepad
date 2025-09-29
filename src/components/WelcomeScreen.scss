@@ -1,0 +1,137 @@
+/**
+ * 欢迎界面样式
+ */
+
+.welcome-screen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  width: 100vw;
+  padding: 2rem;
+  box-sizing: border-box;
+  z-index: 1;
+
+  &.light {
+    background: transparent !important;
+    color: #333;
+  }
+
+  &.dark {
+    background: transparent !important;
+    color: #fff;
+  }
+}
+
+.welcome-content {
+  text-align: center;
+  max-width: 500px;
+  width: 100%;
+}
+
+.welcome-icon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  opacity: 0.8;
+
+  .anticon {
+    color: #1890ff;
+  }
+}
+
+.welcome-title {
+  margin-bottom: 1rem !important;
+  font-weight: 300;
+
+  .welcome-screen.light & {
+    color: #333 !important;
+  }
+
+  .welcome-screen.dark & {
+    color: #fff !important;
+  }
+}
+
+.welcome-description {
+  display: block;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+  opacity: 0.8;
+  line-height: 1.6;
+}
+
+.welcome-actions {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+
+  .welcome-button {
+    width: 120px; /* 0.6倍的200px */
+    height: 48px;
+    font-size: 1rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    &.ant-btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+
+      &:hover {
+        background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+      }
+    }
+  }
+}
+
+.welcome-tips {
+  margin-top: 2rem;
+
+  .welcome-tip {
+    font-size: 0.9rem;
+    opacity: 0.6;
+  }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .welcome-screen {
+    padding: 1rem;
+  }
+
+  .welcome-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+
+  .welcome-title {
+    font-size: 1.5rem !important;
+  }
+
+  .welcome-description {
+    font-size: 1rem;
+  }
+
+  .welcome-actions .welcome-button {
+    width: 108px; /* 0.6倍的180px */
+    height: 44px;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .welcome-actions .welcome-button {
+    width: 96px; /* 0.6倍的160px */
+    height: 40px;
+  }
+}

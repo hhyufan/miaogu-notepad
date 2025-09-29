@@ -301,16 +301,7 @@ const SettingsModal = ({ visible, onClose }) => {
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
         <Card size="small" title={t('settings.editor.font.title')}>
           <Space direction="vertical" style={{ width: '100%' }}>
-            <div className="setting-item">
-              <Text>{t('settings.editor.font.size')}</Text>
-              <InputNumber
-                min={10}
-                max={30}
-                value={localSettings.fontSize}
-                onChange={(value) => updateLocalSetting('fontSize', value)}
-                addonAfter="px"
-              />
-            </div>
+
             <div className="setting-item">
               <Text>{t('settings.editor.font.family')}</Text>
               <Select

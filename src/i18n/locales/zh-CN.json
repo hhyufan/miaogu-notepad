@@ -78,15 +78,12 @@
     "language": "语言",
     "position": "位置",
     "selection": "选择",
-    "fontSize": "字体大小",
     "fontFamily": "字体家族",
     "lineHeight": "行高",
     "wordWrap": "自动换行",
     "minimap": "小地图",
     "lineNumbers": "行号",
     "unsavedFile": "未保存的文件",
-    "decreaseFontSize": "减小字体",
-    "increaseFontSize": "增大字体",
     "lineColumn": "行 {{line}}, 列 {{column}}",
     "switchToCodeEditor": "切换到代码编辑器",
     "switchToTreeEditor": "切换到树形编辑器",
@@ -117,7 +114,6 @@
       "title": "编辑器",
       "font": {
         "title": "字体设置",
-        "size": "字体大小",
         "family": "字体系列",
         "lineHeight": "行高"
       }

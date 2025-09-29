@@ -6,7 +6,7 @@
  * @version 1.2.0
  */
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Empty, message, FloatButton } from 'antd';
 import { VerticalAlignTopOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
@@ -38,7 +38,7 @@ const themes = {
  * @param {Object} [props.languageRef] - 语言设置的ref，用于动态获取当前文件的语言类型
  * @returns {JSX.Element} 代码编辑器组件
  */
-function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false, languageRef, isHeaderVisible = true }) {
+function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false, languageRef, isHeaderVisible = true, setCursorPosition, setCharacterCount }) {
   const { t } = useTranslation();
   const editorRef = useRef(null);
   const containerRef = useRef(null);
@@ -51,6 +51,20 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false, lang
   const { fontSize, fontFamily, lineHeight } = useTheme();
   const { wordWrap, scrollBeyondLastLine, tabSize, insertSpaces, minimap, lineNumbers, folding, matchBrackets, autoIndent, formatOnPaste, formatOnType, renderWhitespace, cursorBlinking, cursorStyle, glyphMargin, showFoldingControls } = useEditor();
   const { currentFile, updateCode: updateContent } = fileManager;
+
+  // 暴露获取编辑器内容的方法给fileManager
+  useEffect(() => {
+    if (fileManager && editorRef.current) {
+      // 确保 getEditorContent ref 存在
+      if (!fileManager.getEditorContent) {
+        fileManager.getEditorContent = { current: null };
+      }
+      fileManager.getEditorContent.current = () => {
+        return editorRef.current.getValue();
+      };
+    }
+  }, [fileManager, editorRef.current]);
+
   const [aiSettings, setAiSettings] = useState({
     enabled: false,
     baseUrl: '',
@@ -62,6 +76,7 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false, lang
   const providerDisposablesRef = useRef([]);
   const keydownDisposableRef = useRef(null);
   const inlineSuggestDisposableRef = useRef(null);
+  const coreDisposablesRef = useRef([]);
   const ctrlLPressedRef = useRef(false);
 
   const cursorPositionRef = useRef(null);
@@ -75,9 +90,30 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false, lang
 
   const MAX_REQUESTS_PER_MINUTE = 6;
 
+  // 从DOM标签页获取当前活动标签页的文件名
+  const getCurrentTabFileName = useCallback(() => {
+    try {
+      // 查找aria-selected="true"的标签页按钮
+      const activeTabBtn = document.querySelector('.ant-tabs-tab-btn[aria-selected="true"]');
+      if (activeTabBtn) {
+        // 获取按钮内的span元素
+        const spanElement = activeTabBtn.querySelector('span');
+        if (spanElement) {
+          const fileName = spanElement.textContent || spanElement.innerText || '';
+          if (fileName.trim()) {
+            return fileName.trim();
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to get current tab file name from DOM:', error);
+    }
+    return 'plaintext';
+  }, [currentFile?.name]);
+
   const isMarkdownFile = useCallback(() => {
-    // 直接使用currentFile.name获取文件名，不依赖AppHeader中的DOM元素
-    const displayFileName = currentFile?.name;
+    // 直接使用getCurrentTabFileName获取文件名，不依赖currentFile
+    const displayFileName = getCurrentTabFileName();
 
     if (!displayFileName) {
       return false;
@@ -85,7 +121,7 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false, lang
 
     const extension = displayFileName.toLowerCase().split('.').pop();
     return ['md', 'markdown', 'mgtree'].includes(extension);
-  }, [currentFile?.name]);
+  }, []);
 
   const handleToggleMarkdownPreview = useCallback(() => {
     if (!currentFile) {
@@ -812,6 +848,7 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false, lang
 
   const getEditorTheme = useCallback(() => {
     // 如果当前文件是mgtree文件，使用Monaco自定义主题
+
     if (currentFile?.name?.endsWith('.mgtree')) {
       return isDarkMode ? 'mgtree-dark' : 'mgtree-light';
     }
@@ -920,14 +957,34 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false, lang
 
         // 第四步：注册Monaco语言ID（为了Monaco编辑器识别）
         if (!monaco.languages.getLanguages().find(lang => lang.id === mgtreeLanguageConfig.id)) {
+
+
           monaco.languages.register({
             id: mgtreeLanguageConfig.id,
             extensions: mgtreeLanguageConfig.extensions,
             aliases: mgtreeLanguageConfig.aliases
           });
 
+
           // 设置语言配置
           monaco.languages.setLanguageConfiguration(mgtreeLanguageConfig.id, mgtreeLanguageConfig.configuration);
+
+
+          // 🔥 注册 Monarch 语法规则
+          try {
+            monaco.languages.setMonarchTokensProvider(mgtreeLanguageConfig.id, mgtreeLanguageConfig.monarchLanguage);
+
+
+            // 🔍 验证Monarch规则是否正确注册
+
+
+
+
+
+          } catch (error) {
+            console.error('❌ mgtree Monarch语法规则注册失败:', error);
+          }
+        } else {
 
         }
 
@@ -974,13 +1031,6 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false, lang
           });
         }
 
-        // 第五步：注册mgtree自定义主题（已经在Shiki中加载，无需重复注册）
-
-
-
-
-
-
         if (mounted) {
           setHighlighterReady(true);
         }
@@ -1004,10 +1054,16 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false, lang
     // 初始化编辑器
     if (containerRef.current && !editorRef.current && highlighterReady) {
       // 创建编辑器实例
+
+      // 优先使用TabBar的languageRef，然后使用文件名推断语言
+      const fileNameLanguage = getFileLanguage(getCurrentTabFileName());
+      const initialLanguage = fileNameLanguage || 'plaintext';
+
+
       try {
         editorRef.current = monaco.editor.create(containerRef.current, {
-          value: '// Monaco Editor is working!\nconsole.log("Hello World");',
-          language: languageRef?.current || 'javascript',
+          value: '', // 不设置默认内容，让文件管理器控制
+          language: languageRef?.current || initialLanguage,
           theme: 'vs-dark', // 使用基础主题初始化
           fontSize: fontSize,
           fontFamily: fontFamily,
@@ -1053,6 +1109,7 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false, lang
           },
           suggestOnTriggerCharacters: true
         });
+
         inlineSuggestDisposableRef.current = editorRef.current.onDidChangeModelContent((e) => {
           if (e.changes && e.changes.length > 0) {
             const change = e.changes[0];
@@ -1289,6 +1346,137 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false, lang
           setShowBackToTop(e.scrollTop > 300);
         });
 
+        // 设置核心监听器 - 每次Monaco初始化都必须添加
+        const setupCoreListeners = () => {
+          if (!editorRef.current) return [];
+
+          const disposables = [];
+
+          // 光标位置变化监听器
+          const cursorDisposable = editorRef.current.onDidChangeCursorPosition((e) => {
+            const newPosition = {
+              lineNumber: e.position.lineNumber,
+              column: e.position.column
+            };
+            cursorPositionRef.current = newPosition;
+            if (setCursorPosition) {
+              setCursorPosition(newPosition);
+            }
+          });
+          disposables.push(cursorDisposable);
+
+          // 内容变化监听器 - 实时更新字符数
+          const contentDisposable = editorRef.current.onDidChangeModelContent(() => {
+            if (editorRef.current && setCharacterCount) {
+              const currentValue = editorRef.current.getValue();
+              setCharacterCount(currentValue.length);
+            }
+          });
+          disposables.push(contentDisposable);
+
+          // 模型变化监听器
+          const modelDisposable = editorRef.current.onDidChangeModel(() => {
+            isCompletionActiveRef.current = false;
+
+            // 当模型变化时，立即更新光标位置和字符数
+            if (editorRef.current) {
+              const currentPosition = editorRef.current.getPosition();
+              const currentValue = editorRef.current.getValue();
+
+              if (currentPosition && setCursorPosition) {
+                setCursorPosition({
+                  lineNumber: currentPosition.lineNumber,
+                  column: currentPosition.column
+                });
+              }
+
+              if (setCharacterCount) {
+                setCharacterCount(currentValue.length);
+              }
+            }
+          });
+          disposables.push(modelDisposable);
+
+          return disposables;
+        };
+
+        // 立即设置监听器
+        const coreDisposables = setupCoreListeners();
+        coreDisposablesRef.current = coreDisposables;
+
+        // 编辑器初始化完成后，根据是否有文件来设置内容
+        setTimeout(() => {
+          if (editorRef.current && currentFile && currentFile['content'] !== undefined) {
+            const fileContent = currentFile['content'];
+            if (editorRef.current.getValue() !== fileContent) {
+              editorRef.current.setValue(fileContent);
+            }
+
+            // 优先使用TabBar的languageRef，但对于mgtree文件特殊处理
+            const tabBarLanguage = fileManager?.tabBarRef?.languageRef?.current;
+            const fileNameLanguage = getFileLanguage(getCurrentTabFileName());
+
+            // 🔥 特殊处理：对于.mgtree文件，优先使用文件名推断的语言
+            let language;
+            if (getCurrentTabFileName()?.endsWith('.mgtree')) {
+              // mgtree文件优先使用文件名推断的语言，忽略TabBar设置
+              language = fileNameLanguage || 'mgtree';
+
+            } else {
+              // 其他文件使用原有逻辑
+              language = tabBarLanguage || fileNameLanguage || 'plaintext';
+            }
+
+            // 🔍 添加详细的调试日志
+
+
+
+
+
+
+
+            monaco.editor.setModelLanguage(editorRef.current.getModel(), language);
+
+            // 🔍 验证Monaco语言设置
+            const currentModel = editorRef.current.getModel();
+            const actualLanguage = currentModel.getLanguageId();
+
+
+            // 🔍 检查Monaco是否识别mgtree语言
+            const registeredLanguages = monaco.languages.getLanguages();
+            const mgtreeLanguage = registeredLanguages.find(lang => lang.id === 'mgtree');
+
+            if (mgtreeLanguage) {
+
+            }
+
+            // 初始化字符数统计 - 使用实际编辑器内容
+            if (setCharacterCount) {
+              const actualContent = editorRef.current.getValue();
+              setCharacterCount(actualContent.length);
+            }
+
+            // 初始化光标位置
+            if (setCursorPosition) {
+              const position = editorRef.current.getPosition() || { lineNumber: 1, column: 1 };
+              setCursorPosition(position);
+            }
+          } else if (editorRef.current) {
+            // 如果没有文件，设置空内容
+            editorRef.current.setValue('');
+            monaco.editor.setModelLanguage(editorRef.current.getModel(), 'plaintext');
+
+            // 重置状态栏信息
+            if (setCharacterCount) {
+              setCharacterCount(0);
+            }
+
+            if (setCursorPosition) {
+              setCursorPosition({ lineNumber: 1, column: 1 });
+            }
+          }
+        }, 0);
+
       } catch (error) {
       }
     }
@@ -1305,6 +1493,13 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false, lang
         }
         providerDisposablesRef.current.forEach(d => d?.dispose?.());
         providerDisposablesRef.current = [];
+
+        // 清理核心监听器
+        if (coreDisposablesRef.current) {
+          coreDisposablesRef.current.forEach(d => d?.dispose?.());
+          coreDisposablesRef.current = [];
+        }
+
         editorRef.current.dispose();
         editorRef.current = null;
       }
@@ -1312,17 +1507,46 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false, lang
   }, [highlighterReady, createGhostText, restoreAllGhostTexts, acceptCurrentLineGhostText]);
 
   useEffect(() => {
-    if (!editorRef.current || isInternalChange.current) return;
+    if (!editorRef.current || isInternalChange.current) return;      // 确保编辑器内容与文件内容同步
+      const fileContent = currentFile['content'];
+      if (editorRef.current.getValue() !== fileContent) {
+        editorRef.current.setValue(fileContent);
+      }
 
-    if (currentFile && currentFile['content'] !== undefined) {
-      editorRef.current.setValue(currentFile['content']);
-      const language = getFileLanguage(currentFile['name']);
+      // 优先使用TabBar的languageRef，但对于mgtree文件特殊处理
+      const tabBarLanguage = fileManager?.tabBarRef?.languageRef?.current;
+      const fileNameLanguage = getFileLanguage(getCurrentTabFileName());
+
+      // 🔥 特殊处理：对于.mgtree文件，优先使用文件名推断的语言
+      let language;
+      if (getCurrentTabFileName()?.endsWith('.mgtree')) {
+        // mgtree文件优先使用文件名推断的语言，忽略TabBar设置
+        language = fileNameLanguage || 'mgtree';
+
+      } else {
+        // 其他文件使用原有逻辑
+        language = tabBarLanguage || fileNameLanguage || 'plaintext';
+      }
+
       monaco.editor.setModelLanguage(editorRef.current.getModel(), language);
-    } else {
-      editorRef.current.setValue('// Monaco Editor is working!\nconsole.log("Hello World");');
-      monaco.editor.setModelLanguage(editorRef.current.getModel(), 'javascript');
-    }
-  }, [currentFile, getFileLanguage]);
+
+    // 内容设置完成后，强制更新状态栏信息以确保与编辑器严格同步
+    setTimeout(() => {
+      if (editorRef.current) {
+        // 更新字符数统计 - 严格使用当前编辑器内容
+        if (setCharacterCount) {
+          const actualContent = editorRef.current.getValue();
+          setCharacterCount(actualContent.length);
+        }
+
+        // 更新光标位置 - 严格使用当前编辑器光标位置
+        if (setCursorPosition) {
+          const position = editorRef.current.getPosition() || { lineNumber: 1, column: 1 };
+          setCursorPosition(position);
+        }
+      }
+    }, 0);
+  }, [currentFile, getFileLanguage, setCharacterCount, setCursorPosition]);
 
   useEffect(() => {
     if (!editorRef.current) return;
@@ -1355,59 +1579,6 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false, lang
 
     wasModifiedRef.current = currentFile['isModified'];
   }, [currentFile?.isModified, clearAllGhostTexts]);
-
-  useEffect(() => {
-    if (!editorRef.current) return;
-
-    const disposables = [];
-
-    const cursorDisposable = editorRef.current.onDidChangeCursorPosition(async (e) => {
-      const newPosition = {
-        lineNumber: e.position.lineNumber,
-        column: e.position.column
-      };
-
-      cursorPositionRef.current = newPosition;
-
-      if (ghostTextsRef.current.size > 0) {
-        for (const [_, ghostData] of ghostTextsRef.current) {
-          const originalPos = ghostData.originalPosition;
-          const isAtGhostPosition = newPosition.lineNumber === originalPos.lineNumber &&
-            newPosition.column <= originalPos.column;
-
-          if (isAtGhostPosition) {
-            setTimeout(() => {
-              editorRef.current?.trigger('ghost', 'editor.action.inlineSuggest.trigger', {});
-            }, 10);
-            break;
-          }
-        }
-      }
-
-      setTimeout(() => {
-        editorRef.current?.trigger('cursor-move', 'editor.action.inlineSuggest.trigger', {});
-      }, 50);
-
-    });
-
-    const completionDisposable = editorRef.current.onDidChangeModel(() => {
-      isCompletionActiveRef.current = false;
-    });
-
-    disposables.push(cursorDisposable, completionDisposable);
-
-    return () => {
-      disposables.forEach(d => d?.dispose?.());
-      if (cursorTimerRef.current) {
-        clearTimeout(cursorTimerRef.current);
-        cursorTimerRef.current = null;
-      }
-      if (apiRequestResetTimerRef.current) {
-        clearTimeout(apiRequestResetTimerRef.current);
-        apiRequestResetTimerRef.current = null;
-      }
-    };
-  }, [aiSettings.enabled, triggerAICompletion]);
 
   useEffect(() => {
     if (!editorRef.current) return;
@@ -2032,7 +2203,22 @@ Filter: ${filterName}
         editorRef.current.setValue(newValue);
       }
 
-      const language = getFileLanguage(currentFile['name']);
+      // 优先使用TabBar的languageRef，但对于mgtree文件特殊处理
+      const tabBarLanguage = fileManager?.tabBarRef?.languageRef?.current;
+      const fileNameLanguage = getFileLanguage(getCurrentTabFileName());
+
+      // 🔥 特殊处理：对于.mgtree文件，优先使用文件名推断的语言
+      let language;
+      if (currentFile?.name?.endsWith('.mgtree')) {
+        // mgtree文件优先使用文件名推断的语言，忽略TabBar设置
+        language = fileNameLanguage || 'mgtree';
+
+      } else {
+        // 其他文件使用原有逻辑
+        language = tabBarLanguage || fileNameLanguage || 'plaintext';
+      }
+
+
       const model = editorRef.current.getModel();
       if (model) {
         monaco.editor.setModelLanguage(model, language);
@@ -2046,28 +2232,34 @@ Filter: ${filterName}
 
   useEffect(() => {
     if (editorRef.current) {
-      const theme = getEditorTheme();
-
       try {
         // 完全分离两个主题系统
-        if (currentFile?.name?.endsWith('.mgtree')) {
+        if (getCurrentTabFileName().endsWith('.mgtree')) {
           // mgtree文件使用Monaco原生主题系统
           const mgtreeTheme = isDarkMode ? 'mgtree-dark' : 'mgtree-light';
 
           // 确保主题存在后再设置
           try {
+
+
+
             monaco.editor.setTheme(mgtreeTheme);
 
+
           } catch (setError) {
-            console.warn(`Failed to set ${mgtreeTheme}, trying to redefine:`, setError);
+            console.warn(`❌ 设置${mgtreeTheme}失败，尝试重新定义:`, setError);
             // 如果设置失败，重新定义主题
             try {
+
               monaco.editor.defineTheme('mgtree-dark', mgtreeThemeConfig.dark);
               monaco.editor.defineTheme('mgtree-light', mgtreeThemeConfig.light);
+
+
               monaco.editor.setTheme(mgtreeTheme);
 
+
             } catch (redefineError) {
-              console.error('Failed to redefine mgtree theme:', redefineError);
+              console.error('❌ 重新定义mgtree主题失败:', redefineError);
               // 最后降级到基础主题
               monaco.editor.setTheme(isDarkMode ? 'vs-dark' : 'vs');
             }
@@ -2217,22 +2409,22 @@ Filter: ${filterName}
               const currentScrollTop = editor.getScrollTop();
               const duration = 800; // 动画持续时间800ms
               const startTime = performance.now();
-              
+
               const animateScroll = (currentTime) => {
                 const elapsed = currentTime - startTime;
                 const progress = Math.min(elapsed / duration, 1);
-                
+
                 // 使用easeOutCubic缓动函数，让动画更自然
                 const easeOutCubic = 1 - Math.pow(1 - progress, 3);
                 const scrollTop = currentScrollTop * (1 - easeOutCubic);
-                
+
                 editor.setScrollTop(scrollTop);
-                
+
                 if (progress < 1) {
                   requestAnimationFrame(animateScroll);
                 }
               };
-              
+
               requestAnimationFrame(animateScroll);
             }
           }}

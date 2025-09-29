@@ -103,7 +103,8 @@ class PersistenceManager {
         isTemporary: f.isTemporary,
         isModified: f.isModified,
         encoding: f.encoding,
-        lineEnding: f.lineEnding
+        lineEnding: f.lineEnding,
+        content: f.isTemporary ? f.content : undefined // 只为临时文件保存内容
       }));
 
       await settingsApi.set('openedFiles', filesToSave);
@@ -112,7 +113,6 @@ class PersistenceManager {
 
       await settingsApi.set('themeSettings', {
         theme: theme.theme,
-        fontSize: theme.fontSize,
         fontFamily: theme.fontFamily,
         lineHeight: theme.lineHeight,
         backgroundImage: theme.backgroundImage,
@@ -142,8 +142,7 @@ class PersistenceManager {
 
       if (ui) {
         await settingsApi.set('windowState', {
-          sidebarVisible: ui.sidebarVisible,
-          statusBarVisible: ui.statusBarVisible
+          sidebarVisible: ui.sidebarVisible
         });
       }
     } catch (error) {}

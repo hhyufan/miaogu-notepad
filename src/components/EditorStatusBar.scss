@@ -12,10 +12,10 @@
 
   border-top: 1px solid var(--border-color);
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 0 10px;
+  padding: 0 6px;
   font-size: 12px;
+  font-family: 'Microsoft YaHei', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: var(--text-color-secondary);
   z-index: 10;
 
@@ -26,38 +26,25 @@
   .status-item {
     display: flex;
     align-items: center;
-    margin-right: 10px;
-    position: relative;
+    padding: 0 4px;
+    font-size: 12px;
+    font-family: 'Microsoft YaHei', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--text-color-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
 
-    &:last-child {
-      margin-right: 0;
+    &:hover {
+      background-color: var(--hover-bg-color);
+      color: var(--text-color);
     }
 
-    &.font-size-control {
-      .font-size-display {
-        min-width: 30px;
-        text-align: center;
-        font-size: 11px;
-        color: var(--text-color-secondary);
-      }
-
-      .font-size-btn {
-        width: 20px;
-        height: 20px;
-        padding: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 2px;
-
-        &:hover {
-          background-color: var(--hover-background);
-        }
-
-        .anticon {
-          font-size: 10px;
-        }
-      }
+    &.cursor-info,
+    &.character-count {
+      font-family: 'Microsoft YaHei', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-weight: 500;
+      min-width: 80px;
+      justify-content: center;
+      white-space: nowrap;
     }
   }
 
@@ -204,11 +191,12 @@
   .status-right {
     display: flex;
     align-items: center;
-    gap: 8px;
-    width: 310px;
-    justify-content: flex-end;
+    gap: 4px;
+    min-width: 380px; /* 增加右侧区域最小宽度 */
     flex-shrink: 0;
-    min-width: 200px;
+    white-space: nowrap;
+    width: auto;
+    justify-content: flex-end;
 
     .status-item {
       &.font-size-control {

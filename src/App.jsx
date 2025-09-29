@@ -5,23 +5,25 @@
  * @version 1.2.0
  */
 
-import {useCallback, useEffect, useRef, useState} from 'react';
-import {App as AntdApp, Button, ConfigProvider, Layout, Spin, theme} from 'antd';
-import {CodeOutlined, EyeOutlined, InboxOutlined, MoonFilled, PartitionOutlined, SunOutlined} from '@ant-design/icons';
-import {Provider, useSelector} from 'react-redux';
-import {store} from './store';
-import {useTheme} from './hooks/redux';
-import {useI18n} from './hooks/useI18n';
-import tauriApi, {fileApi} from './utils/tauriApi';
-import {useSessionRestore} from './hooks/useSessionRestore';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { App as AntdApp, Button, ConfigProvider, Layout, Spin, theme } from 'antd';
+import { CodeOutlined, EyeOutlined, InboxOutlined, MoonFilled, PartitionOutlined, SunOutlined } from '@ant-design/icons';
+import { Provider, useSelector } from 'react-redux';
+import { store } from './store';
+import { useTheme } from './hooks/redux';
+import { useI18n } from './hooks/useI18n';
+import tauriApi, { fileApi } from './utils/tauriApi';
+import { useSessionRestore } from './hooks/useSessionRestore';
 import AppHeader from './components/AppHeader';
 import TabBar from './components/TabBar';
 import CodeEditor from './components/CodeEditor';
 import TreeEditor from './components/TreeEditor';
 import EditorStatusBar from './components/EditorStatusBar';
 
-import {useFileManager} from './hooks/useFileManager.jsx';
-import {withEditorModeTransition, withThemeTransition} from './utils/viewTransition';
+import WelcomeScreen from './components/WelcomeScreen';
+
+import { useFileManager } from './hooks/useFileManager.jsx';
+import { withEditorModeTransition, withThemeTransition } from './utils/viewTransition';
 import './App.scss';
 
 const { settings: settingsApi, app: appApi } = tauriApi;
@@ -43,15 +45,18 @@ const EDITOR_MODES = {
  * @param {Function} props.toggleTheme - 主题切换函数
  * @param {Object} props.fileManager - 文件管理器实例
  */
-const AppContent = ({ isDarkMode, toggleTheme, fileManager, isHeaderVisible }) => {
+const AppContent = ({ isDarkMode, toggleTheme, fileManager, isHeaderVisible, setCursorPosition, setCharacterCount }) => {
   const { t } = useI18n();
   const [isTreeMode, setIsTreeMode] = useState(false);
   const [editorMode, setEditorMode] = useState(EDITOR_MODES.MONACO);
-  const { currentFile } = fileManager;
+  const { currentFile, openedFiles, newFile, openFile } = fileManager;
 
   const isMgtreeFile = currentFile && currentFile['name'] && currentFile['name'].endsWith('.mgtree');
   const isMarkdownFile = currentFile && currentFile['name'] &&
     ['md', 'markdown'].some(ext => currentFile['name'].toLowerCase().endsWith('.' + ext));
+
+  // 检查是否有打开的文件
+  const hasOpenFiles = openedFiles && openedFiles.length > 0;
 
   /**
    * 切换编辑器模式
@@ -143,32 +148,42 @@ const AppContent = ({ isDarkMode, toggleTheme, fileManager, isHeaderVisible }) =
         )}
       </div>
       <div className="content-container">
-        <div className="code-editor-container">
-          <div
-            className="monaco-editor-wrapper"
-            style={{ display: (isMgtreeFile && isTreeMode) ? 'none' : 'block' }}
-          >
-            <CodeEditor
-              isDarkMode={isDarkMode}
-              fileManager={fileManager}
-              showMarkdownPreview={isMarkdownFile && editorMode === EDITOR_MODES.MARKDOWN}
-              languageRef={fileManager.appHeaderRef?.languageRef}
-              isHeaderVisible={isHeaderVisible}
-            />
-          </div>
-          {isMgtreeFile && (
+        {!hasOpenFiles ? (
+          <WelcomeScreen
+            isDarkMode={isDarkMode}
+            onNewFile={() => newFile()}
+            onOpenFile={openFile}
+          />
+        ) : (
+          <div className="code-editor-container">
             <div
-              className="tree-editor-wrapper"
-              style={{ display: isTreeMode ? 'block' : 'none' }}
+              className="monaco-editor-wrapper"
+              style={{ display: (isMgtreeFile && isTreeMode) ? 'none' : 'block' }}
             >
-              <TreeEditor
+              <CodeEditor
                 isDarkMode={isDarkMode}
                 fileManager={fileManager}
+                showMarkdownPreview={isMarkdownFile && editorMode === EDITOR_MODES.MARKDOWN}
+                languageRef={fileManager.tabBarRef?.languageRef}
                 isHeaderVisible={isHeaderVisible}
+                setCursorPosition={setCursorPosition}
+                setCharacterCount={setCharacterCount}
               />
             </div>
-          )}
-        </div>
+            {isMgtreeFile && (
+              <div
+                className="tree-editor-wrapper"
+                style={{ display: isTreeMode ? 'block' : 'none' }}
+              >
+                <TreeEditor
+                  isDarkMode={isDarkMode}
+                  fileManager={fileManager}
+                  isHeaderVisible={isHeaderVisible}
+                />
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </>
   );
@@ -192,6 +207,8 @@ const MainApp = () => {
   const [loading, setLoading] = useState(true);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const [cursorPosition, setCursorPosition] = useState({ lineNumber: 1, column: 1 });
+  const [characterCount, setCharacterCount] = useState(0);
 
   useEffect(() => {
     const handleTauriDragEnter = () => {
@@ -211,32 +228,29 @@ const MainApp = () => {
     };
   }, []);
 
-  // F11键切换全屏模式（隐藏AppHeader并最大化窗口）
+  // F11键切换全屏模式（隐藏AppHeader、最大化窗口并隐藏任务栏）
   useEffect(() => {
     const handleKeyDown = async (event) => {
       if (event.key === 'F11') {
         event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+
         const newHeaderVisible = !isHeaderVisible;
         setIsHeaderVisible(newHeaderVisible);
-        
+
         // 检查是否在Tauri环境中
         if (typeof window !== 'undefined' && window['__TAURI_INTERNALS__']) {
           try {
             const { getCurrentWindow } = await import('@tauri-apps/api/window');
             const appWindow = getCurrentWindow();
-            
-            // 获取当前窗口状态
-            const isMaximized = await appWindow.isMaximized();
-            
+
             if (newHeaderVisible) {
-              // 显示Header时，保持当前窗口状态不变
-              // 不做任何窗口大小调整
+              // 退出全屏模式：显示Header，退出全屏状态
+              await appWindow.setFullscreen(false);
             } else {
-              // 隐藏Header时，如果窗口未最大化则最大化
-              if (!isMaximized) {
-                await appWindow.maximize();
-              }
-              // 如果已经最大化，则保持最大化状态
+              // 进入全屏模式：隐藏Header，设置全屏状态（这会隐藏任务栏）
+              await appWindow.setFullscreen(true);
             }
           } catch (error) {
             console.error('F11全屏切换失败:', error);
@@ -245,17 +259,17 @@ const MainApp = () => {
       }
     };
 
-    // 监听窗口状态变化，当窗口不是最大化时自动显示AppHeader
+    // 监听窗口状态变化，当窗口退出全屏时自动显示AppHeader
     const checkWindowState = async () => {
       if (typeof window !== 'undefined' && window['__TAURI_INTERNALS__']) {
         try {
           const { getCurrentWindow } = await import('@tauri-apps/api/window');
           const appWindow = getCurrentWindow();
-          
-          const isMaximized = await appWindow.isMaximized();
-          
-          // 如果当前Header是隐藏的，但窗口不是最大化状态，则显示Header
-          if (!isHeaderVisible && !isMaximized) {
+
+          const isFullscreen = await appWindow.isFullscreen();
+
+          // 如果当前Header是隐藏的，但窗口不是全屏状态，则显示Header
+          if (!isHeaderVisible && !isFullscreen) {
             setIsHeaderVisible(true);
           }
         } catch (error) {
@@ -267,9 +281,10 @@ const MainApp = () => {
     // 定期检查窗口状态
     const intervalId = setInterval(checkWindowState, 500);
 
-    document.addEventListener('keydown', handleKeyDown);
+    // 使用捕获阶段监听，确保F11事件能被优先处理
+    document.addEventListener('keydown', handleKeyDown, true);
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keydown', handleKeyDown, true);
       clearInterval(intervalId);
     };
   }, [isHeaderVisible]);
@@ -277,6 +292,47 @@ const MainApp = () => {
   const { isRestoring, restoreError } = useSessionRestore();
   const { backgroundEnabled, backgroundImage } = useSelector((state) => state.theme);
   const fileManager = useFileManager();
+
+  // 全局键盘快捷键处理（确保F11全屏模式下也能使用）
+  useEffect(() => {
+    const handleGlobalKeyDown = async (event) => {
+      // Ctrl+S 保存文件
+      if (event.ctrlKey && event.key === 's' && !event.shiftKey) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (fileManager.currentFile) {
+          try {
+            await fileManager.saveFile(false);
+          } catch (error) {
+            console.error('保存文件失败:', error);
+          }
+        }
+      }
+
+      // Ctrl+Shift+S 另存为
+      if (event.ctrlKey && event.shiftKey && event.key === 'S') {
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (fileManager.currentFile) {
+          try {
+            await fileManager.saveFile(true);
+          } catch (error) {
+            console.error('另存为失败:', error);
+          }
+        }
+      }
+    };
+
+    // 使用捕获阶段监听，确保优先处理
+    document.addEventListener('keydown', handleGlobalKeyDown, true);
+    return () => {
+      document.removeEventListener('keydown', handleGlobalKeyDown, true);
+    };
+  }, [fileManager]);
+  const { openedFiles } = fileManager;
+  const hasOpenFiles = openedFiles && openedFiles.length > 0;
 
   /**
    * 处理拖拽悬停事件
@@ -378,7 +434,7 @@ const MainApp = () => {
     });
 
     if (window['__TAURI__']) {
-      settingsApi.set('theme', newTheme).catch(() => {});
+      settingsApi.set('theme', newTheme).catch(() => { });
     } else {
       localStorage.setItem('theme', newTheme);
     }
@@ -407,7 +463,7 @@ const MainApp = () => {
 
         try {
           await fileApi.fileExists(filePath);
-        } catch (error) {}
+        } catch (error) { }
 
         try {
           await fileManager.setOpenFile(filePath);
@@ -416,15 +472,15 @@ const MainApp = () => {
           return { success: false, error };
         }
       } else {
-          const debugFile = localStorage.getItem('miaogu-notepad-debug-file');
-          if (debugFile) {
-            try {
-              await fileManager.setOpenFile(debugFile);
-              return { success: true, filePath: debugFile };
-            } catch (error) {
-              return { success: false, error };
-            }
+        const debugFile = localStorage.getItem('miaogu-notepad-debug-file');
+        if (debugFile) {
+          try {
+            await fileManager.setOpenFile(debugFile);
+            return { success: true, filePath: debugFile };
+          } catch (error) {
+            return { success: false, error };
           }
+        }
       }
     } catch (error) {
       return { success: false, error };
@@ -465,15 +521,15 @@ const MainApp = () => {
             if (filePath && typeof filePath === 'string') {
               try {
                 await fileApi.fileExists(filePath);
-              } catch (error) {}
+              } catch (error) { }
 
               try {
                 await fileManager.setOpenFile(filePath);
                 return;
-              } catch (error) {}
+              } catch (error) { }
             }
           }
-        } catch (error) {}
+        } catch (error) { }
 
         if (!window['__TAURI__']) {
           const debugFile = localStorage.getItem('miaogu-notepad-debug-file');
@@ -481,13 +537,14 @@ const MainApp = () => {
             try {
               await fileManager.setOpenFile(debugFile);
               return;
-            } catch (error) {}
+            } catch (error) { }
           }
         }
 
         if (fileManager.openedFiles.length === 0) {
-          const initialContent = ''
-          await fileManager.createFile('untitled.js', initialContent);
+          // 不在这里创建初始文件，让useSessionRestore处理
+          // const initialContent = '// Monaco Editor is working!\n
+          // await fileManager.createFile('untitled.js', initialContent);
         }
       }
     };
@@ -615,14 +672,14 @@ const MainApp = () => {
     >
       <AntdApp>
         <Layout
-          className={`app-layout ${backgroundEnabled && backgroundImage ? 'has-background' : ''} ${isDragOver ? 'drag-over' : ''}`}
+          className={`app-layout ${backgroundEnabled && backgroundImage ? 'has-background' : ''} ${isDragOver ? 'drag-over' : ''} ${!isHeaderVisible ? 'fullscreen-mode' : ''}`}
           data-theme={currentTheme}
           onDragOver={handleDragOver}
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
-          {isHeaderVisible && <AppHeader fileManager={fileManager} />}
+          {isHeaderVisible && <AppHeader fileManager={fileManager} hasOpenFiles={hasOpenFiles} />}
           <TabBar fileManager={fileManager} />
           <Layout className="main-layout">
             <Content className="app-content">
@@ -631,9 +688,16 @@ const MainApp = () => {
                 toggleTheme={toggleTheme}
                 fileManager={fileManager}
                 isHeaderVisible={isHeaderVisible}
+                setCursorPosition={setCursorPosition}
+                setCharacterCount={setCharacterCount}
               />
             </Content>
-            <EditorStatusBar fileManager={fileManager} />
+            <EditorStatusBar
+              fileManager={fileManager}
+              cursorPosition={cursorPosition}
+              characterCount={characterCount}
+              hasOpenFiles={hasOpenFiles}
+            />
           </Layout>
           {isDragOver && (
             <div className="drag-overlay">

@@ -480,8 +480,8 @@ const MarkdownRenderer = React.memo(({ content, currentFileName, currentFolder, 
               // 对于脚注span，确保内容能正确渲染Markdown
               if (id && id.startsWith('fn-')) {
                 return (
-                  <span 
-                    id={id} 
+                  <span
+                    id={id}
                     style={{
                       color: isDarkMode ? '#9ca3af' : '#6b7280' // 明暗主题不同的灰色
                     }}
