@@ -2,7 +2,7 @@
  * @fileoverview Tauri API封装 - 提供文件操作、设置存储、窗口控制等功能
  * 统一封装Tauri的各种API，提供一致的接口给前端使用
  * @author hhyufan
- * @version 1.2.0
+ * @version 1.3.0
  */
 
 import { invoke } from '@tauri-apps/api/core';

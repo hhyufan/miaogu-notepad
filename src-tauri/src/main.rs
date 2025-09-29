@@ -4,7 +4,7 @@
  * 喵咕记事本 - 基于Tauri的跨平台文本编辑器
  *
  * @author hhyufan
- * @version 1.2.0
+ * @version 1.3.0
  */
 
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!

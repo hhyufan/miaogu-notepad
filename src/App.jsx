@@ -2,7 +2,7 @@
  * @fileoverview 应用程序主组件
  * 提供整体布局、主题管理、编辑器模式切换等核心功能
  * @author hhyufan
- * @version 1.2.0
+ * @version 1.3.0
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -288,7 +288,9 @@ const MainApp = () => {
     };
   }, [isHeaderVisible]);
 
-  const { isRestoring, restoreError } = useSessionRestore();
+  // const { isRestoring, restoreError } = useSessionRestore();
+  const isRestoring = false; // 禁用会话恢复
+  const restoreError = null;
   const { backgroundEnabled, backgroundImage } = useSelector((state) => state.theme);
   const fileManager = useFileManager();
 
@@ -625,12 +627,12 @@ const MainApp = () => {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', currentTheme);
-    
+
     // 强制更新背景透明度变量以确保主题切换时正确应用
     const updateBackgroundForTheme = () => {
       const state = store.getState();
       const { backgroundEnabled, backgroundTransparency, backgroundImage } = state.theme;
-      
+
       if (backgroundEnabled && backgroundImage) {
         const darkTransparency = backgroundTransparency.dark / 100;
         const lightTransparency = backgroundTransparency.light / 100;
@@ -642,7 +644,7 @@ const MainApp = () => {
         document.documentElement.style.setProperty('--editor-background-dark', darkOpacity);
       }
     };
-    
+
     updateBackgroundForTheme();
   }, [currentTheme]);
 

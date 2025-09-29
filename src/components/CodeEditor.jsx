@@ -3,7 +3,7 @@
  * 集成Monaco Editor，提供代码编辑、语法高亮、智能补全、格式化等功能
  * 支持多种编程语言和主题，具备Markdown预览能力
  * @author hhyufan
- * @version 1.2.0
+ * @version 1.3.0
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';

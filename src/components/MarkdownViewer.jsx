@@ -2,7 +2,7 @@
  * @fileoverview Markdown预览组件 - 提供Markdown文档的渲染和预览功能
  * 支持代码高亮、Mermaid图表、树形结构可视化等扩展功能
  * @author hhyufan
- * @version 1.2.0
+ * @version 1.3.0
  */
 
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';

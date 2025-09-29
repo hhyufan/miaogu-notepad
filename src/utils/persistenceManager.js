@@ -2,7 +2,7 @@
  * @fileoverview 持久化管理器 - 负责应用状态的保存和恢复
  * 提供防抖保存、状态恢复、设置管理等功能
  * @author hhyufan
- * @version 1.2.0
+ * @version 1.3.0
  */
 
 import tauriApi from './tauriApi';

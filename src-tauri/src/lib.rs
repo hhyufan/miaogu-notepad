@@ -4,7 +4,7 @@
  * 喵咕记事本后端实现，包含文件读写、编码检测、文件监控、系统集成等功能
  *
  * @author hhyufan
- * @version 1.2.0
+ * @version 1.3.0
  */
 
 use std::fs;

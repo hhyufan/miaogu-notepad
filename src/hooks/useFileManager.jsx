@@ -2,7 +2,7 @@
  * @fileoverview 文件管理Hook - 提供文件操作、标签页管理、会话恢复等功能
  * 包含文件打开、保存、关闭、重命名等核心功能，以及标签页管理和会话恢复
  * @author hhyufan
- * @version 1.2.0
+ * @version 1.3.0
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'

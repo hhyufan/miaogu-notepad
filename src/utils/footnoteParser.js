@@ -2,7 +2,7 @@
  * @fileoverview 自定义脚注解析器 - 解析Markdown中的脚注语法
  * 支持 [^1] 引用语法和 [^1]: 定义语法
  * @author hhyufan
- * @version 1.0.0
+ * @version 1.3.0
  */
 
 /**

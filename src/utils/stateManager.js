@@ -2,7 +2,7 @@
  * @fileoverview 状态持久化管理工具 - 使用Tauri Settings API进行状态的保存和恢复
  * 提供应用状态的持久化存储，包括展开状态、当前文件、树形数据等
  * @author hhyufan
- * @version 1.2.0
+ * @version 1.3.0
  */
 
 import tauriApi from './tauriApi';

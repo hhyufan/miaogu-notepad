@@ -2,7 +2,7 @@
  * @fileoverview 树形编辑器组件 - 用于编辑和可视化树形结构数据
  * 支持节点的增删改查、拖拽排序、缩放等功能，适用于思维导图和知识图谱编辑
  * @author hhyufan
- * @version 1.2.0
+ * @version 1.3.0
  */
 
 import React, { useState, useCallback, useEffect, useMemo, useRef } from "react";
@@ -879,7 +879,7 @@ const TreeEditor = ({ fileManager, isDarkMode, isHeaderVisible }) => {
       </div>
 
       {/* 返回顶部悬浮按钮 - F11模式下也显示 */}
-      
+
       {showBackToTop && currentFile && (
         <FloatButton
           icon={<VerticalAlignTopOutlined />}

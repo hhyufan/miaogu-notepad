@@ -2,7 +2,7 @@
  * @fileoverview 持久化中间件 - 自动保存Redux状态到Tauri Store
  * 监听特定的Redux action，自动将状态变化持久化到本地存储
  * @author hhyufan
- * @version 1.2.0
+ * @version 1.3.0
  */
 
 import { persistenceManager } from '../../utils/persistenceManager';

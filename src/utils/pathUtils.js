@@ -2,7 +2,7 @@
  * @fileoverview 路径处理工具函数 - 提供跨平台的路径操作功能
  * 支持Windows和Unix/Linux路径格式的处理和转换
  * @author hhyufan
- * @version 1.2.0
+ * @version 1.3.0
  */
 
 /**
@@ -125,8 +125,8 @@ export const resolvePath = (basePath, relativePath) => {
   }
 
   // 如果相对路径已经是绝对路径，直接返回
-  if (relativePath.startsWith('http') || relativePath.startsWith('https') || 
-      relativePath.startsWith('data:') || /^[A-Za-z]:\\/.test(relativePath) || 
+  if (relativePath.startsWith('http') || relativePath.startsWith('https') ||
+      relativePath.startsWith('data:') || /^[A-Za-z]:\\/.test(relativePath) ||
       relativePath.startsWith('/')) {
     return relativePath
   }
@@ -148,7 +148,7 @@ export const resolvePath = (basePath, relativePath) => {
 
   // 处理相对路径段
   const resultSegments = [...baseSegments]
-  
+
   for (const segment of relativeSegments) {
     if (segment === '..') {
       // 返回上级目录
@@ -163,7 +163,7 @@ export const resolvePath = (basePath, relativePath) => {
 
   // 重新构建路径
   let resolvedPath
-  
+
   // 如果原始基础路径是Windows绝对路径
   if (driveLetter) {
     resolvedPath = driveLetter + '\\' + resultSegments.join('\\')

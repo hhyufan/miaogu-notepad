@@ -2,7 +2,7 @@
  * @fileoverview 树状图导出工具函数 - 适用于Tauri环境
  * 提供将DOM元素导出为PNG图片的功能，支持主题适配
  * @author hhyufan
- * @version 1.2.0
+ * @version 1.3.0
  * @module exportUtils
  */
 
