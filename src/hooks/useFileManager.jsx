@@ -5,12 +5,12 @@
  * @version 1.2.0
  */
 
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react'
-import {Modal} from 'antd'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Modal } from 'antd'
 import tauriApi from '../utils/tauriApi';
-import {useI18n} from './useI18n'
-import {listen} from '@tauri-apps/api/event'
-import {withFileTransition} from '../utils/viewTransition'
+import { useI18n } from './useI18n'
+import { listen } from '@tauri-apps/api/event'
+import { withFileTransition } from '../utils/viewTransition'
 
 const { file: fileApi } = tauriApi;
 
@@ -966,40 +966,40 @@ export const useFileManager = () => {
 
                 setOpenedFiles((prev) => {
 
-                  return prev.map((file) => {
-                      if (file.path === oldPath) {
-                        // 获取当前文件的实际内容
-                        let actualContent = file.content
+                    return prev.map((file) => {
+                        if (file.path === oldPath) {
+                            // 获取当前文件的实际内容
+                            let actualContent = file.content
 
-                        // 如果是当前正在编辑的文件，优先使用编辑器的实时内容
-                        if (oldPath === currentFilePath) {
-                          // 尝试从编辑器获取实时内容
-                          if (getEditorContent.current) {
-                            try {
-                              actualContent = getEditorContent.current()
+                            // 如果是当前正在编辑的文件，优先使用编辑器的实时内容
+                            if (oldPath === currentFilePath) {
+                                // 尝试从编辑器获取实时内容
+                                if (getEditorContent.current) {
+                                    try {
+                                        actualContent = getEditorContent.current()
 
-                            } catch (error) {
-                              console.warn('获取编辑器实时内容失败，使用editorCode:', error)
-                              actualContent = (editorCode !== undefined && editorCode !== null) ? editorCode : file.content
+                                    } catch (error) {
+                                        console.warn('获取编辑器实时内容失败，使用editorCode:', error)
+                                        actualContent = (editorCode !== undefined && editorCode !== null) ? editorCode : file.content
+                                    }
+                                } else {
+                                    // 如果getEditorContent不可用，使用editorCode
+                                    actualContent = (editorCode !== undefined && editorCode !== null) ? editorCode : file.content
+
+                                }
                             }
-                          } else {
-                            // 如果getEditorContent不可用，使用editorCode
-                            actualContent = (editorCode !== undefined && editorCode !== null) ? editorCode : file.content
 
-                          }
+                            return {
+                                ...file,
+                                path: newTempPath,
+                                name: newName,
+                                content: actualContent,
+                                isModified: oldPath === currentFilePath ?
+                                    (actualContent !== file.originalContent) :
+                                    file.isModified
+                            }
                         }
-
-                        return {
-                          ...file,
-                          path: newTempPath,
-                          name: newName,
-                          content: actualContent,
-                          isModified: oldPath === currentFilePath ?
-                            (actualContent !== file.originalContent) :
-                            file.isModified
-                        }
-                      }
-                      return file
+                        return file
                     })
                 })
 
@@ -1422,12 +1422,10 @@ export const useFileManager = () => {
         }
     }, [])
 
-    // 移除自动创建临时文件的逻辑，让编辑器在没有文件时显示欢迎界面
+    // 监听语言变化，更新默认文件名
     useEffect(() => {
-        // 只更新默认文件名，不自动创建文件
         updateDefaultFileName(t('common.untitled'))
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []) // 空依赖数组确保只在组件挂载时执行一次
+    }, [t, updateDefaultFileName]) // 添加t作为依赖，当语言变化时重新执行
 
     return {
         // 状态

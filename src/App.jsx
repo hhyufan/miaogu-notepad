@@ -295,6 +295,31 @@ const MainApp = () => {
   // 全局键盘快捷键处理（确保F11全屏模式下也能使用）
   useEffect(() => {
     const handleGlobalKeyDown = async (event) => {
+      // Ctrl+N 新建文件
+      if (event.ctrlKey && event.key === 'n' && !event.shiftKey) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        try {
+          // 不传文件名，让createFile方法自动处理索引
+          await fileManager.createFile();
+        } catch (error) {
+          console.error('新建文件失败:', error);
+        }
+      }
+
+      // Ctrl+O 打开文件
+      if (event.ctrlKey && event.key === 'o' && !event.shiftKey) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        try {
+          await fileManager.openFile();
+        } catch (error) {
+          console.error('打开文件失败:', error);
+        }
+      }
+
       // Ctrl+S 保存文件
       if (event.ctrlKey && event.key === 's' && !event.shiftKey) {
         event.preventDefault();

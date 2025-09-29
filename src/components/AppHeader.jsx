@@ -295,35 +295,6 @@ const AppHeader = ({ fileManager, hasOpenFiles }) => {
         };
     }, []);
 
-    useEffect(() => {
-        const handleKeyDown = (e) => {
-            if (e.ctrlKey && e.key === 'n' && !e.shiftKey) {
-                e.preventDefault();
-                handleNewFile();
-            }
-
-            if (e.ctrlKey && e.key === 'o' && !e.shiftKey) {
-                e.preventDefault();
-                handleOpenFile().catch();
-            }
-
-            if (e.ctrlKey && e.key === 's' && !e.shiftKey) {
-                e.preventDefault();
-                handleSaveFile().catch();
-            }
-
-            if (e.ctrlKey && e.shiftKey && e.key === 'S') {
-                e.preventDefault();
-                handleSaveAsFile().catch();
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-        };
-    }, [currentFile]);
-
     const fileMenuItems = [
         {
             key: 'open',

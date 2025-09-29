@@ -66,6 +66,13 @@
   "breadcrumb": {
     "openInExplorer": "在资源管理器中打开"
   },
+  "welcome": {
+    "title": "欢迎使用 Miaogu NotePad",
+    "description": "开始您的编程之旅，创建新文件或打开本地文件",
+    "newFile": "新建文件",
+    "openFile": "打开文件",
+    "tip": "提示：您也可以直接拖拽文件到此处打开"
+  },
   "editor": {
     "placeholder": "开始编写您的代码...",
     "lineEnding": {
