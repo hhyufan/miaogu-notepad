@@ -41,6 +41,34 @@
 }
 
 .monaco-editor {
+  /* 隐藏当前行高亮边框 */
+  .current-line {
+    border: none !important;
+    box-shadow: none !important;
+    background-color: transparent !important;
+  }
+
+  /* 隐藏当前行高亮装饰 */
+  .current-line-highlight {
+    border: none !important;
+    box-shadow: none !important;
+    background-color: transparent !important;
+  }
+
+  /* 隐藏行号区域的当前行高亮 */
+  .line-numbers .current-line {
+    border: none !important;
+    box-shadow: none !important;
+    background-color: transparent !important;
+  }
+
+  /* 隐藏Monaco编辑器的当前行边框装饰 */
+  .monaco-editor-background .current-line,
+  .view-line.current-line {
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+  }
 
   .inline-completion-text-to-insert {
     opacity: 0.6 !important;

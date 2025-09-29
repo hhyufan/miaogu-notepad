@@ -135,6 +135,21 @@ body {
   user-select: none;
   position: relative;
 
+  &.fullscreen-mode {
+    &.has-background::before {
+      background-color: var(--editor-background) !important;
+    }
+    
+    /* 确保在全屏模式下主题切换时背景能正确更新 */
+    &[data-theme="dark"].has-background::before {
+      background-color: var(--editor-background-dark) !important;
+    }
+    
+    &[data-theme="light"].has-background::before {
+      background-color: var(--editor-background-light) !important;
+    }
+  }
+
   &.has-background {
 
     &::before {
@@ -147,6 +162,7 @@ body {
       background-color: var(--editor-background);
       z-index: 1;
       pointer-events: none;
+      transition: background-color var(--transition-duration);
     }
 
     .ant-layout-header,
@@ -194,7 +210,6 @@ body {
 /* MarkdownViewer 透明背景 */
 .markdown-viewer-container {
   background: transparent !important;
-  background-color: transparent !important;
 }
 
 /* 脚注样式 */
@@ -286,7 +301,6 @@ body {
 .markdown-viewer-container .ant-btn,
 .theme-toggle {
   background: transparent !important;
-  background-color: transparent !important;
   border: none !important;
 }
 
@@ -295,7 +309,6 @@ body {
 .markdown-viewer-container thead,
 .markdown-viewer-container tbody {
   background: initial;
-  background-color: initial;
   border: initial !important;
 }
 
@@ -304,7 +317,6 @@ body {
 /* 确保行内代码保持背景颜色，但排除TreeEditor和TreeViewer */
 .markdown-viewer-container code:not(.inline-code) {
   background: initial !important;
-  background-color: initial !important;
 }
 
 .monaco-editor .minimap-decorations-layer,
@@ -639,7 +651,6 @@ body {
 [data-theme='dark'] .tree-viewer-card .ant-tree-node-content-wrapper:hover,
 [data-theme='dark'] .tree-viewer-card .ant-tree-treenode:hover,
 [data-theme='dark'] .tree-viewer-card .ant-tree-treenode:hover .ant-tree-node-content-wrapper {
-  background-color: transparent !important;
   background: transparent !important;
 }
 
@@ -648,7 +659,6 @@ body {
 .tree-viewer-card .ant-tree-node-content-wrapper:hover,
 .tree-viewer-card .ant-tree-treenode:hover,
 .tree-viewer-card .ant-tree-treenode:hover .ant-tree-node-content-wrapper {
-  background-color: transparent !important;
   background: transparent !important;
 }
 
@@ -668,7 +678,6 @@ body {
 .tree-viewer-card .tree-node-content.tree-node-clickable:hover,
 [data-theme='dark'] .tree-viewer-card .tree-node-content.tree-node-clickable:hover {
   background: transparent !important;
-  background-color: transparent !important;
   transform: none !important;
   box-shadow: none !important;
   opacity: 1 !important;
@@ -719,43 +728,6 @@ body {
 .content-container {
   background-color: transparent !important;
   transition: all var(--transition-duration);
-}
-
-/* 全屏模式样式 */
-.fullscreen-mode {
-  .main-layout {
-    height: calc(100vh - var(--tab-bar-height)) !important;
-    position: fixed !important;
-    top: var(--tab-bar-height) !important;
-    left: 0 !important;
-    right: 0 !important;
-    z-index: 9999 !important;
-  }
-
-  .app-content {
-    height: calc(100vh - var(--tab-bar-height)) !important;
-  }
-
-  .tab-bar {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    z-index: 10000 !important;
-    background-color: var(--bar-background-color) !important;
-  }
-
-  .theme-toggle {
-    top: 20px !important;
-    right: 20px !important;
-    z-index: 10001 !important;
-  }
-
-  .code-runner-container {
-    top: 20px !important;
-    right: 80px !important;
-    z-index: 10001 !important;
-  }
 }
 
 .theme-toggle {

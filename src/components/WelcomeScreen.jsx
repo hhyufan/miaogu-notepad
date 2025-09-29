@@ -29,15 +29,15 @@ const WelcomeScreen = ({ onNewFile, onOpenFile, isDarkMode }) => {
         <div className="welcome-icon">
           <CodeOutlined />
         </div>
-        
+
         <Title level={2} className="welcome-title">
-          {t('welcome.title', '欢迎使用 Miaogu IDE')}
+          {t('welcome.title', '欢迎使用 Miaogu NotePad')}
         </Title>
-        
+
         <Text className="welcome-description">
-          {t('welcome.description', '开始您的编程之旅，创建新文件或打开现有项目')}
+          {t('welcome.description', '开始您的编程之旅，创建新文件或打开本地文件')}
         </Text>
-        
+
         <Space direction="horizontal" size="large" className="welcome-actions">
           <Button
             type="primary"
@@ -48,7 +48,7 @@ const WelcomeScreen = ({ onNewFile, onOpenFile, isDarkMode }) => {
           >
             {t('welcome.newFile', '新建文件')}
           </Button>
-          
+
           <Button
             size="large"
             icon={<FolderOpenOutlined />}
@@ -58,7 +58,7 @@ const WelcomeScreen = ({ onNewFile, onOpenFile, isDarkMode }) => {
             {t('welcome.openFile', '打开文件')}
           </Button>
         </Space>
-        
+
         <div className="welcome-tips">
           <Text type="secondary" className="welcome-tip">
             {t('welcome.tip', '提示：您也可以直接拖拽文件到此处打开')}

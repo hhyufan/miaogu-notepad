@@ -43,7 +43,6 @@ const SettingsModal = ({ visible, onClose }) => {
     backgroundEnabled,
     backgroundTransparency,
     setTheme,
-    setFontSize,
     setFontFamily,
     setLineHeight,
     setBackgroundImage,
@@ -163,7 +162,6 @@ const SettingsModal = ({ visible, onClose }) => {
 
   const saveSettings = useCallback(async () => {
     try {
-      setFontSize(localSettings.fontSize);
       setFontFamily(localSettings.fontFamily);
       setLineHeight(localSettings.lineHeight);
 
@@ -203,7 +201,7 @@ const SettingsModal = ({ visible, onClose }) => {
       console.error('错误详情:', error.message, error.stack);
       message.error(`${t('settings.saveError')}: ${error.message || t('common.unknownError')}`);
     }
-  }, [localSettings, setFontSize, setFontFamily, setLineHeight, setBackgroundImage, setBackgroundEnabled, setBackgroundTransparency, t]);
+  }, [localSettings, setFontFamily, setLineHeight, setBackgroundImage, setBackgroundEnabled, setBackgroundTransparency, t]);
 
   const handleReset = useCallback(() => {
     resetTheme();

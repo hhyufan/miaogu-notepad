@@ -1094,6 +1094,7 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false, lang
           smoothScrolling: true,
           multiCursorModifier: 'ctrlCmd',
           accessibilitySupport: 'auto',
+          renderLineHighlight: 'none', // 禁用当前行高亮
           inlineSuggest: {
             enabled: true,
             mode: 'prefix',

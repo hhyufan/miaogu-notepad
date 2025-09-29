@@ -196,7 +196,6 @@ const MainApp = () => {
   const {
     theme: currentTheme,
     setTheme,
-    setFontSize,
     setFontFamily,
     setLineHeight,
     setBackgroundImage,
@@ -565,7 +564,6 @@ const MainApp = () => {
           const savedBackgroundTransparency = await settingsApi.get('backgroundTransparency', { dark: 80, light: 55 });
 
           setTheme(savedTheme);
-          setFontSize(savedFontSize);
           setFontFamily(savedFontFamily);
           setLineHeight(savedLineHeight);
           setBackgroundImage(savedBackgroundImage);
@@ -602,6 +600,25 @@ const MainApp = () => {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', currentTheme);
+    
+    // 强制更新背景透明度变量以确保主题切换时正确应用
+    const updateBackgroundForTheme = () => {
+      const state = store.getState();
+      const { backgroundEnabled, backgroundTransparency, backgroundImage } = state.theme;
+      
+      if (backgroundEnabled && backgroundImage) {
+        const darkTransparency = backgroundTransparency.dark / 100;
+        const lightTransparency = backgroundTransparency.light / 100;
+
+        const lightOpacity = `rgba(255, 255, 255, ${lightTransparency})`;
+        const darkOpacity = `rgba(0, 0, 0, ${darkTransparency})`;
+
+        document.documentElement.style.setProperty('--editor-background-light', lightOpacity);
+        document.documentElement.style.setProperty('--editor-background-dark', darkOpacity);
+      }
+    };
+    
+    updateBackgroundForTheme();
   }, [currentTheme]);
 
   useEffect(() => {

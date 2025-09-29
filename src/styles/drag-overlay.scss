@@ -50,12 +50,14 @@
   opacity: 0.8;
 }
 
-/* 暗色主题适配 */
-[data-theme="dark"] .drag-overlay {
+/* 暗色主题适配 - 使用更具体的选择器确保在全屏模式下也能正确应用 */
+[data-theme="dark"] .drag-overlay,
+.app-layout[data-theme="dark"] .drag-overlay {
   background: rgba(24, 144, 255, 0.12);
 }
 
-[data-theme="dark"] .drag-overlay-content {
+[data-theme="dark"] .drag-overlay-content,
+.app-layout[data-theme="dark"] .drag-overlay-content {
   background: rgba(20, 20, 20, 0.95);
   border-color: #1890ff;
   box-shadow: 
@@ -63,15 +65,18 @@
     0 8px 24px rgba(0, 0, 0, 0.24);
 }
 
-[data-theme="dark"] .drag-icon {
+[data-theme="dark"] .drag-icon,
+.app-layout[data-theme="dark"] .drag-icon {
   color: #69c0ff;
 }
 
-[data-theme="dark"] .drag-text {
+[data-theme="dark"] .drag-text,
+.app-layout[data-theme="dark"] .drag-text {
   color: #69c0ff;
 }
 
-[data-theme="dark"] .drag-subtext {
+[data-theme="dark"] .drag-subtext,
+.app-layout[data-theme="dark"] .drag-subtext {
   color: #a6a6a6;
 }
 
@@ -115,7 +120,8 @@
   transition: all 0.2s ease-in-out;
 }
 
-[data-theme="dark"] .main-layout.drag-over {
+[data-theme="dark"] .main-layout.drag-over,
+.app-layout[data-theme="dark"] .main-layout.drag-over {
   border-color: #1890ff;
   background: rgba(24, 144, 255, 0.1);
 }

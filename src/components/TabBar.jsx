@@ -24,7 +24,6 @@ const getLanguageFromFileName = (fileName) => {
 
     // 🔥 特殊处理：对于.mgtree文件，返回mgtree而不是plaintext
     if (extension === 'mgtree') {
-
         return 'mgtree';
     }
 
@@ -63,7 +62,6 @@ const TabBar = ({ fileManager }) => {
           const spanElement = activeTabBtn.querySelector('span');
           if (spanElement) {
             const fileName = spanElement.textContent || spanElement.innerText || '';
-
             if (fileName.trim()) {
               return getLanguageFromFileName(fileName.trim());
             }
@@ -79,7 +77,6 @@ const TabBar = ({ fileManager }) => {
     const updateLanguageRef = useCallback(() => {
         const language = getLanguageFromActiveTab();
         if (languageRef.current !== language) {
-
             languageRef.current = language;
         }
     }, [getLanguageFromActiveTab]);
