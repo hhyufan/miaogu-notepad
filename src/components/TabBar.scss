@@ -7,7 +7,9 @@
   &.with-background {
     background-color: transparent !important;
   }
-
+  .ant-tabs-nav-operations-hidden {
+    display: none !important;
+  }
   .ant-tabs {
     .ant-tabs-nav {
       margin: 0;
@@ -45,12 +47,51 @@
         }
       }
 
+      .ant-tabs-nav-add {
+        color: var(--text-color);
+        border: none;
+        background: transparent;
+        transition: all 0.3s;
+        min-width: 32px;
+        height: 32px;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateX(-2px);
+
+        &:hover {
+          color: var(--primary-color);
+          background-color: var(--hover-bg-color);
+        }
+
+        &:focus {
+          color: var(--primary-color);
+          background-color: var(--hover-bg-color);
+        }
+      }
+
       .ant-tabs-nav-wrap {
         height: var(--tab-bar-height);
       }
 
       .ant-tabs-ink-bar {
         background-color: var(--primary-color);
+      }
+    }
+  }
+
+  &.hovered {
+    .ant-tabs {
+      .ant-tabs-nav {
+        .ant-tabs-nav-add {
+          opacity: 1;
+          visibility: visible;
+          transform: translateX(0);
+        }
       }
     }
   }

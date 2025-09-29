@@ -8,8 +8,8 @@
 import './TabBar.scss'
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react'
 import { useSelector } from 'react-redux'
-import { EditOutlined, FileAddOutlined } from '@ant-design/icons'
-import { Tabs, Dropdown } from 'antd'
+import { EditOutlined, FileAddOutlined, PlusOutlined } from '@ant-design/icons'
+import { Tabs, Dropdown, Button } from 'antd'
 import { useI18n } from '../hooks/useI18n'
 import extensionToLanguage from '../configs/file-extensions.json'
 
@@ -42,11 +42,15 @@ const TabBar = ({ fileManager }) => {
         currentFile,
         openedFiles,
         switchFile: switchToFile,
-        closeFile: closeFileByPath
+        closeFile: closeFileByPath,
+        createFile
     } = fileManager
 
     const { theme, backgroundEnabled, backgroundImage } = useSelector(state => state.theme)
     const hasBackground = backgroundEnabled && backgroundImage
+
+    // 添加悬停状态管理
+    const [isHovered, setIsHovered] = useState(false)
     const [contextMenu, setContextMenu] = useState({ visible: false, tabKey: null })
 
     // 创建语言设置的ref，供CodeEditor使用
@@ -54,23 +58,23 @@ const TabBar = ({ fileManager }) => {
 
     // 从DOM标签页获取当前活动标签页的文件名和语言
     const getLanguageFromActiveTab = useCallback(() => {
-      try {
-        // 查找aria-selected="true"的标签页按钮
-        const activeTabBtn = document.querySelector('.ant-tabs-tab-btn[aria-selected="true"]');
-        if (activeTabBtn) {
-          // 获取按钮内的span元素
-          const spanElement = activeTabBtn.querySelector('span');
-          if (spanElement) {
-            const fileName = spanElement.textContent || spanElement.innerText || '';
-            if (fileName.trim()) {
-              return getLanguageFromFileName(fileName.trim());
+        try {
+            // 查找aria-selected="true"的标签页按钮
+            const activeTabBtn = document.querySelector('.ant-tabs-tab-btn[aria-selected="true"]');
+            if (activeTabBtn) {
+                // 获取按钮内的span元素
+                const spanElement = activeTabBtn.querySelector('span');
+                if (spanElement) {
+                    const fileName = spanElement.textContent || spanElement.innerText || '';
+                    if (fileName.trim()) {
+                        return getLanguageFromFileName(fileName.trim());
+                    }
+                }
             }
-          }
+        } catch (error) {
+            console.warn('Failed to get current tab file name from DOM:', error);
         }
-      } catch (error) {
-        console.warn('Failed to get current tab file name from DOM:', error);
-      }
-      return 'plaintext';
+        return 'plaintext';
     }, []);
 
     // 更新languageRef的值
@@ -80,9 +84,9 @@ const TabBar = ({ fileManager }) => {
             languageRef.current = language;
         }
     }, [getLanguageFromActiveTab]);
-  useEffect(() => {
-    updateLanguageRef()
-  });
+    useEffect(() => {
+        updateLanguageRef()
+    });
     // 监听标签页变化并更新语言
     useEffect(() => {
         // 初始更新
@@ -145,11 +149,21 @@ const TabBar = ({ fileManager }) => {
         switchToFile(activeKey)
     }, [switchToFile])
 
+    const handleNewFile = useCallback(async () => {
+        try {
+            await createFile();
+        } catch (error) {
+            console.error('新建文件失败:', error);
+        }
+    }, [createFile])
+
     const onEdit = useCallback((targetKey, action) => {
         if (action === 'remove') {
             closeFileByPath(targetKey)
+        } else if (action === 'add') {
+            handleNewFile();
         }
-    }, [closeFileByPath])
+    }, [closeFileByPath, handleNewFile])
 
     const handleCloseTab = useCallback((tabKey) => {
         closeFileByPath(tabKey)
@@ -247,8 +261,10 @@ const TabBar = ({ fileManager }) => {
 
     return (
         <div
-            className={`tab-bar ${hasBackground ? 'with-background' : ''}`}
+            className={`tab-bar ${hasBackground ? 'with-background' : ''} ${isHovered ? 'hovered' : ''}`}
             data-theme={theme}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
         >
             <Tabs
                 type="editable-card"
@@ -256,7 +272,6 @@ const TabBar = ({ fileManager }) => {
                 activeKey={currentFile ? getFileKey(currentFile) : ''}
                 onEdit={onEdit}
                 items={items}
-                hideAdd
             />
         </div>
     )
