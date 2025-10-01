@@ -19,6 +19,15 @@ use notify::{Watcher, RecursiveMode, Event, EventKind};
 use once_cell::sync::Lazy;
 use tauri::{AppHandle, Emitter};
 
+// Windows API相关导入
+#[cfg(windows)]
+use windows_sys::Win32::System::Power::{
+    SetThreadExecutionState, ES_CONTINUOUS, ES_DISPLAY_REQUIRED, ES_SYSTEM_REQUIRED,
+};
+
+// 全局状态：跟踪是否启用了防休眠模式
+static PREVENT_SLEEP_ENABLED: Lazy<Arc<Mutex<bool>>> = Lazy::new(|| Arc::new(Mutex::new(false)));
+
 /// 文件信息结构体
 /// 用于描述文件或目录的基本信息
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -989,6 +998,74 @@ async fn open_url(url: String) -> Result<(), String> {
     }
 }
 
+/// 启用防休眠模式
+/// 防止系统进入休眠状态和显示器关闭，适用于全屏模式等场景
+#[tauri::command]
+async fn enable_prevent_sleep() -> Result<String, String> {
+    #[cfg(windows)]
+    {
+        unsafe {
+            let result = SetThreadExecutionState(
+                ES_CONTINUOUS | ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED
+            );
+            
+            if result != 0 {
+                // 更新全局状态
+                if let Ok(mut enabled) = PREVENT_SLEEP_ENABLED.lock() {
+                    *enabled = true;
+                }
+                Ok("防休眠模式已启用".to_string())
+            } else {
+                Err("启用防休眠模式失败".to_string())
+            }
+        }
+    }
+    
+    #[cfg(not(windows))]
+    {
+        // 非Windows平台暂不支持
+        Err("当前平台不支持防休眠功能".to_string())
+    }
+}
+
+/// 禁用防休眠模式
+/// 恢复系统正常的电源管理行为
+#[tauri::command]
+async fn disable_prevent_sleep() -> Result<String, String> {
+    #[cfg(windows)]
+    {
+        unsafe {
+            let result = SetThreadExecutionState(ES_CONTINUOUS);
+            
+            if result != 0 {
+                // 更新全局状态
+                if let Ok(mut enabled) = PREVENT_SLEEP_ENABLED.lock() {
+                    *enabled = false;
+                }
+                Ok("防休眠模式已禁用".to_string())
+            } else {
+                Err("禁用防休眠模式失败".to_string())
+            }
+        }
+    }
+    
+    #[cfg(not(windows))]
+    {
+        // 非Windows平台暂不支持
+        Err("当前平台不支持防休眠功能".to_string())
+    }
+}
+
+/// 获取防休眠模式状态
+/// 返回当前是否启用了防休眠模式
+#[tauri::command]
+async fn get_prevent_sleep_status() -> Result<bool, String> {
+    match PREVENT_SLEEP_ENABLED.lock() {
+        Ok(enabled) => Ok(*enabled),
+        Err(_) => Err("获取防休眠状态失败".to_string()),
+    }
+}
+
 /// Tauri应用程序运行函数
 /// 初始化并启动Tauri应用程序，配置插件和命令处理器
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -1018,7 +1095,10 @@ pub fn run() {
             start_file_watching,
             stop_file_watching,
             check_file_external_changes,
-            open_url
+            open_url,
+            enable_prevent_sleep,
+            disable_prevent_sleep,
+            get_prevent_sleep_status
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

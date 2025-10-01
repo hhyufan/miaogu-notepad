@@ -9,6 +9,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { App as AntdApp, Button, ConfigProvider, Layout, Spin, theme } from 'antd';
 import { CodeOutlined, EyeOutlined, InboxOutlined, MoonFilled, PartitionOutlined, SunOutlined } from '@ant-design/icons';
 import { Provider, useSelector } from 'react-redux';
+import { invoke } from '@tauri-apps/api/core';
 import { store } from './store';
 import { useTheme } from './hooks/redux';
 import { useI18n } from './hooks/useI18n';
@@ -245,11 +246,21 @@ const MainApp = () => {
             const appWindow = getCurrentWindow();
 
             if (newHeaderVisible) {
-              // 退出全屏模式：显示Header，退出全屏状态
+              // 退出全屏模式：显示Header，退出全屏状态，允许休眠
               await appWindow.setFullscreen(false);
+              try {
+                await invoke('disable_prevent_sleep');
+              } catch (error) {
+                console.warn('允许休眠失败:', error);
+              }
             } else {
-              // 进入全屏模式：隐藏Header，设置全屏状态（这会隐藏任务栏）
+              // 进入全屏模式：隐藏Header，设置全屏状态（这会隐藏任务栏），防止休眠
               await appWindow.setFullscreen(true);
+              try {
+                await invoke('enable_prevent_sleep');
+              } catch (error) {
+                console.warn('防止休眠失败:', error);
+              }
             }
           } catch (error) {
             console.error('F11全屏切换失败:', error);
