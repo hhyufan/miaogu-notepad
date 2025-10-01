@@ -124,14 +124,31 @@ const SettingsModal = ({ visible, onClose }) => {
     }
   }, [theme, localSettings.backgroundEnabled, localSettings.backgroundImage, localSettings.backgroundTransparency]);
 
-  const updateLocalSetting = useCallback((key, value) => {
+  const updateLocalSetting = useCallback(async (key, value) => {
     setLocalSettings(prev => ({ ...prev, [key]: value }));
 
     if (key === 'backgroundTransparency' || key === 'backgroundEnabled' || key === 'backgroundImage') {
       const updatedSettings = { ...localSettings, [key]: value };
 
       if (updatedSettings.backgroundEnabled && updatedSettings.backgroundImage) {
-        document.documentElement.style.setProperty('--editor-background-image', `url(${updatedSettings.backgroundImage})`);
+        // 处理背景图片URL，区分base64和文件路径
+        let imageUrl;
+        if (updatedSettings.backgroundImage.startsWith('data:')) {
+          // 如果是base64数据，直接使用
+          imageUrl = `url("${updatedSettings.backgroundImage}")`;
+        } else {
+          // 如果是文件路径，使用convertFileSrc转换
+          try {
+            const { convertFileSrc } = await import('@tauri-apps/api/core');
+            const convertedUrl = convertFileSrc(updatedSettings.backgroundImage);
+            imageUrl = `url("${convertedUrl}")`;
+          } catch (error) {
+            console.warn('转换背景图片路径失败:', error);
+            imageUrl = `url("${updatedSettings.backgroundImage}")`;
+          }
+        }
+
+        document.documentElement.style.setProperty('--editor-background-image', imageUrl);
 
         const darkTransparency = updatedSettings.backgroundTransparency.dark / 100;
         const lightTransparency = updatedSettings.backgroundTransparency.light / 100;
@@ -177,6 +194,11 @@ const SettingsModal = ({ visible, onClose }) => {
         }
       }
 
+      // 添加调试日志
+
+
+
+
 
       await settingsApi.set('fontSize', localSettings.fontSize);
       await settingsApi.set('fontFamily', localSettings.fontFamily);
@@ -185,6 +207,10 @@ const SettingsModal = ({ visible, onClose }) => {
       await settingsApi.set('backgroundImage', localSettings.backgroundImage);
       await settingsApi.set('backgroundEnabled', localSettings.backgroundEnabled);
       await settingsApi.set('backgroundTransparency', localSettings.backgroundTransparency);
+
+      // 验证保存结果
+      const verifyBackgroundImage = await settingsApi.get('backgroundImage', '');
+      const verifyBackgroundEnabled = await settingsApi.get('backgroundEnabled', false);
 
 
 
@@ -231,7 +257,7 @@ const SettingsModal = ({ visible, onClose }) => {
         // 验证是否为图片文件
         const ext = selected.split('.').pop()?.toLowerCase();
         const imageExtensions = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg'];
-        
+
         if (imageExtensions.includes(ext)) {
           updateLocalSetting('backgroundImage', selected);
           updateLocalSetting('backgroundEnabled', true);

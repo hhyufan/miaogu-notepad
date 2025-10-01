@@ -581,7 +581,12 @@ const MainApp = () => {
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        if (window['__TAURI__']) {
+
+
+        // 使用与 tauriApi.js 一致的环境检测
+        if (typeof window !== 'undefined' && window.__TAURI_INTERNALS__ !== undefined) {
+
+
           const savedTheme = await settingsApi.get('theme', 'light');
           const savedFontSize = await settingsApi.get('fontSize', 14);
           const savedFontFamily = await settingsApi.get('fontFamily', 'Consolas, Monaco, monospace');
@@ -703,7 +708,7 @@ const MainApp = () => {
             imageUrl = `url("${backgroundImage}")`;
           }
         }
-        
+
         document.documentElement.style.setProperty('--editor-background-image', imageUrl);
 
         const darkTransparency = backgroundTransparency.dark / 100;

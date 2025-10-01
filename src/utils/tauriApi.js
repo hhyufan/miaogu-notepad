@@ -8,7 +8,15 @@
 import { invoke } from '@tauri-apps/api/core';
 import { open, save } from '@tauri-apps/plugin-dialog';
 import { readTextFile, writeTextFile, exists, readFile } from '@tauri-apps/plugin-fs';
-import { Store } from '@tauri-apps/plugin-store';
+// 导入 Tauri Store
+let Store, load;
+try {
+  const storeModule = await import('@tauri-apps/plugin-store');
+  Store = storeModule.Store;
+  load = storeModule.load;
+} catch (error) {
+  console.warn('Tauri Store 不可用，将使用 localStorage');
+}
 
 let store = null;
 let storeInitialized = false;
@@ -22,12 +30,30 @@ const initStore = async () => {
   if (storeInitialized) return store;
 
   try {
+    // 检查是否在 Tauri 环境中
+
 
     if (typeof window !== 'undefined' && window.__TAURI_INTERNALS__ !== undefined) {
+      // 在 Tauri 环境中，使用 Tauri Store
 
-      useLocalStorage = true;
-      storeInitialized = true;
+
+      try {
+        // 使用 load 函数创建 Store 实例
+        if (load) {
+          store = await load('settings.json', { autoSave: true });
+          useLocalStorage = false;
+          storeInitialized = true;
+
+        } else {
+          throw new Error('load 函数不可用');
+        }
+      } catch (storeError) {
+        console.error('Tauri Store 初始化失败，回退到 localStorage:', storeError);
+        useLocalStorage = true;
+        storeInitialized = true;
+      }
     } else {
+      // 在浏览器环境中，使用 localStorage
 
       useLocalStorage = true;
       storeInitialized = true;
@@ -391,10 +417,14 @@ export const settingsApi = {
 
   async set(key, value) {
     try {
+      // 添加调试日志
+
+
+
+
 
       await initStore();
       const currentStore = useLocalStorage ? localStorageStore : store;
-
 
       if (!currentStore) {
         console.error('存储实例为空');
@@ -403,9 +433,14 @@ export const settingsApi = {
 
       await currentStore.set(key, value);
 
+      // 验证设置是否成功
+      const verifyValue = await currentStore.get(key);
 
-      if (currentStore.save) {
-        await currentStore.save();
+
+      // 对于 Tauri Store，由于使用了 autoSave，不需要手动调用 save()
+      if (!useLocalStorage) {
+
+      } else if (useLocalStorage) {
 
       }
     } catch (error) {
