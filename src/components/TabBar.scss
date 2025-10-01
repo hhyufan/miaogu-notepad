@@ -7,9 +7,11 @@
   &.with-background {
     background-color: transparent !important;
   }
+
   .ant-tabs-nav-operations-hidden {
     display: none !important;
   }
+
   .ant-tabs {
     .ant-tabs-nav {
       margin: 0;
@@ -93,6 +95,56 @@
           transform: translateX(0);
         }
       }
+    }
+  }
+
+  // 标签页重命名输入框样式
+  .tab-rename-input {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    outline: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+
+    &:focus {
+      border: none !important;
+      box-shadow: none !important;
+      background: transparent !important;
+    }
+
+    &:hover {
+      border: none !important;
+      background: none !important;
+    }
+  }
+
+  // 标签页标签容器
+  .tab-label {
+    cursor: pointer;
+    user-select: none;
+
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+
+  // 标签页标签容器
+  .tab-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    cursor: pointer;
+    user-select: none;
+    
+    // 确保输入框和文本在同一位置
+    .tab-rename-input {
+      display: inline-block;
+      vertical-align: baseline;
+      line-height: inherit;
+      text-align: left;
+      color: var(--text-primary); // 使用主题变量确保字体颜色自适应
     }
   }
 }
