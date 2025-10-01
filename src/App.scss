@@ -148,6 +148,23 @@ body {
     &[data-theme="light"].has-background::before {
       background-color: var(--editor-background-light) !important;
     }
+
+    /* 全屏模式下编辑器高度调整 - 补偿隐藏的 AppHeader 高度 */
+    .app-content {
+      height: calc(100vh - var(--tab-bar-height)) !important;
+      
+      &.with-console {
+        height: calc(100vh - var(--tab-bar-height) - var(--console-layout-height)) !important;
+      }
+    }
+
+    .main-layout {
+      height: calc(100vh - var(--tab-bar-height)) !important;
+    }
+
+    .code-editor-container {
+      height: calc(100vh - var(--tab-bar-height) - 24px) !important;
+    }
   }
 
   &.has-background {
