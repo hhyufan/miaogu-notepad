@@ -628,7 +628,7 @@ const MainApp = () => {
                 imageUrl = `url("${savedBackgroundImage}")`;
               }
             }
-            
+
             document.documentElement.style.setProperty('--editor-background-image', imageUrl);
 
             const darkTransparency = savedBackgroundTransparency.dark / 100;

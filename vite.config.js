@@ -15,6 +15,7 @@ export default defineConfig(async () => ({
   },
   
   build: {
+    target: 'esnext', // 支持最新的 JavaScript 特性，包括 top-level await
     minify: 'terser',
     terserOptions: {
       compress: {
