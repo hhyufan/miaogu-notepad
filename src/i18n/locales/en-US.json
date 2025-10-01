@@ -57,6 +57,7 @@
       "clickToPreview": "Click to preview"
     },
   "tabs": {
+    "rename": "Rename",
     "close": "Close",
     "closeOthers": "Close Others",
     "closeAll": "Close All"
