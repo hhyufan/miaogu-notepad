@@ -225,11 +225,20 @@ const SettingsModal = ({ visible, onClose }) => {
 
   const handleSelectBackground = useCallback(async () => {
     try {
-      const result = await fileApi.selectImageDialog(t);
-      if (result) {
-        updateLocalSetting('backgroundImage', result);
-        updateLocalSetting('backgroundEnabled', true);
-        message.success(t('settings.backgroundSuccess'));
+      // 使用原生文件选择对话框，只获取文件路径
+      const selected = await fileApi.openFileDialog(t);
+      if (selected) {
+        // 验证是否为图片文件
+        const ext = selected.split('.').pop()?.toLowerCase();
+        const imageExtensions = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg'];
+        
+        if (imageExtensions.includes(ext)) {
+          updateLocalSetting('backgroundImage', selected);
+          updateLocalSetting('backgroundEnabled', true);
+          message.success(t('settings.backgroundSuccess'));
+        } else {
+          message.error(t('settings.backgroundError'));
+        }
       }
     } catch (error) {
       message.error(t('settings.backgroundError'));

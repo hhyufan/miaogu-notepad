@@ -30,7 +30,7 @@ class PersistenceManager {
     try {
       await this.restoreAppState();
       this.isInitialized = true;
-    } catch (error) {}
+    } catch (error) { }
   }
 
   /**
@@ -71,7 +71,7 @@ class PersistenceManager {
 
     try {
       this.debouncedSave(state);
-    } catch (error) {}
+    } catch (error) { }
   }
 
   /**
@@ -115,7 +115,8 @@ class PersistenceManager {
         theme: theme.theme,
         fontFamily: theme.fontFamily,
         lineHeight: theme.lineHeight,
-        backgroundImage: theme.backgroundImage,
+        // 不存储 backgroundImage，避免 base64 数据导致存储配额超限
+        // backgroundImage: theme.backgroundImage,
         backgroundEnabled: theme.backgroundEnabled,
         backgroundTransparency: theme.backgroundTransparency
       });
@@ -145,7 +146,7 @@ class PersistenceManager {
           sidebarVisible: ui.sidebarVisible
         });
       }
-    } catch (error) {}
+    } catch (error) { }
   }
 
   /**
@@ -157,7 +158,7 @@ class PersistenceManager {
   async saveSetting(key, value) {
     try {
       await settingsApi.set(key, value);
-    } catch (error) {}
+    } catch (error) { }
   }
 
   /**
@@ -181,7 +182,7 @@ class PersistenceManager {
   async clearAll() {
     try {
       await settingsApi.clear();
-    } catch (error) {}
+    } catch (error) { }
   }
 
   /**

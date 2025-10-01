@@ -19,6 +19,27 @@ const persistConfig = {
   storage,
   whitelist: ['theme', 'editor', 'file'],
   blacklist: ['ui'],
+  transforms: [
+    // 排除 backgroundImage 字段，避免存储大量 base64 数据
+    {
+      in: (inboundState, key) => {
+        if (key === 'theme' && inboundState.backgroundImage) {
+          const { backgroundImage, ...rest } = inboundState;
+          return rest;
+        }
+        return inboundState;
+      },
+      out: (outboundState, key) => {
+        if (key === 'theme') {
+          return {
+            ...outboundState,
+            backgroundImage: '' // 恢复时重置为空字符串
+          };
+        }
+        return outboundState;
+      }
+    }
+  ]
 };
 
 const rootReducer = combineReducers({

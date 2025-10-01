@@ -605,6 +605,39 @@ const MainApp = () => {
             }
           }
 
+          // 初始化背景图片样式
+          if (savedBackgroundEnabled && savedBackgroundImage) {
+            // 检查是否为文件路径，如果是则使用convertFileSrc转换
+            let imageUrl;
+            if (savedBackgroundImage.startsWith('data:')) {
+              // 如果是base64数据，直接使用
+              imageUrl = `url("${savedBackgroundImage}")`;
+            } else {
+              // 如果是文件路径，使用convertFileSrc转换
+              try {
+                const { convertFileSrc } = await import('@tauri-apps/api/core');
+                const convertedUrl = convertFileSrc(savedBackgroundImage);
+                imageUrl = `url("${convertedUrl}")`;
+              } catch (error) {
+                console.warn('转换背景图片路径失败:', error);
+                imageUrl = `url("${savedBackgroundImage}")`;
+              }
+            }
+            
+            document.documentElement.style.setProperty('--editor-background-image', imageUrl);
+
+            const darkTransparency = savedBackgroundTransparency.dark / 100;
+            const lightTransparency = savedBackgroundTransparency.light / 100;
+
+            const lightOpacity = `rgba(255, 255, 255, ${lightTransparency})`;
+            const darkOpacity = `rgba(0, 0, 0, ${darkTransparency})`;
+
+            document.documentElement.style.setProperty('--editor-background-light', lightOpacity);
+            document.documentElement.style.setProperty('--editor-background-dark', darkOpacity);
+          } else {
+            document.documentElement.style.setProperty('--editor-background-image', 'none');
+          }
+
           document.documentElement.setAttribute('data-theme', savedTheme);
         } else {
           if (!document.documentElement.getAttribute('data-theme')) {
@@ -649,12 +682,28 @@ const MainApp = () => {
   }, [currentTheme]);
 
   useEffect(() => {
-    const updateBackgroundStyles = () => {
+    const updateBackgroundStyles = async () => {
       const state = store.getState();
       const { backgroundEnabled, backgroundTransparency, backgroundImage } = state.theme;
 
       if (backgroundEnabled && backgroundImage) {
-        const imageUrl = `url("${backgroundImage}")`;
+        // 检查是否为文件路径，如果是则使用convertFileSrc转换
+        let imageUrl;
+        if (backgroundImage.startsWith('data:')) {
+          // 如果是base64数据，直接使用
+          imageUrl = `url("${backgroundImage}")`;
+        } else {
+          // 如果是文件路径，使用convertFileSrc转换
+          try {
+            const { convertFileSrc } = await import('@tauri-apps/api/core');
+            const convertedUrl = convertFileSrc(backgroundImage);
+            imageUrl = `url("${convertedUrl}")`;
+          } catch (error) {
+            console.warn('转换背景图片路径失败:', error);
+            imageUrl = `url("${backgroundImage}")`;
+          }
+        }
+        
         document.documentElement.style.setProperty('--editor-background-image', imageUrl);
 
         const darkTransparency = backgroundTransparency.dark / 100;
@@ -666,8 +715,18 @@ const MainApp = () => {
         document.documentElement.style.setProperty('--editor-background-light', lightOpacity);
         document.documentElement.style.setProperty('--editor-background-dark', darkOpacity);
 
+        // 预加载图片以确保正确显示
         const testImg = new Image();
-        testImg.src = backgroundImage;
+        if (backgroundImage.startsWith('data:')) {
+          testImg.src = backgroundImage;
+        } else {
+          try {
+            const { convertFileSrc } = await import('@tauri-apps/api/core');
+            testImg.src = convertFileSrc(backgroundImage);
+          } catch (error) {
+            testImg.src = backgroundImage;
+          }
+        }
       } else {
         document.documentElement.style.setProperty('--editor-background-image', 'none');
 
@@ -680,7 +739,7 @@ const MainApp = () => {
     };
 
     updateBackgroundStyles();
-    const unsubscribe = store.subscribe(updateBackgroundStyles);
+    const unsubscribe = store.subscribe(() => updateBackgroundStyles());
 
     return () => {
       unsubscribe();

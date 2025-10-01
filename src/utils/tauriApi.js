@@ -304,7 +304,7 @@ export const fileApi = {
     }
   },
 
-async getDirectoryContents(dirPath) {
+  async getDirectoryContents(dirPath) {
     try {
       const contents = await invoke('get_directory_contents', { dirPath });
       return contents;
@@ -337,13 +337,13 @@ async getDirectoryContents(dirPath) {
     }
   },
 
-   async showInExplorer(path) {
-     try {
-       return await invoke('show_in_explorer', { path });
-     } catch (error) {
-       throw error;
-     }
-   },
+  async showInExplorer(path) {
+    try {
+      return await invoke('show_in_explorer', { path });
+    } catch (error) {
+      throw error;
+    }
+  },
 
   async startFileWatching(filePath) {
     try {
