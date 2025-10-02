@@ -1509,27 +1509,27 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false, lang
 
   useEffect(() => {
     if (!editorRef.current || isInternalChange.current) return;      // 确保编辑器内容与文件内容同步
-      const fileContent = currentFile['content'];
-      if (editorRef.current.getValue() !== fileContent) {
-        editorRef.current.setValue(fileContent);
-      }
+    const fileContent = currentFile['content'];
+    if (editorRef.current.getValue() !== fileContent) {
+      editorRef.current.setValue(fileContent);
+    }
 
-      // 优先使用TabBar的languageRef，但对于mgtree文件特殊处理
-      const tabBarLanguage = fileManager?.tabBarRef?.languageRef?.current;
-      const fileNameLanguage = getFileLanguage(getCurrentTabFileName());
+    // 优先使用TabBar的languageRef，但对于mgtree文件特殊处理
+    const tabBarLanguage = fileManager?.tabBarRef?.languageRef?.current;
+    const fileNameLanguage = getFileLanguage(getCurrentTabFileName());
 
-      // 🔥 特殊处理：对于.mgtree文件，优先使用文件名推断的语言
-      let language;
-      if (getCurrentTabFileName()?.endsWith('.mgtree')) {
-        // mgtree文件优先使用文件名推断的语言，忽略TabBar设置
-        language = fileNameLanguage || 'mgtree';
+    // 🔥 特殊处理：对于.mgtree文件，优先使用文件名推断的语言
+    let language;
+    if (getCurrentTabFileName()?.endsWith('.mgtree')) {
+      // mgtree文件优先使用文件名推断的语言，忽略TabBar设置
+      language = fileNameLanguage || 'mgtree';
 
-      } else {
-        // 其他文件使用原有逻辑
-        language = tabBarLanguage || fileNameLanguage || 'plaintext';
-      }
+    } else {
+      // 其他文件使用原有逻辑
+      language = tabBarLanguage || fileNameLanguage || 'plaintext';
+    }
 
-      monaco.editor.setModelLanguage(editorRef.current.getModel(), language);
+    monaco.editor.setModelLanguage(editorRef.current.getModel(), language);
 
     // 内容设置完成后，强制更新状态栏信息以确保与编辑器严格同步
     setTimeout(() => {

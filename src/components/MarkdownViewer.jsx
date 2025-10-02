@@ -721,8 +721,6 @@ const MarkdownRenderer = React.memo(({ content, currentFileName, currentFolder, 
                   src={imageSrc}
                   alt={alt}
                   style={{
-                    maxWidth: '100%',
-                    maxHeight: '500px',
                     width: 'auto',
                     height: 'auto',
                     borderRadius: '4px',
