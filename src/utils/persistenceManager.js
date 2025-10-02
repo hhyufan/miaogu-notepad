@@ -156,24 +156,8 @@ class PersistenceManager {
    * @returns {Promise<void>}
    */
   async saveSetting(key, value) {
-    try {
-      console.log('💾 [persistenceManager] 保存设置:', {
-        key,
-        value: key === 'themeSettings' ? value : '[其他设置]',
-        timestamp: new Date().toISOString()
-      });
-      
       await settingsApi.set(key, value);
-      
-      console.log('💾 [persistenceManager] 设置保存成功:', key);
-    } catch (error) {
-      console.error('💾 [persistenceManager] 设置保存失败:', {
-        key,
-        error: error.message
-      });
-    }
   }
-
   /**
    * 获取单个设置项
    * @param {string} key - 设置键
@@ -182,26 +166,8 @@ class PersistenceManager {
    */
   async getSetting(key, defaultValue = null) {
     try {
-      console.log('📖 [persistenceManager] 获取设置:', {
-        key,
-        defaultValue: key === 'themeSettings' ? defaultValue : '[其他默认值]',
-        timestamp: new Date().toISOString()
-      });
-      
-      const result = await settingsApi.get(key, defaultValue);
-      
-      console.log('📖 [persistenceManager] 设置获取成功:', {
-        key,
-        result: key === 'themeSettings' ? result : '[其他结果]'
-      });
-      
-      return result;
+      return await settingsApi.get(key, defaultValue);
     } catch (error) {
-      console.error('📖 [persistenceManager] 设置获取失败:', {
-        key,
-        error: error.message,
-        返回默认值: defaultValue
-      });
       return defaultValue;
     }
   }

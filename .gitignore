@@ -172,7 +172,6 @@ config.local.*
 settings.local.*
 
 # Generated documentation
-docs/api/
 docs/generated/
 
 # Profiling and debugging

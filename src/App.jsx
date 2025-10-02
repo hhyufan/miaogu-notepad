@@ -462,24 +462,10 @@ const MainApp = () => {
    * 主题切换函数
    */
   const toggleTheme = useCallback(async () => {
-    console.log('🔄 [App] toggleTheme开始:', {
-      currentTheme,
-      timestamp: new Date().toISOString()
-    });
 
     const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-    console.log('🔄 [App] 准备切换到新主题:', newTheme);
-
     // 直接设置主题，不使用视觉过渡，避免时序问题
     setTheme(newTheme);
-
-    console.log('🔄 [App] toggleTheme完成:', {
-      oldTheme: currentTheme,
-      newTheme,
-      timestamp: new Date().toISOString()
-    });
-
-    // 移除重复的localStorage操作，主题持久化由Redux persist和persistenceManager统一处理
   }, [currentTheme, setTheme]);
 
   const testCliArgs = async () => {
@@ -680,11 +666,6 @@ const MainApp = () => {
   }, []);
 
   useEffect(() => {
-    console.log('🎨 [App] 主题同步 - 设置data-theme属性:', {
-      currentTheme,
-      timestamp: new Date().toISOString()
-    });
-    
     document.documentElement.setAttribute('data-theme', currentTheme);
 
     // 强制更新背景透明度变量以确保主题切换时正确应用
@@ -705,12 +686,6 @@ const MainApp = () => {
     };
 
     updateBackgroundForTheme();
-    
-    console.log('🎨 [App] 主题同步完成:', {
-      currentTheme,
-      dataTheme: document.documentElement.getAttribute('data-theme'),
-      timestamp: new Date().toISOString()
-    });
   }, [currentTheme]);
 
   useEffect(() => {
