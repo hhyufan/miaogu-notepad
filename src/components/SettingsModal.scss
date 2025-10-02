@@ -10,6 +10,8 @@
     .settings-menu {
       width: 200px;
       border-right: 1px solid var(--border-color);
+      padding: 5px;
+
       background: var(--background-secondary);
 
       .settings-menu-list {
@@ -18,7 +20,8 @@
         height: 100%;
 
         .ant-menu-item {
-          margin: 0;
+          margin: 5px 0;
+          width: 100%;
           border-radius: 0;
 
           &:hover {
