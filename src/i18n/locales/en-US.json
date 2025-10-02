@@ -151,15 +151,15 @@
       }
     },
     "ai": {
-      "title": "AI Completion",
-      "enable": "Enable AI Completion",
-      "baseUrl": "Base URL",
-      "baseUrlPlaceholder": "e.g., https://api.openai.com",
+      "title": "AI Assistant",
+      "basicSettings": "Basic Settings",
+      "enable": "Enable AI Assistant",
+      "baseUrl": "API Base URL",
+      "baseUrlPlaceholder": "Enter API base URL, e.g.: https://api.openai.com/v1",
       "apiKey": "API Key",
-      "apiKeyPlaceholder": "sk-...",
-      "model": "Model",
-      "modelPlaceholder": "e.g., gpt-4o-mini, gpt-4.1, qwen-turbo, etc.",
-      "basicSettings": "Basic Settings"
+      "apiKeyPlaceholder": "Enter your API key",
+      "model": "Model Name",
+      "modelPlaceholder": "Enter model name, e.g.: gpt-3.5-turbo"
     },
     "language": {
       "title": "Language",

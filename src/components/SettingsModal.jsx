@@ -95,7 +95,7 @@ const SettingsModal = ({ visible, onClose }) => {
         setLocalSettings(prev => ({
           ...prev,
           aiEnabled: Boolean(enabled ?? prev.aiEnabled),
-          aiBaseUrl: String(baseUrl ?? prev.aiBaseUrl ?? ''),
+          aiBaseUrl: String(baseUrl ?? prev.baseUrl ?? ''),
           aiApiKey: String(apiKey ?? prev.aiApiKey ?? ''),
           aiModel: String(model ?? prev.aiModel ?? ''),
         }));

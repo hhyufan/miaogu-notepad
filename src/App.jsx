@@ -14,6 +14,7 @@ import { store } from './store';
 import { useTheme } from './hooks/redux';
 import useThemeSync from './hooks/useTheme'; // 导入主题同步 hook
 import { useI18n } from './hooks/useI18n';
+import { initImageProxyLoader } from './utils/imageProxy';
 import tauriApi, { fileApi } from './utils/tauriApi';
 import { useSessionRestore } from './hooks/useSessionRestore';
 import AppHeader from './components/AppHeader';
@@ -627,7 +628,13 @@ const MainApp = () => {
   useEffect(() => {
     const initializeApp = async () => {
       try {
+        // 初始化图片代理加载器 - 自动检测系统代理配置
+        try {
+          await initImageProxyLoader();
 
+        } catch (error) {
+          console.warn('Failed to initialize image proxy loader:', error);
+        }
 
         // 使用与 tauriApi.js 一致的环境检测
         if (typeof window !== 'undefined' && window.__TAURI_INTERNALS__ !== undefined) {

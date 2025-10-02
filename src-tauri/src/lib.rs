@@ -18,6 +18,8 @@ use encoding_rs::{Encoding, UTF_8};
 use notify::{Watcher, RecursiveMode, Event, EventKind};
 use once_cell::sync::Lazy;
 use tauri::{AppHandle, Emitter};
+use tauri_plugin_http::reqwest;
+use base64::Engine;
 
 // Windows API相关导入
 #[cfg(windows)]
@@ -38,6 +40,35 @@ struct FileInfo {
     is_file: bool,
     is_dir: bool,
     modified: u64,
+}
+
+/// 代理配置结构体
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProxyConfig {
+    pub enabled: bool,
+    pub http_proxy: Option<String>,
+    pub https_proxy: Option<String>,
+    pub no_proxy: Option<String>,
+}
+
+impl Default for ProxyConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            http_proxy: None,
+            https_proxy: None,
+            no_proxy: None,
+        }
+    }
+}
+
+/// 图片加载结果结构体
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ImageLoadResult {
+    pub success: bool,
+    pub data: Option<String>, // Base64 编码的图片数据
+    pub content_type: Option<String>,
+    pub error: Option<String>,
 }
 
 /// 文件操作结果结构体
@@ -1056,6 +1087,145 @@ async fn disable_prevent_sleep() -> Result<String, String> {
     }
 }
 
+/// 通过代理加载图片资源
+/// 
+/// # 参数
+/// * `url` - 图片URL
+/// * `proxy_config` - 代理配置
+/// 
+/// # 返回值
+/// 返回包含图片数据的 ImageLoadResult
+#[tauri::command]
+async fn load_image_with_proxy(url: String, proxy_config: Option<ProxyConfig>) -> Result<ImageLoadResult, String> {
+    println!("Loading image: {} with proxy config: {:?}", url, proxy_config);
+    
+    // 创建 HTTP 客户端
+    let mut client_builder = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
+    
+    // 配置代理
+    if let Some(config) = proxy_config {
+        if config.enabled {
+            // 配置 HTTP 代理
+            if let Some(http_proxy) = config.http_proxy {
+                if let Ok(proxy) = reqwest::Proxy::http(&http_proxy) {
+                    client_builder = client_builder.proxy(proxy);
+                }
+            }
+            
+            // 配置 HTTPS 代理
+            if let Some(ref https_proxy) = config.https_proxy {
+                if let Ok(proxy) = reqwest::Proxy::https(https_proxy) {
+                    client_builder = client_builder.proxy(proxy);
+                }
+            }
+            
+            // 配置不使用代理的地址
+            if let Some(no_proxy) = config.no_proxy {
+                // 如果有 HTTPS 代理配置，使用它来设置 no_proxy
+                if let Some(ref https_proxy_url) = config.https_proxy {
+                    if let Ok(proxy) = reqwest::Proxy::all(https_proxy_url) {
+                        let proxy_with_no_proxy = proxy.no_proxy(reqwest::NoProxy::from_string(&no_proxy));
+                        client_builder = client_builder.proxy(proxy_with_no_proxy);
+                    }
+                }
+            }
+        }
+    }
+    
+    let client = client_builder.build().map_err(|e| format!("Failed to create HTTP client: {}", e))?;
+    
+    // 发送请求
+    match client.get(&url).send().await {
+        Ok(response) => {
+            if response.status().is_success() {
+                let content_type = response.headers()
+                    .get("content-type")
+                    .and_then(|ct| ct.to_str().ok())
+                    .map(|s| s.to_string());
+                
+                match response.bytes().await {
+                    Ok(bytes) => {
+                        // 将图片数据转换为 Base64
+                        let base64_data = base64::engine::general_purpose::STANDARD.encode(&bytes);
+                        
+                        Ok(ImageLoadResult {
+                            success: true,
+                            data: Some(base64_data),
+                            content_type,
+                            error: None,
+                        })
+                    }
+                    Err(e) => Ok(ImageLoadResult {
+                        success: false,
+                        data: None,
+                        content_type: None,
+                        error: Some(format!("Failed to read response body: {}", e)),
+                    })
+                }
+            } else {
+                Ok(ImageLoadResult {
+                    success: false,
+                    data: None,
+                    content_type: None,
+                    error: Some(format!("HTTP error: {}", response.status())),
+                })
+            }
+        }
+        Err(e) => Ok(ImageLoadResult {
+            success: false,
+            data: None,
+            content_type: None,
+            error: Some(format!("Request failed: {}", e)),
+        })
+    }
+}
+
+/// 获取系统代理设置
+/// 
+/// # 返回值
+/// 返回系统代理配置
+#[tauri::command]
+async fn get_system_proxy() -> Result<ProxyConfig, String> {
+    // 尝试从环境变量获取代理设置
+    let http_proxy = std::env::var("HTTP_PROXY")
+        .or_else(|_| std::env::var("http_proxy"))
+        .ok();
+    
+    let https_proxy = std::env::var("HTTPS_PROXY")
+        .or_else(|_| std::env::var("https_proxy"))
+        .ok();
+    
+    let no_proxy = std::env::var("NO_PROXY")
+        .or_else(|_| std::env::var("no_proxy"))
+        .ok();
+    
+    let enabled = http_proxy.is_some() || https_proxy.is_some();
+    
+    Ok(ProxyConfig {
+        enabled,
+        http_proxy,
+        https_proxy,
+        no_proxy,
+    })
+}
+
+/// 设置代理配置
+/// 
+/// # 参数
+/// * `config` - 代理配置
+/// 
+/// # 返回值
+/// 返回操作结果
+#[tauri::command]
+async fn set_proxy_config(config: ProxyConfig) -> Result<(), String> {
+    // 这里可以将代理配置保存到应用配置中
+    // 目前只是简单返回成功
+    println!("Proxy config set: {:?}", config);
+    Ok(())
+}
+
 /// 获取防休眠模式状态
 /// 返回当前是否启用了防休眠模式
 #[tauri::command]
@@ -1077,6 +1247,7 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_store::Builder::default().build())
+        .plugin(tauri_plugin_http::init())
         .invoke_handler(tauri::generate_handler![
             greet,
             read_file_content,
@@ -1098,7 +1269,10 @@ pub fn run() {
             open_url,
             enable_prevent_sleep,
             disable_prevent_sleep,
-            get_prevent_sleep_status
+            get_prevent_sleep_status,
+            load_image_with_proxy,
+            get_system_proxy,
+            set_proxy_config
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

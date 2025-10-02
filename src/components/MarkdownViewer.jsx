@@ -20,6 +20,8 @@ import MermaidRenderer from './MermaidRenderer';
 import { useTheme } from '../hooks/redux';
 import { useI18n } from '../hooks/useI18n';
 import { convertFileSrc } from '@tauri-apps/api/core';
+import { imageProxyLoader } from '../utils/imageProxy';
+import ProxyImage from './ProxyImage';
 import { resolvePath } from '../utils/pathUtils';
 import { handleLinkClick } from '../utils/linkUtils';
 import { parseFootnotes, addFootnoteJumpHandlers } from '../utils/footnoteParser';
@@ -717,7 +719,7 @@ const MarkdownRenderer = React.memo(({ content, currentFileName, currentFolder, 
 
 
               return (
-                <Image
+                <ProxyImage
                   src={imageSrc}
                   alt={alt}
                   style={{

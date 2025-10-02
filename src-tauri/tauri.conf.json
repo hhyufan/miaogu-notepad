@@ -64,7 +64,8 @@
           "args": true
         }
       ]
-    }
+    },
+    "http": null
   },
   "bundle": {
     "active": true,
