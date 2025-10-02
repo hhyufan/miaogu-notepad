@@ -25,6 +25,11 @@ const initialState = {
   error: null
 };
 
+/**
+ * 从文件路径中提取文件名
+ * @param {string} path - 文件路径
+ * @returns {string} 提取的文件名，如果路径为空则返回空字符串
+ */
 const getFileNameFromPath = (path) => {
   if (!path) return '';
   return path.split(/[\\/]/).pop() || '';

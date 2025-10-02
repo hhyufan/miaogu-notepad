@@ -5,8 +5,10 @@
  * @version 1.3.0
  */
 
-// 颜色配置 - 参考 Prism One Dark/Light 主题风格
-// 格式: [dark, light]
+/**
+ * 颜色配置 - 参考 Prism One Dark/Light 主题风格
+ * 格式: [dark, light]
+ */
 const COLORS = {
   // 编辑器基础颜色
   editorBackground: ['#282c34', '#fafafa'],
@@ -34,7 +36,9 @@ const COLORS = {
   numeric: ['#d19a66', '#986801']                // 数字 - 基于函数颜色调整
 };
 
-// 获取颜色的辅助函数
+/**
+ * 获取颜色的辅助函数
+ */
 const getColor = (colorKey, isDark = false) => {
   const colors = COLORS[colorKey];
   return colors ? colors[isDark ? 0 : 1] : '#000000';

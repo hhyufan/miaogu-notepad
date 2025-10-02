@@ -53,7 +53,7 @@ const parseTreeText = (text, knowledgeMapTitle = 'Knowledge Map', newNodeText = 
 
   const lastJumpIndex = {};
 
-  lines.forEach((line, _) => {
+  lines.forEach((line) => {
     const trimmedLine = line.trim();
     if (!trimmedLine) return;
 
@@ -167,28 +167,55 @@ const treeToText = (nodes, level = 0, newNodeText = '[新节点]') => {
 /**
  * 树形编辑器主组件
  * 提供可视化的树形结构编辑功能，支持节点增删改查、拖拽排序等操作
+ *
+ * @component
  * @param {Object} props - 组件属性
- * @param {Object} props.fileManager - 文件管理器实例
+ * @param {Object} props.fileManager - 文件管理器实例，包含以下方法和属性：
+ *   @param {Object} fileManager.currentFile - 当前打开的文件对象
+ *   @param {Function} fileManager.updateCode - 更新文件内容的方法
  * @param {boolean} props.isDarkMode - 是否为暗色主题
+ * @param {boolean} props.isHeaderVisible - 是否显示头部
  * @returns {JSX.Element} 树形编辑器组件
+ *
+ * @example
+ * <TreeEditor
+ *   fileManager={fileManager}
+ *   isDarkMode={false}
+ *   isHeaderVisible={true}
+ * />
  */
 const TreeEditor = ({ fileManager, isDarkMode, isHeaderVisible }) => {
   const { t } = useTranslation();
   const { backgroundEnabled, backgroundImage, fontSize } = useSelector((state) => state.theme);
   const hasBackground = backgroundEnabled && backgroundImage;
+
+  /** 树形结构数据 */
   const [treeData, setTreeData] = useState([]);
+  /** 展开的节点键数组 */
   const [expandedSections, setExpandedSections] = useState([]);
+  /** 选中的节点键数组 */
   const [selectedKeys, setSelectedKeys] = useState([]);
+  /** 当前正在编辑的节点键 */
   const [editingNode, setEditingNode] = useState(null);
+  /** 编辑框中的值 */
   const [editValue, setEditValue] = useState("");
+  /** 是否为内部操作标志，用于避免不必要的文件保存 */
   const [isInternalOperation, setIsInternalOperation] = useState(false);
+  /** 当前悬停的节点键 */
   const [hoveredNode, setHoveredNode] = useState(null);
+  /** 输入法组合状态 */
   const [_, setIsComposing] = useState(false);
+  /** 缩放级别 */
   const [zoomLevel, setZoomLevel] = useState(1);
+  /** 编辑输入框的引用 */
   const inputRef = useRef(null);
+  /** 树容器的引用 */
   const treeContainerRef = useRef(null);
+  /** 是否显示返回顶部按钮 */
   const [showBackToTop, setShowBackToTop] = useState(false);
-  const [debugMode, setDebugMode] = useState(false); // 调试模式硬编码为false
+  /** 调试模式标志 */
+  const [debugMode, setDebugMode] = useState(false);
+  /** 调试信息 */
   const [debugInfo, setDebugInfo] = useState({
     lastScrollEvent: null,
     scrollEvents: [],
@@ -198,6 +225,10 @@ const TreeEditor = ({ fileManager, isDarkMode, isHeaderVisible }) => {
 
   const { currentFile, updateCode } = fileManager;
 
+  /**
+   * 生成唯一的节点键
+   * @returns {string} 唯一的节点键
+   */
   const generateNodeKey = () => {
     const allKeys = [];
     const collectKeys = (nodes) => {
@@ -215,6 +246,10 @@ const TreeEditor = ({ fileManager, isDarkMode, isHeaderVisible }) => {
     return `node-${counter}`;
   };
 
+  /**
+   * 将树形数据保存到文件系统
+   * @param {Array} data - 树形数据
+   */
   const saveToFileSystem = useCallback(async (data) => {
     if (!currentFile || isInternalOperation) return;
 
@@ -224,8 +259,11 @@ const TreeEditor = ({ fileManager, isDarkMode, isHeaderVisible }) => {
     } catch (error) {
       console.error("保存到文件系统失败:", error);
     }
-  }, [currentFile, updateCode, isInternalOperation]);
+  }, [currentFile, updateCode, isInternalOperation, t]);
 
+  /**
+   * 当当前文件内容变化时，重新解析树形数据
+   */
   useEffect(() => {
     if (currentFile && currentFile['content'] && !isInternalOperation) {
       try {
@@ -236,13 +274,14 @@ const TreeEditor = ({ fileManager, isDarkMode, isHeaderVisible }) => {
         setTreeData([]);
       }
     }
-  }, [currentFile?.content, isInternalOperation]);
+  }, [currentFile?.content, isInternalOperation, t]);
 
-  // 滚动监听和返回顶部按钮
+  /**
+   * 监听滚动事件，控制返回顶部按钮的显示状态
+   * 同时处理缩放功能的滚轮事件
+   */
   useEffect(() => {
     if (!currentFile) return;
-
-
 
     // 找到真正的滚动容器 - code-editor-container
     const codeEditorContainer = document.querySelector('.code-editor-container');
@@ -252,15 +291,10 @@ const TreeEditor = ({ fileManager, isDarkMode, isHeaderVisible }) => {
       return;
     }
 
-
-
-
     // 创建滚动处理函数
     const handleScroll = (event) => {
       try {
         const scrollTop = event.target.scrollTop || 0;
-
-
 
         // 更新调试信息
         const eventInfo = {
@@ -279,13 +313,7 @@ const TreeEditor = ({ fileManager, isDarkMode, isHeaderVisible }) => {
         }));
 
         // 更新按钮显示状态
-        if (scrollTop > 100) {
-
-          setShowBackToTop(true);
-        } else {
-
-          setShowBackToTop(false);
-        }
+        setShowBackToTop(scrollTop > 100);
       } catch (error) {
         console.error('TreeEditor: 滚动处理错误', error);
       }
@@ -294,16 +322,12 @@ const TreeEditor = ({ fileManager, isDarkMode, isHeaderVisible }) => {
     // 绑定滚动事件
     codeEditorContainer.addEventListener('scroll', handleScroll, { passive: true });
 
-
     // 检查初始滚动位置
     const initialScrollTop = codeEditorContainer.scrollTop || 0;
+    setShowBackToTop(initialScrollTop > 100);
 
-
+    // 更新初始调试信息
     if (initialScrollTop > 100) {
-
-      setShowBackToTop(true);
-
-      // 更新初始调试信息
       const initialEventInfo = {
         time: new Date().toLocaleTimeString(),
         container: 'code-editor-container (初始)',
@@ -341,7 +365,6 @@ const TreeEditor = ({ fileManager, isDarkMode, isHeaderVisible }) => {
 
     // 清理函数
     return () => {
-
       codeEditorContainer.removeEventListener('scroll', handleScroll);
       scrollListeners.forEach(({ element, handler, isWheel }) => {
         if (isWheel) {
@@ -351,11 +374,19 @@ const TreeEditor = ({ fileManager, isDarkMode, isHeaderVisible }) => {
         }
       });
     };
-  }, [currentFile, treeData]); // 添加treeData依赖，确保树数据加载后重新绑定
+  }, [currentFile, treeData]);
 
+  /**
+   * 处理输入框变化（空实现，保留用于未来扩展）
+   * @param {Event} _ - 事件对象
+   */
   const handleInputChange = (_) => {
   };
 
+  /**
+   * 开始编辑节点
+   * @param {Object} node - 要编辑的节点
+   */
   const startEditNode = (node) => {
     setEditingNode(node.key);
     let value = node.originalText || node.title;
@@ -365,6 +396,9 @@ const TreeEditor = ({ fileManager, isDarkMode, isHeaderVisible }) => {
     setEditValue(value);
   };
 
+  /**
+   * 保存节点编辑内容
+   */
   const saveEdit = async () => {
     if (!editingNode) return;
 
@@ -445,6 +479,9 @@ const TreeEditor = ({ fileManager, isDarkMode, isHeaderVisible }) => {
     }
   };
 
+  /**
+   * 取消节点编辑
+   */
   const cancelEdit = async () => {
     const currentValue = (inputRef.current?.input?.value || inputRef.current?.value || '').trim();
     if (editingNode && currentValue) {
@@ -455,6 +492,10 @@ const TreeEditor = ({ fileManager, isDarkMode, isHeaderVisible }) => {
     }
   };
 
+  /**
+   * 添加新节点
+   * @param {string} parentKey - 父节点键，'root'表示根节点
+   */
   const handleAddNode = async (parentKey) => {
     const newNodeKey = generateNodeKey();
     const newNode = {
@@ -513,16 +554,17 @@ const TreeEditor = ({ fileManager, isDarkMode, isHeaderVisible }) => {
     }
   };
 
+  /**
+   * 删除指定节点
+   * @param {string} nodeKey - 要删除的节点键
+   */
   const handleDeleteNode = async (nodeKey) => {
     try {
       setIsInternalOperation(true);
 
       const deleteNodeRecursive = (nodes) => {
         return nodes
-          .filter((node) => {
-            return node.key !== nodeKey;
-
-          })
+          .filter((node) => node.key !== nodeKey)
           .map((node) => {
             if (node.children) {
               return {
@@ -548,6 +590,11 @@ const TreeEditor = ({ fileManager, isDarkMode, isHeaderVisible }) => {
     }
   };
 
+  /**
+   * 渲染树形节点
+   * @param {Object} node - 节点数据
+   * @returns {Object} 渲染后的节点配置
+   */
   const renderTreeNode = useCallback(
     (node) => {
       const isEditing = editingNode === node.key;
@@ -616,8 +663,7 @@ const TreeEditor = ({ fileManager, isDarkMode, isHeaderVisible }) => {
         key: node.key,
         title: (
           <div
-            className={`tree-node-content ${isClickable ? "tree-node-clickable" : ""
-              }`}
+            className={`tree-node-content ${isClickable ? "tree-node-clickable" : ""}`}
             tabIndex={-1}
             onMouseEnter={() => setHoveredNode(node.key)}
             onMouseLeave={() => setHoveredNode(null)}
@@ -650,8 +696,7 @@ const TreeEditor = ({ fileManager, isDarkMode, isHeaderVisible }) => {
                 <FileTextOutlined className="tree-icon file-icon" />
               )}
               <Text
-                className={`tree-node-text ${node.hasJump ? "has-code" : ""
-                  }`}
+                className={`tree-node-text ${node.hasJump ? "has-code" : ""}`}
                 onClick={() => startEditNode(node)}
               >
                 {(() => {
@@ -727,25 +772,36 @@ const TreeEditor = ({ fileManager, isDarkMode, isHeaderVisible }) => {
         children: node.children?.map(renderTreeNode) || [],
       };
     },
-    [editingNode, editValue, expandedSections, hoveredNode, handleAddNode, handleDeleteNode]
+    [editingNode, editValue, expandedSections, hoveredNode, handleAddNode, handleDeleteNode, t]
   );
 
-  // 树形数据转换为Antd Tree组件需要的格式
+  /**
+   * 生成树形组件所需的节点数据
+   * @type {Array<Object>} 树形节点配置数组
+   */
   const treeNodes = useMemo(() => {
     return treeData.map(renderTreeNode);
   }, [treeData, renderTreeNode]);
 
-  // 处理树节点展开/收起
+  /**
+   * 处理树节点展开/收起
+   * @param {Array<string>} expandedKeys - 展开的节点键数组
+   */
   const handleExpand = (expandedKeys) => {
     setExpandedSections(expandedKeys);
   };
 
-  // 处理树节点选择
+  /**
+   * 处理树节点选择
+   * @param {Array<string>} selectedKeys - 选中的节点键数组
+   */
   const handleSelect = (selectedKeys) => {
     setSelectedKeys(selectedKeys);
   };
 
-  // 展开所有节点
+  /**
+   * 展开所有节点
+   */
   const expandAll = () => {
     const allKeys = [];
     const collectKeys = (nodes) => {
@@ -760,7 +816,9 @@ const TreeEditor = ({ fileManager, isDarkMode, isHeaderVisible }) => {
     setExpandedSections(allKeys);
   };
 
-  // 收起所有节点
+  /**
+   * 收起所有节点
+   */
   const collapseAll = () => {
     setExpandedSections([]);
   };
@@ -878,8 +936,7 @@ const TreeEditor = ({ fileManager, isDarkMode, isHeaderVisible }) => {
         )}
       </div>
 
-      {/* 返回顶部悬浮按钮 - F11模式下也显示 */}
-
+      {/* 返回顶部悬浮按钮 */}
       {showBackToTop && currentFile && (
         <FloatButton
           icon={<VerticalAlignTopOutlined />}
@@ -887,9 +944,6 @@ const TreeEditor = ({ fileManager, isDarkMode, isHeaderVisible }) => {
             // 直接使用我们确认的正确滚动容器
             const codeEditorContainer = document.querySelector('.code-editor-container');
             if (codeEditorContainer) {
-
-
-
               // 平滑滚动到顶部
               codeEditorContainer.scrollTo({
                 top: 0,
@@ -900,7 +954,6 @@ const TreeEditor = ({ fileManager, isDarkMode, isHeaderVisible }) => {
               setTimeout(() => {
                 if (codeEditorContainer.scrollTop > 0) {
                   codeEditorContainer.scrollTop = 0;
-
                 }
               }, 100);
             } else {
@@ -908,9 +961,9 @@ const TreeEditor = ({ fileManager, isDarkMode, isHeaderVisible }) => {
             }
           }}
           style={{
-            position: 'fixed', // 改为fixed定位，相对于视口定位
+            position: 'fixed',
             right: 20,
-            bottom: 40, // F11模式下调整位置
+            bottom: 40,
             zIndex: 1000
           }}
         />

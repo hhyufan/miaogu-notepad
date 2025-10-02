@@ -89,17 +89,10 @@ export const useSessionRestore = () => {
       // 等待一小段时间确保Redux Persist完全恢复
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      // Redux Persist会自动恢复主题状态，这里主要处理Tauri存储的额外设置
       const themeSettings = await persistenceManager.getSetting('themeSettings', {});
 
-      // 通过检查Redux store的当前状态来判断是否需要手动恢复
       const currentState = store.getState();
       const currentTheme = currentState.theme.theme;
-
-
-
-
-      // 只在Redux Persist没有恢复主题时才手动设置
       // 如果当前主题仍是默认值且Tauri存储中有主题设置，则使用Tauri存储的设置
       if (currentTheme === 'light' && themeSettings.theme && themeSettings.theme !== 'light' && themeSettings.theme !== 'undefined') {
 

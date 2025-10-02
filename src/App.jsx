@@ -34,11 +34,12 @@ const { Content } = Layout;
 
 /**
  * 编辑器模式枚举
+ * @enum {string}
  */
 const EDITOR_MODES = {
-  MONACO: 'monaco',
-  MARKDOWN: 'markdown',
-  MGTREE: 'mgtree'
+  MONACO: 'monaco',    // 代码编辑模式
+  MARKDOWN: 'markdown', // Markdown预览模式
+  MGTREE: 'mgtree'     // 树形编辑模式
 };
 
 /**
@@ -47,6 +48,10 @@ const EDITOR_MODES = {
  * @param {boolean} props.isDarkMode - 是否为暗色模式
  * @param {Function} props.toggleTheme - 主题切换函数
  * @param {Object} props.fileManager - 文件管理器实例
+ * @param {boolean} props.isHeaderVisible - 头部是否可见
+ * @param {Function} props.setCursorPosition - 设置光标位置的回调函数
+ * @param {Function} props.setCharacterCount - 设置字符计数的回调函数
+ * @returns {JSX.Element} 应用内容组件
  */
 const AppContent = ({ isDarkMode, toggleTheme, fileManager, isHeaderVisible, setCursorPosition, setCharacterCount }) => {
   const { t } = useI18n();
@@ -63,6 +68,7 @@ const AppContent = ({ isDarkMode, toggleTheme, fileManager, isHeaderVisible, set
 
   /**
    * 切换编辑器模式
+   * 根据当前文件类型在代码模式、预览模式和树形模式之间切换
    */
   const toggleEditorMode = useCallback(async () => {
     await withEditorModeTransition(() => {
@@ -84,6 +90,10 @@ const AppContent = ({ isDarkMode, toggleTheme, fileManager, isHeaderVisible, set
     });
   }, [editorMode, isMgtreeFile, isMarkdownFile]);
 
+  /**
+   * 获取编辑器模式对应的图标
+   * @returns {JSX.Element} 编辑器模式图标
+   */
   const getEditorModeIcon = () => {
     if (isMgtreeFile) {
       return editorMode === EDITOR_MODES.MGTREE ? <CodeOutlined /> : <PartitionOutlined />;
@@ -93,6 +103,10 @@ const AppContent = ({ isDarkMode, toggleTheme, fileManager, isHeaderVisible, set
     return <CodeOutlined />;
   };
 
+  /**
+   * 获取编辑器模式对应的CSS类名
+   * @returns {string} CSS类名字符串
+   */
   const getEditorModeClassName = () => {
     if (isMgtreeFile) {
       return editorMode === EDITOR_MODES.MGTREE ? 'code-mode' : 'mgtree-mode';
@@ -102,6 +116,10 @@ const AppContent = ({ isDarkMode, toggleTheme, fileManager, isHeaderVisible, set
     return 'code-mode';
   };
 
+  /**
+   * 获取编辑器模式切换按钮的标题
+   * @returns {string} 按钮标题
+   */
   const getEditorModeTitle = () => {
     if (isMgtreeFile) {
       return editorMode === EDITOR_MODES.MGTREE ? t('editor.switchToCodeEditor') : t('editor.switchToTreeEditor');
@@ -111,6 +129,9 @@ const AppContent = ({ isDarkMode, toggleTheme, fileManager, isHeaderVisible, set
     return t('editor.editorMode');
   };
 
+  /**
+   * 监听键盘事件，处理Ctrl+/快捷键切换编辑器模式
+   */
   useEffect(() => {
     const handleKeyDown = async (event) => {
       if (event.ctrlKey && event.key === '/') {
@@ -125,6 +146,9 @@ const AppContent = ({ isDarkMode, toggleTheme, fileManager, isHeaderVisible, set
     };
   }, [toggleEditorMode]);
 
+  /**
+   * 当文件类型或当前文件变化时，重置编辑器模式
+   */
   useEffect(() => {
     setEditorMode(EDITOR_MODES.MONACO);
     setIsTreeMode(false);
@@ -194,6 +218,7 @@ const AppContent = ({ isDarkMode, toggleTheme, fileManager, isHeaderVisible, set
 
 /**
  * 主应用组件 - 处理应用初始化、拖拽、主题管理等核心功能
+ * @returns {JSX.Element} 主应用组件
  */
 const MainApp = () => {
   const {
@@ -216,20 +241,23 @@ const MainApp = () => {
   const [cursorPosition, setCursorPosition] = useState({ lineNumber: 1, column: 1 });
   const [characterCount, setCharacterCount] = useState(0);
 
-  // 立即设置初始主题，确保在首次渲染时就有正确的data-theme属性
+  /**
+   * 立即设置初始主题，确保在首次渲染时就有正确的data-theme属性
+   * 避免初始渲染时的白色闪烁
+   */
   useEffect(() => {
-    // 在组件挂载时立即设置主题属性，避免初始渲染时的白色闪烁
     const initialTheme = currentTheme && currentTheme !== 'undefined' ? currentTheme : 'light';
     document.documentElement.setAttribute('data-theme', initialTheme);
-
 
     // 如果当前主题是 undefined 或无效值，直接在 DOM 上设置为 light，但不触发 Redux 更新
     if (!currentTheme || currentTheme === 'undefined') {
       document.documentElement.setAttribute('data-theme', 'light');
-
     }
   }, []); // 空依赖数组，只在组件挂载时执行一次
 
+  /**
+   * 监听Tauri拖拽事件，更新拖拽状态
+   */
   useEffect(() => {
     const handleTauriDragEnter = () => {
       setIsDragOver(true);
@@ -248,7 +276,10 @@ const MainApp = () => {
     };
   }, []);
 
-  // F11键切换全屏模式（隐藏AppHeader、最大化窗口并隐藏任务栏）
+  /**
+   * 处理F11键切换全屏模式
+   * 隐藏/显示AppHeader、最大化窗口并控制休眠状态
+   */
   useEffect(() => {
     const handleKeyDown = async (event) => {
       if (event.key === 'F11') {
@@ -267,7 +298,6 @@ const MainApp = () => {
 
             if (newHeaderVisible) {
               // 退出全屏模式：显示Header，退出全屏状态，允许休眠
-
               await appWindow.setFullscreen(false);
               try {
                 await invoke('disable_prevent_sleep');
@@ -276,17 +306,11 @@ const MainApp = () => {
               }
             } else {
               // 进入全屏模式：先检查当前窗口状态，确保正确进入全屏
-
-
-              // 检查当前窗口状态
               const isCurrentlyFullscreen = await appWindow.isFullscreen();
               const isCurrentlyMaximized = await appWindow.isMaximized();
 
-
-
               // 如果当前是最大化状态，先退出最大化再进入全屏
               if (isCurrentlyMaximized && !isCurrentlyFullscreen) {
-
                 await appWindow.unmaximize();
                 // 短暂延迟确保状态切换完成
                 await new Promise(resolve => setTimeout(resolve, 50));
@@ -294,7 +318,6 @@ const MainApp = () => {
 
               // 设置全屏状态（这会隐藏任务栏并完全覆盖屏幕）
               await appWindow.setFullscreen(true);
-
 
               try {
                 await invoke('enable_prevent_sleep');
@@ -309,7 +332,9 @@ const MainApp = () => {
       }
     };
 
-    // 监听窗口状态变化，当窗口退出全屏时自动显示AppHeader
+    /**
+     * 检查窗口状态，当窗口退出全屏时自动显示AppHeader
+     */
     const checkWindowState = async () => {
       if (typeof window !== 'undefined' && window['__TAURI_INTERNALS__']) {
         try {
@@ -322,7 +347,6 @@ const MainApp = () => {
           // 如果当前Header是隐藏的，但窗口既不是全屏也不是最大化状态，则显示Header
           // 或者如果窗口从全屏退出到最大化状态，也应该显示Header
           if (!isHeaderVisible && !isFullscreen) {
-
             setIsHeaderVisible(true);
           }
         } catch (error) {
@@ -346,7 +370,10 @@ const MainApp = () => {
   const { backgroundEnabled, backgroundImage } = useSelector((state) => state.theme);
   const fileManager = useFileManager();
 
-  // 全局键盘快捷键处理（确保F11全屏模式下也能使用）
+  /**
+   * 全局键盘快捷键处理
+   * 支持Ctrl+N新建、Ctrl+O打开、Ctrl+S保存、Ctrl+Shift+S另存为
+   */
   useEffect(() => {
     const handleGlobalKeyDown = async (event) => {
       // Ctrl+N 新建文件
@@ -355,7 +382,6 @@ const MainApp = () => {
         event.stopPropagation();
 
         try {
-          // 不传文件名，让createFile方法自动处理索引
           await fileManager.createFile();
         } catch (error) {
           console.error('新建文件失败:', error);
@@ -409,11 +435,13 @@ const MainApp = () => {
       document.removeEventListener('keydown', handleGlobalKeyDown, true);
     };
   }, [fileManager]);
+
   const { openedFiles } = fileManager;
   const hasOpenFiles = openedFiles && openedFiles.length > 0;
 
   /**
    * 处理拖拽悬停事件
+   * @param {DragEvent} e - 拖拽事件对象
    */
   const handleDragOver = useCallback((e) => {
     e.preventDefault();
@@ -426,6 +454,7 @@ const MainApp = () => {
 
   /**
    * 处理拖拽进入事件
+   * @param {DragEvent} e - 拖拽事件对象
    */
   const handleDragEnter = useCallback((e) => {
     e.preventDefault();
@@ -435,6 +464,7 @@ const MainApp = () => {
 
   /**
    * 处理拖拽离开事件
+   * @param {DragEvent} e - 拖拽事件对象
    */
   const handleDragLeave = useCallback((e) => {
     e.preventDefault();
@@ -451,6 +481,7 @@ const MainApp = () => {
 
   /**
    * 处理文件拖拽放置事件
+   * @param {DragEvent} e - 拖拽事件对象
    */
   const handleDrop = useCallback(async (e) => {
     e.preventDefault();
@@ -503,6 +534,7 @@ const MainApp = () => {
 
   /**
    * 主题切换函数
+   * 在亮色和暗色主题之间切换
    */
   const toggleTheme = useCallback(async () => {
     // 确保 currentTheme 有有效值，避免传递 undefined
@@ -513,6 +545,10 @@ const MainApp = () => {
     setTheme(newTheme);
   }, [currentTheme, setTheme]);
 
+  /**
+   * 测试CLI参数
+   * @returns {Promise<string[]>} CLI参数数组
+   */
   const testCliArgs = async () => {
     try {
       return await appApi.getCliArgs();
@@ -521,12 +557,20 @@ const MainApp = () => {
     }
   };
 
+  /**
+   * 设置调试文件路径到localStorage
+   * @param {string} filePath - 文件路径
+   */
   const setDebugFile = (filePath) => {
     if (!window['__TAURI__']) {
       localStorage.setItem('miaogu-notepad-debug-file', filePath);
     }
   };
 
+  /**
+   * 测试打开文件
+   * @returns {Promise<Object>} 包含操作结果的对象
+   */
   const testFileOpen = async () => {
     try {
       const args = await appApi.getCliArgs();
@@ -563,6 +607,9 @@ const MainApp = () => {
 
   const cliArgsProcessedRef = useRef(false);
 
+  /**
+   * 处理CLI参数，打开通过命令行传递的文件
+   */
   useEffect(() => {
     const handleCliArgs = async () => {
       if (cliArgsProcessedRef.current) {
@@ -616,30 +663,29 @@ const MainApp = () => {
 
         if (fileManager.openedFiles.length === 0) {
           // 不在这里创建初始文件，让useSessionRestore处理
-          // const initialContent = '// Monaco Editor is working!\n
-          // await fileManager.createFile('untitled.js', initialContent);
         }
       }
     };
 
     handleCliArgs().then();
-  }, [isRestoring, loading]);
+  }, [isRestoring, loading, fileManager]);
 
+  /**
+   * 初始化应用程序设置
+   * 加载保存的主题、字体、背景等设置
+   */
   useEffect(() => {
     const initializeApp = async () => {
       try {
         // 初始化图片代理加载器 - 自动检测系统代理配置
         try {
           await initImageProxyLoader();
-
         } catch (error) {
           console.warn('Failed to initialize image proxy loader:', error);
         }
 
         // 使用与 tauriApi.js 一致的环境检测
         if (typeof window !== 'undefined' && window.__TAURI_INTERNALS__ !== undefined) {
-
-
           const savedTheme = await settingsApi.get('theme', 'light');
           const savedFontSize = await settingsApi.get('fontSize', 14);
           const savedFontFamily = await settingsApi.get('fontFamily', 'Consolas, Monaco, monospace');
@@ -719,6 +765,9 @@ const MainApp = () => {
     initializeApp().then();
   }, []);
 
+  /**
+   * 当主题变化时，更新背景透明度
+   */
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', currentTheme);
 
@@ -742,6 +791,9 @@ const MainApp = () => {
     updateBackgroundForTheme();
   }, [currentTheme]);
 
+  /**
+   * 监听Redux状态变化，更新背景样式
+   */
   useEffect(() => {
     const updateBackgroundStyles = async () => {
       const state = store.getState();
@@ -894,3 +946,4 @@ function App() {
 }
 
 export default App;
+

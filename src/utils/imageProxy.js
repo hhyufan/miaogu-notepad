@@ -89,7 +89,9 @@ export class ImageProxyLoader {
       return this.loadingPromises.get(url);
     }
 
-    // 创建加载Promise
+    /**
+     * 创建加载Promise
+     */
     const loadingPromise = this._loadImageInternal(url, options);
     this.loadingPromises.set(url, loadingPromise);
 
@@ -113,7 +115,9 @@ export class ImageProxyLoader {
         return url;
       }
 
-      // 使用代理配置
+      /**
+       * 使用代理配置
+       */
       const proxyConfig = options.useProxy !== false ? this.proxyConfig.toBackendFormat() : null;
 
 
@@ -124,7 +128,9 @@ export class ImageProxyLoader {
       });
 
       if (result.success && result.data) {
-        // 构造data URL
+        /**
+         * 构造data URL
+         */
         const contentType = result.content_type || 'image/jpeg';
         return `data:${contentType};base64,${result.data}`;
       } else {
@@ -192,7 +198,9 @@ export class ImageProxyLoader {
   }
 }
 
-// 全局实例
+/**
+ * 全局实例
+ */
 export const imageProxyLoader = new ImageProxyLoader();
 
 /**
@@ -201,7 +209,9 @@ export const imageProxyLoader = new ImageProxyLoader();
  */
 export async function initImageProxyLoader() {
   try {
-    // 自动获取系统代理配置
+    /**
+     * 自动获取系统代理配置
+     */
     const systemProxy = await ProxyConfig.fromSystem();
     imageProxyLoader.setProxyConfig(systemProxy);
   } catch (error) {

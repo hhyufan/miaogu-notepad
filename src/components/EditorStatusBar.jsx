@@ -36,50 +36,86 @@ function standardizeEncodingName(encoding) {
 /**
  * 编辑器状态栏组件
  * 显示当前文件的状态信息，包括路径、编码、行尾符等，并提供相关操作
+ *
+ * @component
  * @param {Object} props - 组件属性
- * @param {Object} props.fileManager - 文件管理器实例
+ * @param {Object} props.fileManager - 文件管理器实例，提供文件操作能力
  * @param {Object} props.cursorPosition - 光标位置信息 {lineNumber, column}
  * @param {number} props.characterCount - 字符数统计
  * @param {boolean} props.hasOpenFiles - 是否有打开的文件
- * @returns {JSX.Element} 状态栏组件
+ * @returns {JSX.Element} 渲染的状态栏组件
+ *
+ * @example
+ * <EditorStatusBar
+ *   fileManager={fileManager}
+ *   cursorPosition={{ lineNumber: 5, column: 10 }}
+ *   characterCount={256}
+ *   hasOpenFiles={true}
+ * />
  */
 const EditorStatusBar = ({ fileManager, cursorPosition = { lineNumber: 1, column: 1 }, characterCount = 0, hasOpenFiles }) => {
+    /** 当前打开的文件对象 */
     const currentFile = useCurrentFile(fileManager)
+    /** 文件操作工具函数 */
     const { updateFileLineEnding } = useFileActions(fileManager)
+    /** 主题配置 */
     const { backgroundEnabled, backgroundImage } = useTheme()
+    /** 国际化工具 */
     const { t } = useI18n()
+    /** 是否有背景图片 */
     const hasBackground = backgroundEnabled && backgroundImage
+    /** 文件路径分段 */
     const [pathSegments, setPathSegments] = useState([])
+    /** 目录内容缓存 */
     const [directoryContents, setDirectoryContents] = useState({})
+    /** 面包屑容器引用 */
     const breadcrumbRef = useRef(null)
+    /** 文件路径容器引用 */
     const filePathRef = useRef(null)
+    /** 滚动状态管理 */
     const [scrollState, setScrollState] = useState({
         canScroll: false,
         scrollLeft: 0,
         scrollWidth: 0,
         clientWidth: 0
     })
+    /** 拖拽状态管理 */
     const [isDragging, setIsDragging] = useState(false)
     const [dragStartX, setDragStartX] = useState(0)
     const [dragStartScrollLeft, setDragStartScrollLeft] = useState(0)
 
+    /**
+     * 行尾符选项配置
+     * @type {Array<Object>} 包含value和label的选项数组
+     */
     const lineEndingOptions = useMemo(() => [
         { value: 'LF', label: t('editor.lineEnding.LF') },
         { value: 'CRLF', label: t('editor.lineEnding.CRLF') },
         { value: 'CR', label: t('editor.lineEnding.CR') }
     ], [t])
 
+    /**
+     * 获取当前行尾符的显示标签
+     * @returns {string} 行尾符标签文本
+     */
     const getCurrentLineEndingLabel = useCallback(() => {
         const lineEndingValue = typeof currentFile['lineEnding'] === 'string' ? currentFile['lineEnding'] : 'LF'
         const option = lineEndingOptions.find((opt) => opt.value === lineEndingValue)
         return option ? option.label : 'LF (\\n)'
     }, [currentFile['lineEnding'], lineEndingOptions])
 
+    /**
+     * 获取当前文件编码的显示标签
+     * @returns {string} 编码标签文本
+     */
     const getCurrentEncodingLabel = useCallback(() => {
         const encodingValue = typeof currentFile['encoding'] === 'string' ? currentFile['encoding'] : 'UTF-8'
         return standardizeEncodingName(encodingValue)
     }, [currentFile['encoding']])
 
+    /**
+     * 当当前文件路径变化时更新路径分段
+     */
     useEffect(() => {
         if (currentFile && currentFile['path'] && !currentFile['isTemporary']) {
             const segments = splitPath(currentFile['path'])
@@ -90,6 +126,9 @@ const EditorStatusBar = ({ fileManager, cursorPosition = { lineNumber: 1, column
         }
     }, [currentFile?.path, currentFile?.isTemporary])
 
+    /**
+     * 监听面包屑更新事件
+     */
     useEffect(() => {
         const handleBreadcrumbUpdate = (event) => {
             const { path } = event.detail
@@ -106,6 +145,10 @@ const EditorStatusBar = ({ fileManager, cursorPosition = { lineNumber: 1, column
         }
     }, [])
 
+    /**
+     * 更新滚动状态信息
+     * 计算是否需要滚动条，更新滚动条位置和尺寸
+     */
     const updateScrollState = useCallback(() => {
         if (breadcrumbRef.current && filePathRef.current) {
             const breadcrumb = breadcrumbRef.current
@@ -149,21 +192,34 @@ const EditorStatusBar = ({ fileManager, cursorPosition = { lineNumber: 1, column
         }
     }, [currentFile['path'], currentFile['isTemporary']])
 
+    /**
+     * 延迟更新滚动状态，避免频繁计算
+     */
     useEffect(() => {
         const timer = setTimeout(updateScrollState, 100)
         return () => clearTimeout(timer)
     }, [pathSegments, updateScrollState])
 
+    /**
+     * 初始化滚动状态
+     */
     useEffect(() => {
         updateScrollState()
     }, [updateScrollState])
 
+    /**
+     * 监听窗口大小变化，更新滚动状态
+     */
     useEffect(() => {
         const handleResize = () => updateScrollState()
         window.addEventListener('resize', handleResize)
         return () => window.removeEventListener('resize', handleResize)
     }, [updateScrollState])
 
+    /**
+     * 处理滚动条点击事件
+     * @param {React.MouseEvent} e - 鼠标事件对象
+     */
     const handleScrollBarClick = useCallback((e) => {
         if (!breadcrumbRef.current || !scrollState.canScroll || isDragging) return
 
@@ -175,6 +231,10 @@ const EditorStatusBar = ({ fileManager, cursorPosition = { lineNumber: 1, column
         updateScrollState()
     }, [scrollState.canScroll, scrollState.scrollWidth, scrollState.clientWidth, isDragging, updateScrollState])
 
+    /**
+     * 处理滚动条滑块鼠标按下事件
+     * @param {React.MouseEvent} e - 鼠标事件对象
+     */
     const handleThumbMouseDown = useCallback((e) => {
         e.preventDefault()
         e.stopPropagation()
@@ -189,6 +249,10 @@ const EditorStatusBar = ({ fileManager, cursorPosition = { lineNumber: 1, column
         }
     }, [scrollState.canScroll])
 
+    /**
+     * 处理鼠标移动事件（拖拽滚动条时）
+     * @param {React.MouseEvent} e - 鼠标事件对象
+     */
     const handleMouseMove = useCallback((e) => {
         if (!isDragging || !breadcrumbRef.current || !filePathRef.current) return
 
@@ -206,6 +270,9 @@ const EditorStatusBar = ({ fileManager, cursorPosition = { lineNumber: 1, column
         updateScrollState()
     }, [isDragging, dragStartX, dragStartScrollLeft, scrollState.scrollWidth, scrollState.clientWidth, updateScrollState])
 
+    /**
+     * 处理鼠标释放事件（结束拖拽）
+     */
     const handleMouseUp = useCallback(() => {
         setIsDragging(false)
 
@@ -214,6 +281,9 @@ const EditorStatusBar = ({ fileManager, cursorPosition = { lineNumber: 1, column
         }
     }, [])
 
+    /**
+     * 拖拽期间监听全局鼠标事件
+     */
     useEffect(() => {
         if (isDragging) {
             document.addEventListener('mousemove', handleMouseMove)
@@ -225,14 +295,26 @@ const EditorStatusBar = ({ fileManager, cursorPosition = { lineNumber: 1, column
         }
     }, [isDragging, handleMouseMove, handleMouseUp])
 
+    /**
+     * 处理面包屑滚动事件
+     */
     const handleBreadcrumbScroll = useCallback(() => {
         updateScrollState()
     }, [updateScrollState])
 
+    /**
+     * 构建指定索引的路径
+     * @param {number} index - 路径分段索引
+     * @returns {string} 构建的完整路径
+     */
     const buildPath = useCallback((index) => {
         return buildFullPath(pathSegments, index)
     }, [pathSegments])
 
+    /**
+     * 处理面包屑点击事件
+     * @param {number} index - 面包屑项索引
+     */
     const handleBreadcrumbClick = useCallback(async (index) => {
         const dirPath = buildPath(index)
         if (!dirPath) return
@@ -260,7 +342,11 @@ const EditorStatusBar = ({ fileManager, cursorPosition = { lineNumber: 1, column
         }
     }, [buildFullPath, pathSegments, fileManager])
 
-    // 处理文件或目录点击
+    /**
+     * 处理文件或目录点击
+     * @param {string} filePath - 文件路径
+     * @param {boolean} isDirectory - 是否为目录
+     */
     const handleFileClick = useCallback(async (filePath, isDirectory) => {
         if (!filePath) return
 
@@ -281,7 +367,11 @@ const EditorStatusBar = ({ fileManager, cursorPosition = { lineNumber: 1, column
         }
     }, [fileManager])
 
-    // 生成面包屑下拉菜单项
+    /**
+     * 生成面包屑下拉菜单项
+     * @param {number} index - 面包屑项索引
+     * @returns {Array<Object>} 下拉菜单项数组
+     */
     const getDropdownItems = useCallback((index) => {
         const contents = directoryContents[index] || []
 
@@ -300,7 +390,10 @@ const EditorStatusBar = ({ fileManager, cursorPosition = { lineNumber: 1, column
         }))
     }, [directoryContents, handleFileClick])
 
-    // 处理右键菜单点击
+    /**
+     * 处理右键菜单点击
+     * @param {number} index - 面包屑项索引
+     */
     const handleContextMenuClick = useCallback(async (index) => {
         const dirPath = buildPath(index)
         if (!dirPath) return
@@ -312,7 +405,11 @@ const EditorStatusBar = ({ fileManager, cursorPosition = { lineNumber: 1, column
         }
     }, [buildFullPath, pathSegments])
 
-    // 生成右键菜单项
+    /**
+     * 生成右键菜单项
+     * @param {number} index - 面包屑项索引
+     * @returns {Array<Object>} 右键菜单项数组
+     */
     const getContextMenuItems = useCallback((index) => [
         {
             key: 'openInExplorer',
@@ -321,7 +418,10 @@ const EditorStatusBar = ({ fileManager, cursorPosition = { lineNumber: 1, column
         }
     ], [handleContextMenuClick, t])
 
-    // 生成面包屑items
+    /**
+     * 生成面包屑items
+     * @type {Array<Object>} 面包屑项数组
+     */
     const breadcrumbItems = useMemo(() => {
         return pathSegments.map((segment, index) => ({
             key: index,
@@ -353,9 +453,10 @@ const EditorStatusBar = ({ fileManager, cursorPosition = { lineNumber: 1, column
         }))
     }, [pathSegments, getDropdownItems, handleBreadcrumbClick, getContextMenuItems])
 
-
-
-    // Handle line ending change
+    /**
+     * 处理行尾符变更
+     * @param {string} value - 行尾符值 (LF/CRLF/CR)
+     */
     const handleLineEndingChange = useCallback((value) => {
         if (updateFileLineEnding && currentFile['path']) {
             updateFileLineEnding(currentFile['path'], value)

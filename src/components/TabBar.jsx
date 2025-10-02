@@ -5,24 +5,24 @@
  * @version 1.3.0
  */
 
-import './TabBar.scss'
-import { useCallback, useEffect, useMemo, useState, useRef } from 'react'
-import { useSelector } from 'react-redux'
-import { EditOutlined, FileAddOutlined, PlusOutlined } from '@ant-design/icons'
-import { Tabs, Dropdown, Button } from 'antd'
-import { useI18n } from '../hooks/useI18n'
-import extensionToLanguage from '../configs/file-extensions.json'
+import './TabBar.scss';
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
+import { useSelector } from 'react-redux';
+import { EditOutlined, FileAddOutlined } from '@ant-design/icons';
+import { Tabs, Dropdown } from 'antd';
+import { useI18n } from '../hooks/useI18n';
+import extensionToLanguage from '../configs/file-extensions.json';
 
 /**
  * 根据文件名推断编程语言
  * @param {string} fileName - 文件名
- * @returns {string} 编程语言标识符
+ * @returns {string} 编程语言标识符，如"javascript"、"python"等，默认为"plaintext"
  */
 const getLanguageFromFileName = (fileName) => {
     if (!fileName) return 'plaintext';
     const extension = fileName.toLowerCase().split('.').pop();
 
-    // 🔥 特殊处理：对于.mgtree文件，返回mgtree而不是plaintext
+    // 特殊处理：对于.mgtree文件，返回mgtree而不是plaintext
     if (extension === 'mgtree') {
         return 'mgtree';
     }
@@ -31,10 +31,21 @@ const getLanguageFromFileName = (fileName) => {
 };
 
 /**
- * 标签页组件
+ * 标签页组件 - 管理打开文件的标签显示和交互
+ *
+ * @component
  * @param {Object} props - 组件属性
- * @param {Object} props.fileManager - 文件管理器实例
- * @returns {JSX.Element} 标签页组件
+ * @param {Object} props.fileManager - 文件管理器实例，包含以下方法和属性：
+ *   @param {Object} fileManager.currentFile - 当前激活的文件对象
+ *   @param {Array<Object>} fileManager.openedFiles - 所有打开的文件数组
+ *   @param {Function} fileManager.switchFile - 切换到指定文件的方法
+ *   @param {Function} fileManager.closeFile - 关闭指定文件的方法
+ *   @param {Function} fileManager.createFile - 创建新文件的方法
+ *   @param {Function} fileManager.renameFile - 重命名文件的方法
+ * @returns {JSX.Element|null} 渲染的标签页组件，若没有打开的文件则返回null
+ *
+ * @example
+ * <TabBar fileManager={fileManager} />
  */
 const TabBar = ({ fileManager }) => {
     const { t } = useI18n();
@@ -44,29 +55,34 @@ const TabBar = ({ fileManager }) => {
         switchFile: switchToFile,
         closeFile: closeFileByPath,
         createFile
-    } = fileManager
+    } = fileManager;
 
-    const { theme, backgroundEnabled, backgroundImage } = useSelector(state => state.theme)
-    const hasBackground = backgroundEnabled && backgroundImage
+    const { theme, backgroundEnabled, backgroundImage } = useSelector(state => state.theme);
+    const hasBackground = backgroundEnabled && backgroundImage;
 
-    // 添加悬停状态管理
-    const [isHovered, setIsHovered] = useState(false)
-    const [contextMenu, setContextMenu] = useState({ visible: false, tabKey: null })
-
-    // 添加重命名状态管理
-    const [renamingTab, setRenamingTab] = useState(null)
-    const [renameValue, setRenameValue] = useState('')
-    const renameInputRef = useRef(null)
-    const [isRenaming, setIsRenaming] = useState(false) // 添加重命名进行中的标志
-
-    // 添加点击延时管理，防止单击和双击冲突
-    const [clickTimer, setClickTimer] = useState(null)
-    const [clickCount, setClickCount] = useState(0)
-
-    // 创建语言设置的ref，供CodeEditor使用
+    /** 标签栏悬停状态 */
+    const [isHovered, setIsHovered] = useState(false);
+    /** 右键菜单状态 */
+    const [contextMenu, setContextMenu] = useState({ visible: false, tabKey: null });
+    /** 当前正在重命名的标签键 */
+    const [renamingTab, setRenamingTab] = useState(null);
+    /** 重命名输入框的值 */
+    const [renameValue, setRenameValue] = useState('');
+    /** 重命名输入框的引用 */
+    const renameInputRef = useRef(null);
+    /** 重命名进行中的标志 */
+    const [isRenaming, setIsRenaming] = useState(false);
+    /** 点击计时器，用于区分单击和双击 */
+    const [clickTimer, setClickTimer] = useState(null);
+    /** 点击计数，用于检测双击 */
+    const [clickCount, setClickCount] = useState(0);
+    /** 用于存储当前活动标签页的语言信息 */
     const languageRef = useRef('plaintext');
 
-    // 从DOM标签页获取当前活动标签页的文件名和语言
+    /**
+     * 从DOM中获取当前活动标签页的文件名并推断语言
+     * @returns {string} 推断出的编程语言标识符
+     */
     const getLanguageFromActiveTab = useCallback(() => {
         try {
             // 查找aria-selected="true"的标签页按钮
@@ -87,17 +103,25 @@ const TabBar = ({ fileManager }) => {
         return 'plaintext';
     }, []);
 
-    // 更新languageRef的值
+    /**
+     * 更新languageRef的值为当前活动标签页的语言
+     */
     const updateLanguageRef = useCallback(() => {
         const language = getLanguageFromActiveTab();
         if (languageRef.current !== language) {
             languageRef.current = language;
         }
     }, [getLanguageFromActiveTab]);
+
+    // 初始更新语言引用
     useEffect(() => {
-        updateLanguageRef()
-    });
-    // 监听标签页变化并更新语言
+        updateLanguageRef();
+    }, [updateLanguageRef]);
+
+    /**
+     * 监听标签页变化并更新语言引用
+     * 使用MutationObserver监测DOM变化，确保语言信息始终准确
+     */
     useEffect(() => {
         // 初始更新
         updateLanguageRef();
@@ -148,14 +172,20 @@ const TabBar = ({ fileManager }) => {
         };
     }, [updateLanguageRef]);
 
-    // 将languageRef暴露给fileManager，供其他组件使用
+    /**
+     * 将languageRef暴露给fileManager，供其他组件使用
+     */
     useEffect(() => {
         if (fileManager) {
             fileManager.tabBarRef = { languageRef };
         }
     }, [fileManager]);
 
-    // 计算文本宽度的函数
+    /**
+     * 计算文本在画布中的宽度
+     * @param {string} text - 要计算宽度的文本
+     * @returns {number} 文本宽度（像素）
+     */
     const getTextWidth = useCallback((text) => {
         if (!text) return 0;
         const canvas = document.createElement('canvas');
@@ -164,30 +194,40 @@ const TabBar = ({ fileManager }) => {
         return context.measureText(text).width;
     }, []);
 
-    // 处理标签页重命名
+    /**
+     * 处理标签页重命名
+     * @param {Object} file - 要重命名的文件对象
+     * @param {string} newName - 新的文件名
+     */
     const handleTabRename = useCallback(async (file, newName) => {
         if (!newName || newName.trim() === file.name) {
-            setRenamingTab(null)
-            setIsRenaming(false)
-            return
+            setRenamingTab(null);
+            setIsRenaming(false);
+            return;
         }
 
         try {
             if (file.isTemporary) {
-                await fileManager.createFile(newName.trim(), file.content || '')
-                fileManager.closeFile(file.path)
+                // 临时文件：创建新文件并关闭临时文件
+                await fileManager.createFile(newName.trim(), file.content || '');
+                fileManager.closeFile(file.path);
             } else {
-                await fileManager.renameFile(file.path, newName.trim())
+                // 普通文件：直接重命名
+                await fileManager.renameFile(file.path, newName.trim());
             }
         } catch (error) {
-            console.error('重命名失败:', error)
+            console.error('重命名失败:', error);
         }
 
-        setRenamingTab(null)
-        setIsRenaming(false)
-    }, [fileManager])
+        setRenamingTab(null);
+        setIsRenaming(false);
+    }, [fileManager]);
 
-    // 获取文件唯一标识
+    /**
+     * 获取文件的唯一标识键
+     * @param {Object} file - 文件对象
+     * @returns {string} 文件的唯一标识
+     */
     const getFileKey = useCallback((file) => {
         if (file.isTemporary) {
             return `temp-${file.name}`;
@@ -195,130 +235,164 @@ const TabBar = ({ fileManager }) => {
         return file.path;
     }, []);
 
-    // 开始重命名
+    /**
+     * 开始标签页重命名流程
+     * @param {Object} file - 要重命名的文件对象
+     */
     const startRename = useCallback((file) => {
-        const tabKey = getFileKey(file)
-        setRenamingTab(tabKey)
-        setRenameValue(file.name)
-        setIsRenaming(true) // 设置重命名进行中标志
-        
+        const tabKey = getFileKey(file);
+        setRenamingTab(tabKey);
+        setRenameValue(file.name);
+        setIsRenaming(true); // 设置重命名进行中标志
+
         // 使用requestAnimationFrame确保DOM完全更新后再聚焦
         requestAnimationFrame(() => {
             setTimeout(() => {
                 if (renameInputRef.current) {
                     try {
-                        renameInputRef.current.focus()
-                        renameInputRef.current.select()
+                        renameInputRef.current.focus();
+                        renameInputRef.current.select();
                         // 强制设置光标位置
-                        renameInputRef.current.setSelectionRange(0, renameInputRef.current.value.length)
+                        renameInputRef.current.setSelectionRange(0, renameInputRef.current.value.length);
                     } catch (error) {
-                        console.warn('Focus failed:', error)
+                        console.warn('Focus failed:', error);
                         // 如果focus失败，再次尝试
                         setTimeout(() => {
                             if (renameInputRef.current) {
-                                renameInputRef.current.focus()
+                                renameInputRef.current.focus();
                             }
-                        }, 50)
+                        }, 50);
                     }
                 }
-            }, 50)
-        })
-    }, [getFileKey])
+            }, 50);
+        });
+    }, [getFileKey]);
 
-    // 取消重命名
+    /**
+     * 取消标签页重命名
+     */
     const cancelRename = useCallback(() => {
-        setRenamingTab(null)
-        setRenameValue('')
-        setIsRenaming(false)
-    }, [])
+        setRenamingTab(null);
+        setRenameValue('');
+        setIsRenaming(false);
+    }, []);
 
-    // 处理重命名键盘事件
+    /**
+     * 处理重命名输入框的键盘事件
+     * @param {Event} e - 键盘事件对象
+     * @param {Object} file - 当前重命名的文件对象
+     */
     const handleRenameKeyDown = useCallback((e, file) => {
-        e.stopPropagation()
+        e.stopPropagation();
         if (e.key === 'Enter') {
-            handleTabRename(file, e.target.value)
+            handleTabRename(file, e.target.value);
         } else if (e.key === 'Escape') {
-            e.preventDefault()
-            setRenamingTab(null)
+            e.preventDefault();
+            setRenamingTab(null);
         }
-    }, [handleTabRename])
+    }, [handleTabRename]);
 
+    /**
+     * 处理标签页切换事件
+     * 支持双击当前标签页触发重命名
+     * @param {string} activeKey - 要激活的标签页键
+     */
     const onChange = useCallback((activeKey) => {
         // 清除之前的计时器
         if (clickTimer) {
-            clearTimeout(clickTimer)
+            clearTimeout(clickTimer);
         }
 
         // 增加点击计数
-        const newClickCount = clickCount + 1
-        setClickCount(newClickCount)
+        const newClickCount = clickCount + 1;
+        setClickCount(newClickCount);
 
         // 设置新的计时器
         const timer = setTimeout(() => {
             // 如果点击的是当前激活的标签，触发重命名而不是切换
             if (currentFile && getFileKey(currentFile) === activeKey) {
-                const file = openedFiles.find(f => getFileKey(f) === activeKey)
+                const file = openedFiles.find(f => getFileKey(f) === activeKey);
                 if (file) {
-                    startRename(file)
+                    startRename(file);
                 }
             } else {
-                switchToFile(activeKey)
+                switchToFile(activeKey);
             }
             // 重置点击计数
-            setClickCount(0)
-        }, 200) // 200ms延时，防止双击冲突
+            setClickCount(0);
+        }, 200); // 200ms延时，防止双击冲突
 
-        setClickTimer(timer)
-    }, [switchToFile, currentFile, getFileKey, openedFiles, startRename, clickTimer, clickCount])
+        setClickTimer(timer);
+    }, [switchToFile, currentFile, getFileKey, openedFiles, startRename, clickTimer, clickCount]);
 
+    /**
+     * 处理新建文件
+     */
     const handleNewFile = useCallback(async () => {
         try {
             await createFile();
         } catch (error) {
             console.error('新建文件失败:', error);
         }
-    }, [createFile])
+    }, [createFile]);
 
+    /**
+     * 处理标签页编辑事件（关闭或新建）
+     * @param {string} targetKey - 目标标签页键
+     * @param {string} action - 操作类型：'remove'表示关闭，'add'表示新建
+     */
     const onEdit = useCallback((targetKey, action) => {
         if (action === 'remove') {
-            closeFileByPath(targetKey)
+            closeFileByPath(targetKey);
         } else if (action === 'add') {
             handleNewFile();
         }
-    }, [closeFileByPath, handleNewFile])
+    }, [closeFileByPath, handleNewFile]);
 
+    /**
+     * 关闭指定标签页
+     * @param {string} tabKey - 要关闭的标签页键
+     */
     const handleCloseTab = useCallback((tabKey) => {
-        closeFileByPath(tabKey)
-        setContextMenu({ visible: false, tabKey: null })
-    }, [closeFileByPath])
+        closeFileByPath(tabKey);
+        setContextMenu({ visible: false, tabKey: null });
+    }, [closeFileByPath]);
 
+    /**
+     * 关闭除指定标签页外的所有标签页
+     * @param {string} tabKey - 要保留的标签页键
+     */
     const handleCloseOthers = useCallback((tabKey) => {
         openedFiles.forEach(file => {
-            const fileKey = getFileKey(file)
+            const fileKey = getFileKey(file);
             if (fileKey !== tabKey) {
-                closeFileByPath(fileKey)
+                closeFileByPath(fileKey);
             }
-        })
-        setContextMenu({ visible: false, tabKey: null })
-    }, [openedFiles, closeFileByPath, getFileKey])
+        });
+        setContextMenu({ visible: false, tabKey: null });
+    }, [openedFiles, closeFileByPath, getFileKey]);
 
+    /**
+     * 关闭所有标签页
+     */
     const handleCloseAll = useCallback(() => {
         openedFiles.forEach(file => {
-            closeFileByPath(getFileKey(file))
-        })
-        setContextMenu({ visible: false, tabKey: null })
-    }, [openedFiles, closeFileByPath, getFileKey])
+            closeFileByPath(getFileKey(file));
+        });
+        setContextMenu({ visible: false, tabKey: null });
+    }, [openedFiles, closeFileByPath, getFileKey]);
 
+    /** 右键菜单选项 */
     const contextMenuItems = [
         {
             key: 'rename',
             label: t('tabs.rename'),
             onClick: () => {
-                const file = openedFiles.find(f => getFileKey(f) === contextMenu.tabKey)
+                const file = openedFiles.find(f => getFileKey(f) === contextMenu.tabKey);
                 if (file) {
-                    startRename(file)
+                    startRename(file);
                 }
-                setContextMenu({ visible: false, tabKey: null })
+                setContextMenu({ visible: false, tabKey: null });
             },
         },
         {
@@ -336,8 +410,12 @@ const TabBar = ({ fileManager }) => {
             label: t('tabs.closeAll'),
             onClick: () => handleCloseAll(),
         },
-    ]
+    ];
 
+    /**
+     * 生成标签页项目列表
+     * @type {Array<Object>} 标签页配置数组
+     */
     const items = useMemo(() => openedFiles.map((file) => ({
         key: getFileKey(file),
         label: (
@@ -346,18 +424,18 @@ const TabBar = ({ fileManager }) => {
                 trigger={['contextMenu']}
                 onOpenChange={(visible) => {
                     if (visible) {
-                        setContextMenu({ visible: true, tabKey: getFileKey(file) })
+                        setContextMenu({ visible: true, tabKey: getFileKey(file) });
                     } else {
-                        setContextMenu({ visible: false, tabKey: null })
+                        setContextMenu({ visible: false, tabKey: null });
                     }
                 }}
             >
                 <span
                     className="tab-label"
                     onDoubleClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        startRename(file)
+                        e.preventDefault();
+                        e.stopPropagation();
+                        startRename(file);
                     }}
                 >
                     {renamingTab === getFileKey(file) ? (
@@ -375,15 +453,15 @@ const TabBar = ({ fileManager }) => {
                                     relatedTarget.closest('.ant-dropdown') ||
                                     relatedTarget.closest('.window-controls')
                                 );
-                                
+
                                 // 如果不是点击交互元素且不在重命名过程中，则处理重命名
                                 if (!isRenaming && !isClickingOnInteractiveElement) {
-                                    handleTabRename(file, renameValue)
+                                    handleTabRename(file, renameValue);
                                 }
                             }}
                             onFocus={() => {
                                 // 获得焦点后清除重命名进行中标志
-                                setTimeout(() => setIsRenaming(false), 100)
+                                setTimeout(() => setIsRenaming(false), 100);
                             }}
                             onKeyDown={(e) => handleRenameKeyDown(e, file)}
                             className="tab-rename-input"
@@ -402,7 +480,6 @@ const TabBar = ({ fileManager }) => {
                                 fontFamily: 'inherit',
                                 display: 'inline-block',
                                 verticalAlign: 'baseline'
-                                // 移除内联的color样式，让CSS类处理主题自适应
                             }}
                         />
                     ) : (
@@ -423,22 +500,26 @@ const TabBar = ({ fileManager }) => {
             </Dropdown>
         ),
         closable: true
-    })), [openedFiles, getFileKey, contextMenuItems, renamingTab, renameValue, startRename, handleTabRename, handleRenameKeyDown])
+    })), [openedFiles, getFileKey, contextMenuItems, renamingTab, renameValue, startRename, handleTabRename, handleRenameKeyDown, getTextWidth]);
 
+    /**
+     * 根据打开的文件数量设置CSS变量，控制标签栏高度
+     */
     useEffect(() => {
         if (openedFiles.length === 0) {
-            document.documentElement.style.setProperty('--tab-bar-height', '0px')
+            document.documentElement.style.setProperty('--tab-bar-height', '0px');
         } else {
-            document.documentElement.style.setProperty('--tab-bar-height', '40px')
+            document.documentElement.style.setProperty('--tab-bar-height', '40px');
         }
 
         return () => {
-            document.documentElement.style.setProperty('--tab-bar-height', '0px')
-        }
-    }, [openedFiles.length])
+            document.documentElement.style.setProperty('--tab-bar-height', '0px');
+        };
+    }, [openedFiles.length]);
 
+    // 如果没有打开的文件，不渲染标签栏
     if (openedFiles.length === 0) {
-        return null
+        return null;
     }
 
     return (
@@ -456,7 +537,7 @@ const TabBar = ({ fileManager }) => {
                 items={items}
             />
         </div>
-    )
+    );
 };
 
 export default TabBar;
