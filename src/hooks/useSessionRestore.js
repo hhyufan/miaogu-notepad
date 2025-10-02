@@ -88,48 +88,48 @@ export const useSessionRestore = () => {
     try {
       // 等待一小段时间确保Redux Persist完全恢复
       await new Promise(resolve => setTimeout(resolve, 100));
-      
+
       // Redux Persist会自动恢复主题状态，这里主要处理Tauri存储的额外设置
       const themeSettings = await persistenceManager.getSetting('themeSettings', {});
 
       // 通过检查Redux store的当前状态来判断是否需要手动恢复
       const currentState = store.getState();
       const currentTheme = currentState.theme.theme;
-      
-      console.log('🔄 [useSessionRestore] 当前Redux状态:', currentState.theme);
-      console.log('🔄 [useSessionRestore] Tauri存储设置:', themeSettings);
-      
+
+
+
+
       // 只在Redux Persist没有恢复主题时才手动设置
       // 如果当前主题仍是默认值且Tauri存储中有主题设置，则使用Tauri存储的设置
       if (currentTheme === 'light' && themeSettings.theme && themeSettings.theme !== 'light' && themeSettings.theme !== 'undefined') {
-        console.log('🔄 [useSessionRestore] 从Tauri存储恢复主题:', themeSettings.theme);
+
         dispatch(setTheme(themeSettings.theme));
       }
 
       // 恢复其他主题相关设置（这些不在Redux Persist中）
       if (themeSettings.fontFamily && themeSettings.fontFamily !== currentState.theme.fontFamily) {
-        console.log('🔄 [useSessionRestore] 恢复字体设置:', themeSettings.fontFamily);
+
         dispatch(setFontFamily(themeSettings.fontFamily));
       }
       if (themeSettings.lineHeight && themeSettings.lineHeight !== currentState.theme.lineHeight) {
-        console.log('🔄 [useSessionRestore] 恢复行高设置:', themeSettings.lineHeight);
+
         dispatch(setLineHeight(themeSettings.lineHeight));
       }
       if (typeof themeSettings.backgroundEnabled === 'boolean' && themeSettings.backgroundEnabled !== currentState.theme.backgroundEnabled) {
-        console.log('🔄 [useSessionRestore] 恢复背景启用设置:', themeSettings.backgroundEnabled);
+
         dispatch(setBackgroundEnabled(themeSettings.backgroundEnabled));
       }
       if (themeSettings.backgroundTransparency) {
         Object.entries(themeSettings.backgroundTransparency).forEach(([theme, value]) => {
           const currentTransparency = currentState.theme.backgroundTransparency[theme];
           if (value !== currentTransparency) {
-            console.log(`🔄 [useSessionRestore] 恢复${theme}主题透明度:`, value);
+
             dispatch(setBackgroundTransparency({ theme, value }));
           }
         });
       }
 
-      console.log('🔄 [useSessionRestore] 主题设置恢复完成');
+
     } catch (error) {
       console.error('🔄 [useSessionRestore] 主题设置恢复失败:', error);
     }

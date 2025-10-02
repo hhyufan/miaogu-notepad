@@ -38,7 +38,7 @@ export const useTheme = () => {
     setTheme: (value) => {
       // 防止设置无效的主题值
       if (value && value !== 'undefined' && typeof value === 'string') {
-        console.log('🎨 [useTheme] 设置主题:', value);
+
         dispatch(setTheme(value));
       } else {
         console.warn('🎨 [useTheme] 拒绝设置无效主题值:', value);

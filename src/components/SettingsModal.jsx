@@ -210,7 +210,7 @@ const SettingsModal = ({ visible, onClose }) => {
       }
 
       // 添加调试日志
-      console.log('保存设置:', validatedSettings);
+
 
       // 保存到存储
       await settingsApi.set('fontSize', validatedSettings.fontSize);
@@ -225,7 +225,7 @@ const SettingsModal = ({ visible, onClose }) => {
       const verifyBackgroundImage = await settingsApi.get('backgroundImage', '');
       const verifyBackgroundEnabled = await settingsApi.get('backgroundEnabled', false);
 
-      console.log('验证保存结果:', { verifyBackgroundImage, verifyBackgroundEnabled });
+
 
       await settingsApi.set('ai.enabled', validatedSettings.aiEnabled);
       await settingsApi.set('ai.baseUrl', validatedSettings.aiBaseUrl);
@@ -243,7 +243,7 @@ const SettingsModal = ({ visible, onClose }) => {
         name: error.name,
         cause: error.cause
       });
-      
+
       // 提供更详细的错误信息
       let errorMessage = error.message || t('common.unknownError');
       if (error.message && error.message.includes('missing required key value')) {
@@ -251,7 +251,7 @@ const SettingsModal = ({ visible, onClose }) => {
       } else if (error.message && error.message.includes('存储实例初始化失败')) {
         errorMessage = '设置保存失败：存储系统初始化失败';
       }
-      
+
       message.error(`${t('settings.saveError')}: ${errorMessage}`);
     }
   }, [localSettings, setFontFamily, setLineHeight, setBackgroundImage, setBackgroundEnabled, setBackgroundTransparency, t]);

@@ -23,12 +23,12 @@ import './i18n'
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <Provider store={store}>
-      <PersistGate 
-        loading={<LoadingComponent />} 
+      <PersistGate
+        loading={<LoadingComponent />}
         persistor={persistor}
         onBeforeLift={() => {
           // 在持久化恢复完成前的回调
-          console.log('🔄 [Redux Persist] 开始恢复持久化状态');
+
         }}
       >
         <App />

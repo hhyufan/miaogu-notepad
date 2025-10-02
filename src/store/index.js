@@ -25,8 +25,8 @@ const persistConfig = {
       in: (inboundState, key) => {
         if (key === 'theme' && inboundState && typeof inboundState === 'object') {
           const { backgroundImage, ...rest } = inboundState;
-          console.log('🔄 [Redux Persist] Transform IN - 原始状态:', inboundState);
-          console.log('🔄 [Redux Persist] Transform IN - 处理后状态:', rest);
+
+
           return rest;
         }
         return inboundState;
@@ -37,8 +37,8 @@ const persistConfig = {
             ...outboundState,
             backgroundImage: outboundState.backgroundImage || '' // 保持原有值或设为空字符串
           };
-          console.log('🔄 [Redux Persist] Transform OUT - 原始状态:', outboundState);
-          console.log('🔄 [Redux Persist] Transform OUT - 处理后状态:', result);
+
+
           return result;
         }
         return outboundState;

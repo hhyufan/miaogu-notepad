@@ -214,7 +214,7 @@ const MainApp = () => {
   useEffect(() => {
     // 防止undefined覆盖有效的主题值
     if (currentTheme && currentTheme !== 'undefined') {
-      console.log('🎨 [App] 当前主题:', currentTheme);
+
       // 应用主题到document
       document.documentElement.setAttribute('data-theme', currentTheme);
     } else {
