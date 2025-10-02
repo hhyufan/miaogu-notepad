@@ -58,6 +58,23 @@ body {
   --tab-bar-height: 36px;
   --editor-background-image: none;
 
+  /* 菜单相关变量默认值（亮色主题） */
+  --app-bg: #ffffff;
+  --app-overlay: rgba(255, 255, 255, 0.3);
+  --menu-item-hover-bg: rgba(0, 0, 0, 0.04);
+  --menu-item-selected-bg: rgba(24, 144, 255, 0.1);
+  --menu-item-selected-color: #1890ff;
+  --btn-text-hover-bg: rgba(0, 0, 0, 0.04);
+  --input-bg: #ffffff;
+  --input-border-color: #d9d9d9;
+  --input-color: #000000;
+  --modal-bg: #ffffff;
+  --modal-header-bg: #ffffff;
+  --modal-body-bg: #ffffff;
+  --modal-footer-bg: #ffffff;
+  --dropdown-bg: #ffffff;
+  --dropdown-item-hover-bg: rgba(0, 0, 0, 0.04);
+
 }
 
 [data-theme='dark'] {

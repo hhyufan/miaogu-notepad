@@ -1569,7 +1569,7 @@ function CodeEditor({ isDarkMode, fileManager, showMarkdownPreview = false, lang
     return () => {
       disposable.dispose();
     };
-  }, [updateContent, currentFile, updateGhostTextsOnChange]);
+  }, [updateContent, currentFile, updateGhostTextsOnChange, highlighterReady]);
 
   useEffect(() => {
     if (!currentFile) return;

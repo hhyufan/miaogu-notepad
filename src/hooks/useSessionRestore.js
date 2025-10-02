@@ -84,30 +84,57 @@ export const useSessionRestore = () => {
    */
   const restoreThemeSettings = async () => {
     try {
+      console.log('🔄 [useSessionRestore] 开始恢复主题设置...');
+      
       const themeSettings = await persistenceManager.getSetting('themeSettings', {});
+      console.log('🔄 [useSessionRestore] 从Tauri存储获取的主题设置:', themeSettings);
 
+      // 优先使用Tauri存储的主题设置
       if (themeSettings.theme) {
+        console.log('🔄 [useSessionRestore] 使用Tauri存储的主题:', themeSettings.theme);
         dispatch(setTheme(themeSettings.theme));
+      } else {
+        // 如果Tauri存储中没有主题设置，尝试从localStorage读取（兼容旧版本）
+        const localTheme = localStorage.getItem('theme');
+        console.log('🔄 [useSessionRestore] Tauri存储中无主题，检查localStorage:', localTheme);
+        
+        if (localTheme && (localTheme === 'dark' || localTheme === 'light')) {
+          console.log('🔄 [useSessionRestore] 使用localStorage主题并迁移到Tauri:', localTheme);
+          dispatch(setTheme(localTheme));
+          // 将localStorage中的主题设置迁移到Tauri存储
+          await persistenceManager.saveSetting('themeSettings', { theme: localTheme });
+        } else {
+          console.log('🔄 [useSessionRestore] 未找到有效主题设置，使用默认主题');
+        }
       }
+      
       if (themeSettings.fontFamily) {
+        console.log('🔄 [useSessionRestore] 恢复字体:', themeSettings.fontFamily);
         dispatch(setFontFamily(themeSettings.fontFamily));
       }
       if (themeSettings.lineHeight) {
+        console.log('🔄 [useSessionRestore] 恢复行高:', themeSettings.lineHeight);
         dispatch(setLineHeight(themeSettings.lineHeight));
       }
       if (themeSettings.backgroundImage) {
+        console.log('🔄 [useSessionRestore] 恢复背景图片');
         dispatch(setBackgroundImage(themeSettings.backgroundImage));
       }
       if (typeof themeSettings.backgroundEnabled === 'boolean') {
+        console.log('🔄 [useSessionRestore] 恢复背景启用状态:', themeSettings.backgroundEnabled);
         dispatch(setBackgroundEnabled(themeSettings.backgroundEnabled));
       }
       if (themeSettings.backgroundTransparency) {
+        console.log('🔄 [useSessionRestore] 恢复背景透明度:', themeSettings.backgroundTransparency);
         Object.entries(themeSettings.backgroundTransparency).forEach(([theme, value]) => {
           dispatch(setBackgroundTransparency({ theme, value }));
         });
       }
 
-    } catch (error) {}
+      console.log('🔄 [useSessionRestore] 主题设置恢复完成');
+    } catch (error) {
+      console.error('🔄 [useSessionRestore] 主题设置恢复失败:', error);
+    }
   };
 
   /**
