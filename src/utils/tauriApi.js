@@ -417,12 +417,8 @@ export const settingsApi = {
 
   async set(key, value) {
     try {
-      // 添加调试日志
-
-
-
-
-
+      console.log(`正在设置 ${key}:`, value);
+      
       await initStore();
       const currentStore = useLocalStorage ? localStorageStore : store;
 
@@ -431,20 +427,34 @@ export const settingsApi = {
         throw new Error('存储实例初始化失败');
       }
 
-      await currentStore.set(key, value);
+      // 确保参数正确传递给 Tauri Store
+      if (!useLocalStorage && store) {
+        // 对于 Tauri Store，确保 key 和 value 都是有效的
+        if (typeof key !== 'string' || key.trim() === '') {
+          throw new Error('无效的键名');
+        }
+        if (value === undefined) {
+          throw new Error('值不能为 undefined');
+        }
+        console.log(`使用 Tauri Store 设置 ${key}:`, value);
+        await store.set(key, value);
+      } else {
+        // 对于 localStorage，使用现有的适配器
+        console.log(`使用 localStorage 设置 ${key}:`, value);
+        await localStorageStore.set(key, value);
+      }
 
       // 验证设置是否成功
       const verifyValue = await currentStore.get(key);
-
+      console.log(`验证设置结果 ${key}:`, verifyValue);
 
       // 对于 Tauri Store，由于使用了 autoSave，不需要手动调用 save()
-      if (!useLocalStorage) {
-
-      } else if (useLocalStorage) {
-
+      if (!useLocalStorage && store) {
+        console.log('Tauri Store 自动保存已启用');
       }
     } catch (error) {
       console.error(`设置 ${key} 失败:`, error);
+      console.error('错误详情:', error.message, error.stack);
       throw error;
     }
   },

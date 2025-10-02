@@ -27,9 +27,23 @@ export const useTheme = () => {
   const theme = useAppSelector((state) => state.theme);
   const dispatch = useAppDispatch();
 
-  return {
+  // 确保主题值的有效性，防止undefined传播
+  const safeTheme = {
     ...theme,
-    setTheme: (value) => dispatch(setTheme(value)),
+    theme: theme.theme || 'light' // 如果主题为undefined，默认使用light
+  };
+
+  return {
+    ...safeTheme,
+    setTheme: (value) => {
+      // 防止设置无效的主题值
+      if (value && value !== 'undefined' && typeof value === 'string') {
+        console.log('🎨 [useTheme] 设置主题:', value);
+        dispatch(setTheme(value));
+      } else {
+        console.warn('🎨 [useTheme] 拒绝设置无效主题值:', value);
+      }
+    },
     setFontFamily: (value) => dispatch(setFontFamily(value)),
     setLineHeight: (value) => dispatch(setLineHeight(value)),
     setBackgroundImage: (value) => dispatch(setBackgroundImage(value)),

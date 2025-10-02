@@ -210,6 +210,18 @@ const MainApp = () => {
   const [cursorPosition, setCursorPosition] = useState({ lineNumber: 1, column: 1 });
   const [characterCount, setCharacterCount] = useState(0);
 
+  // 监听主题变化，确保主题正确应用
+  useEffect(() => {
+    // 防止undefined覆盖有效的主题值
+    if (currentTheme && currentTheme !== 'undefined') {
+      console.log('🎨 [App] 当前主题:', currentTheme);
+      // 应用主题到document
+      document.documentElement.setAttribute('data-theme', currentTheme);
+    } else {
+      console.warn('🎨 [App] 检测到无效主题值:', currentTheme, '- 跳过应用');
+    }
+  }, [currentTheme]);
+
   useEffect(() => {
     const handleTauriDragEnter = () => {
       setIsDragOver(true);

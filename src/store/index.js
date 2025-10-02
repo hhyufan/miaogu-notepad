@@ -23,23 +23,30 @@ const persistConfig = {
     // 排除 backgroundImage 字段，避免存储大量 base64 数据
     {
       in: (inboundState, key) => {
-        if (key === 'theme' && inboundState.backgroundImage) {
+        if (key === 'theme' && inboundState && typeof inboundState === 'object') {
           const { backgroundImage, ...rest } = inboundState;
+          console.log('🔄 [Redux Persist] Transform IN - 原始状态:', inboundState);
+          console.log('🔄 [Redux Persist] Transform IN - 处理后状态:', rest);
           return rest;
         }
         return inboundState;
       },
       out: (outboundState, key) => {
-        if (key === 'theme') {
-          return {
+        if (key === 'theme' && outboundState && typeof outboundState === 'object') {
+          const result = {
             ...outboundState,
-            backgroundImage: '' // 恢复时重置为空字符串
+            backgroundImage: outboundState.backgroundImage || '' // 保持原有值或设为空字符串
           };
+          console.log('🔄 [Redux Persist] Transform OUT - 原始状态:', outboundState);
+          console.log('🔄 [Redux Persist] Transform OUT - 处理后状态:', result);
+          return result;
         }
         return outboundState;
       }
     }
-  ]
+  ],
+  // 确保主题设置能够正确持久化
+  debug: process.env.NODE_ENV === 'development'
 };
 
 const rootReducer = combineReducers({

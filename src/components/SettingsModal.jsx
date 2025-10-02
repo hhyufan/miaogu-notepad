@@ -55,12 +55,12 @@ const SettingsModal = ({ visible, onClose }) => {
 
   const [activeKey, setActiveKey] = useState('general');
   const [localSettings, setLocalSettings] = useState({
-    fontSize,
-    fontFamily,
-    lineHeight,
-    backgroundImage,
-    backgroundEnabled,
-    backgroundTransparency,
+    fontSize: fontSize || 20,
+    fontFamily: fontFamily || 'JetBrains Mono',
+    lineHeight: lineHeight || 1.2,
+    backgroundImage: backgroundImage || '',
+    backgroundEnabled: backgroundEnabled || false,
+    backgroundTransparency: backgroundTransparency || { dark: 80, light: 80 },
 
     aiEnabled: false,
     aiBaseUrl: '',
@@ -71,12 +71,12 @@ const SettingsModal = ({ visible, onClose }) => {
   useEffect(() => {
     setLocalSettings(prev => ({
       ...prev,
-      fontSize,
-      fontFamily,
-      lineHeight,
-      backgroundImage,
-      backgroundEnabled,
-      backgroundTransparency,
+      fontSize: fontSize || prev.fontSize || 20,
+      fontFamily: fontFamily || prev.fontFamily || 'JetBrains Mono',
+      lineHeight: lineHeight || prev.lineHeight || 1.2,
+      backgroundImage: backgroundImage || prev.backgroundImage || '',
+      backgroundEnabled: backgroundEnabled !== undefined ? backgroundEnabled : prev.backgroundEnabled,
+      backgroundTransparency: backgroundTransparency || prev.backgroundTransparency || { dark: 80, light: 80 },
 
     }));
   }, [fontSize, fontFamily, lineHeight, backgroundImage, backgroundEnabled, backgroundTransparency]);
@@ -179,53 +179,80 @@ const SettingsModal = ({ visible, onClose }) => {
 
   const saveSettings = useCallback(async () => {
     try {
-      setFontFamily(localSettings.fontFamily);
-      setLineHeight(localSettings.lineHeight);
+      // 验证和设置默认值
+      const validatedSettings = {
+        fontSize: localSettings.fontSize || 20,
+        fontFamily: localSettings.fontFamily || 'JetBrains Mono',
+        lineHeight: localSettings.lineHeight || 1.2,
+        backgroundImage: localSettings.backgroundImage || '',
+        backgroundEnabled: localSettings.backgroundEnabled !== undefined ? localSettings.backgroundEnabled : false,
+        backgroundTransparency: localSettings.backgroundTransparency || { dark: 80, light: 80 },
+        aiEnabled: localSettings.aiEnabled || false,
+        aiBaseUrl: localSettings.aiBaseUrl || '',
+        aiApiKey: localSettings.aiApiKey || '',
+        aiModel: localSettings.aiModel || ''
+      };
 
-      setBackgroundImage(localSettings.backgroundImage);
-      setBackgroundEnabled(localSettings.backgroundEnabled);
+      // 更新 Redux 状态
+      setFontFamily(validatedSettings.fontFamily);
+      setLineHeight(validatedSettings.lineHeight);
 
-      if (localSettings.backgroundTransparency && typeof localSettings.backgroundTransparency === 'object') {
-        if (localSettings.backgroundTransparency.dark !== undefined) {
-          setBackgroundTransparency('dark', localSettings.backgroundTransparency.dark);
+      setBackgroundImage(validatedSettings.backgroundImage);
+      setBackgroundEnabled(validatedSettings.backgroundEnabled);
+
+      if (validatedSettings.backgroundTransparency && typeof validatedSettings.backgroundTransparency === 'object') {
+        if (validatedSettings.backgroundTransparency.dark !== undefined) {
+          setBackgroundTransparency('dark', validatedSettings.backgroundTransparency.dark);
         }
-        if (localSettings.backgroundTransparency.light !== undefined) {
-          setBackgroundTransparency('light', localSettings.backgroundTransparency.light);
+        if (validatedSettings.backgroundTransparency.light !== undefined) {
+          setBackgroundTransparency('light', validatedSettings.backgroundTransparency.light);
         }
       }
 
       // 添加调试日志
+      console.log('保存设置:', validatedSettings);
 
+      // 保存到存储
+      await settingsApi.set('fontSize', validatedSettings.fontSize);
+      await settingsApi.set('fontFamily', validatedSettings.fontFamily);
+      await settingsApi.set('lineHeight', validatedSettings.lineHeight);
 
-
-
-
-      await settingsApi.set('fontSize', localSettings.fontSize);
-      await settingsApi.set('fontFamily', localSettings.fontFamily);
-      await settingsApi.set('lineHeight', localSettings.lineHeight);
-
-      await settingsApi.set('backgroundImage', localSettings.backgroundImage);
-      await settingsApi.set('backgroundEnabled', localSettings.backgroundEnabled);
-      await settingsApi.set('backgroundTransparency', localSettings.backgroundTransparency);
+      await settingsApi.set('backgroundImage', validatedSettings.backgroundImage);
+      await settingsApi.set('backgroundEnabled', validatedSettings.backgroundEnabled);
+      await settingsApi.set('backgroundTransparency', validatedSettings.backgroundTransparency);
 
       // 验证保存结果
       const verifyBackgroundImage = await settingsApi.get('backgroundImage', '');
       const verifyBackgroundEnabled = await settingsApi.get('backgroundEnabled', false);
 
+      console.log('验证保存结果:', { verifyBackgroundImage, verifyBackgroundEnabled });
 
-
-      await settingsApi.set('ai.enabled', !!localSettings.aiEnabled);
-      await settingsApi.set('ai.baseUrl', localSettings.aiBaseUrl || '');
-      await settingsApi.set('ai.apiKey', localSettings.aiApiKey || '');
-      await settingsApi.set('ai.model', localSettings.aiModel || '');
+      await settingsApi.set('ai.enabled', validatedSettings.aiEnabled);
+      await settingsApi.set('ai.baseUrl', validatedSettings.aiBaseUrl);
+      await settingsApi.set('ai.apiKey', validatedSettings.aiApiKey);
+      await settingsApi.set('ai.model', validatedSettings.aiModel);
 
       window.dispatchEvent(new Event('ai-settings-changed'));
 
       message.success(t('settings.saveSuccess'));
     } catch (error) {
       console.error('设置保存失败:', error);
-      console.error('错误详情:', error.message, error.stack);
-      message.error(`${t('settings.saveError')}: ${error.message || t('common.unknownError')}`);
+      console.error('错误详情:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+        cause: error.cause
+      });
+      
+      // 提供更详细的错误信息
+      let errorMessage = error.message || t('common.unknownError');
+      if (error.message && error.message.includes('missing required key value')) {
+        errorMessage = '设置保存失败：参数格式错误，请重试';
+      } else if (error.message && error.message.includes('存储实例初始化失败')) {
+        errorMessage = '设置保存失败：存储系统初始化失败';
+      }
+      
+      message.error(`${t('settings.saveError')}: ${errorMessage}`);
     }
   }, [localSettings, setFontFamily, setLineHeight, setBackgroundImage, setBackgroundEnabled, setBackgroundTransparency, t]);
 

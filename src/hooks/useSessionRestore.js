@@ -8,6 +8,7 @@
 import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { persistenceManager } from '../utils/persistenceManager';
+import { store } from '../store';
 import tauriApi from '../utils/tauriApi';
 
 const { file: fileApi } = tauriApi;
@@ -81,57 +82,54 @@ export const useSessionRestore = () => {
 
   /**
    * 恢复主题设置
+   * 注意：主题设置主要通过Redux Persist自动恢复，这里只处理特殊情况
    */
   const restoreThemeSettings = async () => {
     try {
-
-
+      // 等待一小段时间确保Redux Persist完全恢复
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Redux Persist会自动恢复主题状态，这里主要处理Tauri存储的额外设置
       const themeSettings = await persistenceManager.getSetting('themeSettings', {});
 
-
-      // 优先使用Tauri存储的主题设置
-      if (themeSettings.theme) {
-
+      // 通过检查Redux store的当前状态来判断是否需要手动恢复
+      const currentState = store.getState();
+      const currentTheme = currentState.theme.theme;
+      
+      console.log('🔄 [useSessionRestore] 当前Redux状态:', currentState.theme);
+      console.log('🔄 [useSessionRestore] Tauri存储设置:', themeSettings);
+      
+      // 只在Redux Persist没有恢复主题时才手动设置
+      // 如果当前主题仍是默认值且Tauri存储中有主题设置，则使用Tauri存储的设置
+      if (currentTheme === 'light' && themeSettings.theme && themeSettings.theme !== 'light' && themeSettings.theme !== 'undefined') {
+        console.log('🔄 [useSessionRestore] 从Tauri存储恢复主题:', themeSettings.theme);
         dispatch(setTheme(themeSettings.theme));
-      } else {
-        // 如果Tauri存储中没有主题设置，尝试从localStorage读取（兼容旧版本）
-        const localTheme = localStorage.getItem('theme');
-
-
-        if (localTheme && (localTheme === 'dark' || localTheme === 'light')) {
-
-          dispatch(setTheme(localTheme));
-          // 将localStorage中的主题设置迁移到Tauri存储
-          await persistenceManager.saveSetting('themeSettings', { theme: localTheme });
-        } else {
-
-        }
       }
 
-      if (themeSettings.fontFamily) {
-
+      // 恢复其他主题相关设置（这些不在Redux Persist中）
+      if (themeSettings.fontFamily && themeSettings.fontFamily !== currentState.theme.fontFamily) {
+        console.log('🔄 [useSessionRestore] 恢复字体设置:', themeSettings.fontFamily);
         dispatch(setFontFamily(themeSettings.fontFamily));
       }
-      if (themeSettings.lineHeight) {
-
+      if (themeSettings.lineHeight && themeSettings.lineHeight !== currentState.theme.lineHeight) {
+        console.log('🔄 [useSessionRestore] 恢复行高设置:', themeSettings.lineHeight);
         dispatch(setLineHeight(themeSettings.lineHeight));
       }
-      if (themeSettings.backgroundImage) {
-
-        dispatch(setBackgroundImage(themeSettings.backgroundImage));
-      }
-      if (typeof themeSettings.backgroundEnabled === 'boolean') {
-
+      if (typeof themeSettings.backgroundEnabled === 'boolean' && themeSettings.backgroundEnabled !== currentState.theme.backgroundEnabled) {
+        console.log('🔄 [useSessionRestore] 恢复背景启用设置:', themeSettings.backgroundEnabled);
         dispatch(setBackgroundEnabled(themeSettings.backgroundEnabled));
       }
       if (themeSettings.backgroundTransparency) {
-
         Object.entries(themeSettings.backgroundTransparency).forEach(([theme, value]) => {
-          dispatch(setBackgroundTransparency({ theme, value }));
+          const currentTransparency = currentState.theme.backgroundTransparency[theme];
+          if (value !== currentTransparency) {
+            console.log(`🔄 [useSessionRestore] 恢复${theme}主题透明度:`, value);
+            dispatch(setBackgroundTransparency({ theme, value }));
+          }
         });
       }
 
-
+      console.log('🔄 [useSessionRestore] 主题设置恢复完成');
     } catch (error) {
       console.error('🔄 [useSessionRestore] 主题设置恢复失败:', error);
     }
