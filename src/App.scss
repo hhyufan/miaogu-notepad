@@ -110,6 +110,23 @@ body {
   --scrollbar-thumb-hover-color: rgba(255, 255, 255, 0.5);
   --scrollbar-thumb-active-color: rgba(255, 255, 255, 0.6);
 
+  /* 菜单相关变量（暗色主题） */
+  --app-bg: #1a1a1a;
+  --app-overlay: rgba(0, 0, 0, 0.3);
+  --menu-item-hover-bg: rgba(255, 255, 255, 0.1);
+  --menu-item-selected-bg: rgba(24, 144, 255, 0.2);
+  --menu-item-selected-color: #1890ff;
+  --btn-text-hover-bg: rgba(255, 255, 255, 0.1);
+  --input-bg: #262626;
+  --input-border-color: #434343;
+  --input-color: #ffffff;
+  --modal-bg: #1f1f1f;
+  --modal-header-bg: #1f1f1f;
+  --modal-body-bg: #1f1f1f;
+  --modal-footer-bg: #1f1f1f;
+  --dropdown-bg: #262626;
+  --dropdown-item-hover-bg: rgba(255, 255, 255, 0.1);
+
   /* 表格样式覆盖已移除，由MarkdownViewer组件内联样式控制 */
 }
 

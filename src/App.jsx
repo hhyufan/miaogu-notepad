@@ -12,6 +12,7 @@ import { Provider, useSelector } from 'react-redux';
 import { invoke } from '@tauri-apps/api/core';
 import { store } from './store';
 import { useTheme } from './hooks/redux';
+import useThemeSync from './hooks/useTheme'; // 导入主题同步 hook
 import { useI18n } from './hooks/useI18n';
 import tauriApi, { fileApi } from './utils/tauriApi';
 import { useSessionRestore } from './hooks/useSessionRestore';
@@ -203,6 +204,10 @@ const MainApp = () => {
     setBackgroundEnabled,
     setBackgroundTransparency
   } = useTheme();
+
+  // 使用主题同步 hook 确保 DOM 属性正确设置
+  useThemeSync();
+
   const { t } = useI18n();
   const [loading, setLoading] = useState(true);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -210,17 +215,19 @@ const MainApp = () => {
   const [cursorPosition, setCursorPosition] = useState({ lineNumber: 1, column: 1 });
   const [characterCount, setCharacterCount] = useState(0);
 
-  // 监听主题变化，确保主题正确应用
+  // 立即设置初始主题，确保在首次渲染时就有正确的data-theme属性
   useEffect(() => {
-    // 防止undefined覆盖有效的主题值
-    if (currentTheme && currentTheme !== 'undefined') {
+    // 在组件挂载时立即设置主题属性，避免初始渲染时的白色闪烁
+    const initialTheme = currentTheme && currentTheme !== 'undefined' ? currentTheme : 'light';
+    document.documentElement.setAttribute('data-theme', initialTheme);
 
-      // 应用主题到document
-      document.documentElement.setAttribute('data-theme', currentTheme);
-    } else {
-      console.warn('🎨 [App] 检测到无效主题值:', currentTheme, '- 跳过应用');
+
+    // 如果当前主题是 undefined 或无效值，直接在 DOM 上设置为 light，但不触发 Redux 更新
+    if (!currentTheme || currentTheme === 'undefined') {
+      document.documentElement.setAttribute('data-theme', 'light');
+
     }
-  }, [currentTheme]);
+  }, []); // 空依赖数组，只在组件挂载时执行一次
 
   useEffect(() => {
     const handleTauriDragEnter = () => {
@@ -259,6 +266,7 @@ const MainApp = () => {
 
             if (newHeaderVisible) {
               // 退出全屏模式：显示Header，退出全屏状态，允许休眠
+
               await appWindow.setFullscreen(false);
               try {
                 await invoke('disable_prevent_sleep');
@@ -266,8 +274,27 @@ const MainApp = () => {
                 console.warn('允许休眠失败:', error);
               }
             } else {
-              // 进入全屏模式：隐藏Header，设置全屏状态（这会隐藏任务栏），防止休眠
+              // 进入全屏模式：先检查当前窗口状态，确保正确进入全屏
+
+
+              // 检查当前窗口状态
+              const isCurrentlyFullscreen = await appWindow.isFullscreen();
+              const isCurrentlyMaximized = await appWindow.isMaximized();
+
+
+
+              // 如果当前是最大化状态，先退出最大化再进入全屏
+              if (isCurrentlyMaximized && !isCurrentlyFullscreen) {
+
+                await appWindow.unmaximize();
+                // 短暂延迟确保状态切换完成
+                await new Promise(resolve => setTimeout(resolve, 50));
+              }
+
+              // 设置全屏状态（这会隐藏任务栏并完全覆盖屏幕）
               await appWindow.setFullscreen(true);
+
+
               try {
                 await invoke('enable_prevent_sleep');
               } catch (error) {
@@ -289,9 +316,12 @@ const MainApp = () => {
           const appWindow = getCurrentWindow();
 
           const isFullscreen = await appWindow.isFullscreen();
+          const isMaximized = await appWindow.isMaximized();
 
-          // 如果当前Header是隐藏的，但窗口不是全屏状态，则显示Header
+          // 如果当前Header是隐藏的，但窗口既不是全屏也不是最大化状态，则显示Header
+          // 或者如果窗口从全屏退出到最大化状态，也应该显示Header
           if (!isHeaderVisible && !isFullscreen) {
+
             setIsHeaderVisible(true);
           }
         } catch (error) {
@@ -474,8 +504,10 @@ const MainApp = () => {
    * 主题切换函数
    */
   const toggleTheme = useCallback(async () => {
+    // 确保 currentTheme 有有效值，避免传递 undefined
+    const safeCurrentTheme = currentTheme || 'light';
+    const newTheme = safeCurrentTheme === 'light' ? 'dark' : 'light';
 
-    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
     // 直接设置主题，不使用视觉过渡，避免时序问题
     setTheme(newTheme);
   }, [currentTheme, setTheme]);
@@ -609,7 +641,10 @@ const MainApp = () => {
           const savedBackgroundEnabled = await settingsApi.get('backgroundEnabled', false);
           const savedBackgroundTransparency = await settingsApi.get('backgroundTransparency', { dark: 80, light: 55 });
 
-          setTheme(savedTheme);
+          // 确保 savedTheme 有有效值，避免传递 undefined
+          const safeTheme = savedTheme && savedTheme !== 'undefined' ? savedTheme : 'light';
+
+          setTheme(safeTheme);
           setFontFamily(savedFontFamily);
           setLineHeight(savedLineHeight);
           setBackgroundImage(savedBackgroundImage);
