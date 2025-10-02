@@ -5,8 +5,16 @@
  * @version 1.3.0
  */
 
-import { useDispatch, useSelector } from 'react-redux';
-import { setTheme, setFontFamily, setLineHeight, setBackgroundImage, setBackgroundEnabled, setBackgroundTransparency, resetTheme } from '../store/slices/themeSlice';
+import {useDispatch, useSelector} from 'react-redux';
+import {
+  resetTheme,
+  setBackgroundEnabled,
+  setBackgroundImage,
+  setBackgroundTransparency,
+  setFontFamily,
+  setLineHeight,
+  setTheme
+} from '../store/slices/themeSlice';
 
 /**
  * 类型化的dispatch hook
@@ -24,34 +32,34 @@ export const useAppSelector = useSelector;
  * @returns {Object} 主题状态和操作函数
  */
 export const useTheme = () => {
-  const theme = useAppSelector((state) => state.theme);
-  const dispatch = useAppDispatch();
+    const theme = useAppSelector((state) => state.theme);
+    const dispatch = useAppDispatch();
 
-  // 确保主题值的有效性，防止undefined传播
-  const safeTheme = {
-    ...theme,
-    theme: theme.theme || 'light' // 如果主题为undefined，默认使用light
-  };
+    // 确保主题值的有效性，防止undefined传播
+    const safeTheme = {
+        ...theme,
+        theme: theme.theme || 'light' // 如果主题为undefined，默认使用light
+    };
 
-  return {
-    ...safeTheme,
-    setTheme: (value) => {
-      // 防止设置无效的主题值
-      if (value && value !== 'undefined' && typeof value === 'string') {
+    return {
+        ...safeTheme,
+        setTheme: (value) => {
+            // 防止设置无效的主题值
+            if (value && value !== 'undefined' && typeof value === 'string') {
 
-        dispatch(setTheme(value));
-      } else {
-        console.warn('🎨 [useTheme] 拒绝设置无效主题值:', value);
-      }
-    },
-    setFontFamily: (value) => dispatch(setFontFamily(value)),
-    setLineHeight: (value) => dispatch(setLineHeight(value)),
-    setBackgroundImage: (value) => dispatch(setBackgroundImage(value)),
-    setBackgroundEnabled: (value) => dispatch(setBackgroundEnabled(value)),
-    setBackgroundTransparency: (theme, value) => dispatch(setBackgroundTransparency({ theme, value })),
+                dispatch(setTheme(value));
+            } else {
+                console.warn('🎨 [useTheme] 拒绝设置无效主题值:', value);
+            }
+        },
+        setFontFamily: (value) => dispatch(setFontFamily(value)),
+        setLineHeight: (value) => dispatch(setLineHeight(value)),
+        setBackgroundImage: (value) => dispatch(setBackgroundImage(value)),
+        setBackgroundEnabled: (value) => dispatch(setBackgroundEnabled(value)),
+        setBackgroundTransparency: (theme, value) => dispatch(setBackgroundTransparency({theme, value})),
 
-    resetTheme: () => dispatch(resetTheme()),
-  };
+        resetTheme: () => dispatch(resetTheme()),
+    };
 };
 
 /**
@@ -60,14 +68,14 @@ export const useTheme = () => {
  * @returns {Object} 编辑器状态和操作函数
  */
 export const useEditor = () => {
-  const editor = useAppSelector((state) => state.editor);
-  const dispatch = useAppDispatch();
+    const editor = useAppSelector((state) => state.editor);
+    const dispatch = useAppDispatch();
 
-  return {
-    ...editor,
+    return {
+        ...editor,
 
-    dispatch
-  };
+        dispatch
+    };
 };
 
 /**
@@ -76,13 +84,13 @@ export const useEditor = () => {
  * @returns {Object} UI状态和操作函数
  */
 export const useUI = () => {
-  const ui = useAppSelector((state) => state.ui);
-  const dispatch = useAppDispatch();
+    const ui = useAppSelector((state) => state.ui);
+    const dispatch = useAppDispatch();
 
-  return {
-    ...ui,
-    dispatch
-  };
+    return {
+        ...ui,
+        dispatch
+    };
 };
 
 /**
@@ -91,15 +99,15 @@ export const useUI = () => {
  * @returns {Object} 包含所有状态和dispatch函数的对象
  */
 export const useAppState = () => {
-  const theme = useAppSelector((state) => state.theme);
-  const editor = useAppSelector((state) => state.editor);
-  const ui = useAppSelector((state) => state.ui);
-  const dispatch = useAppDispatch();
+    const theme = useAppSelector((state) => state.theme);
+    const editor = useAppSelector((state) => state.editor);
+    const ui = useAppSelector((state) => state.ui);
+    const dispatch = useAppDispatch();
 
-  return {
-    theme,
-    editor,
-    ui,
-    dispatch
-  };
+    return {
+        theme,
+        editor,
+        ui,
+        dispatch
+    };
 };

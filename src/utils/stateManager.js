@@ -7,143 +7,143 @@
 
 import tauriApi from './tauriApi';
 
-const { settings: settingsApi } = tauriApi;
+const {settings: settingsApi} = tauriApi;
 
 /**
  * 状态管理器类 - 负责应用状态的持久化存储
  */
 class StateManager {
-  constructor() {
-    this.isTauri = window.__TAURI__ !== undefined;
-  }
-
-  /**
-   * 保存状态到Tauri settings
-   * @param {string} key - 状态键名
-   * @param {*} value - 要保存的值
-   * @returns {Promise<boolean>} 是否保存成功
-   */
-  async saveState(key, value) {
-    if (!this.isTauri || !settingsApi) {
-      console.warn('Not in Tauri environment, state will not be persisted');
-      return false;
+    constructor() {
+        this.isTauri = window.__TAURI__ !== undefined;
     }
 
-    try {
-      await settingsApi.set(key, value);
-      return true;
-    } catch (error) {
-      console.error('Failed to save state:', error);
-      return false;
-    }
-  }
-
-  async loadState(key, defaultValue = null) {
-    if (!this.isTauri || !settingsApi) {
-      console.warn('Not in Tauri environment, returning default value');
-      return defaultValue;
-    }
-
-    try {
-      const value = await settingsApi.get(key, defaultValue);
-      return value !== undefined ? value : defaultValue;
-    } catch (error) {
-      console.error('Failed to load state:', error);
-      return defaultValue;
-    }
-  }
-
-  async deleteState(key) {
-    if (!this.isTauri || !settingsApi) {
-      console.warn('Not in Tauri environment');
-      return false;
-    }
-
-    try {
-      await settingsApi.remove(key);
-      return true;
-    } catch (error) {
-      console.error('Failed to delete state:', error);
-      return false;
-    }
-  }
-
-  async clearAllStates() {
-    if (!this.isTauri || !settingsApi) {
-      console.warn('Not in Tauri environment');
-      return false;
-    }
-
-    try {
-      const keysToDelete = [
-        'expandedSections',
-        'currentFile',
-        'treeData',
-        'selectedKeys',
-        'editorSettings',
-        'themeSettings'
-      ];
-
-      for (const key of keysToDelete) {
-        try {
-          await settingsApi.remove(key);
-        } catch (error) {
+    /**
+     * 保存状态到Tauri settings
+     * @param {string} key - 状态键名
+     * @param {*} value - 要保存的值
+     * @returns {Promise<boolean>} 是否保存成功
+     */
+    async saveState(key, value) {
+        if (!this.isTauri || !settingsApi) {
+            console.warn('Not in Tauri environment, state will not be persisted');
+            return false;
         }
-      }
-      return true;
-    } catch (error) {
-      console.error('Failed to clear all states:', error);
-      return false;
+
+        try {
+            await settingsApi.set(key, value);
+            return true;
+        } catch (error) {
+            console.error('Failed to save state:', error);
+            return false;
+        }
     }
-  }
 
-  async saveExpandedSections(expandedSections) {
+    async loadState(key, defaultValue = null) {
+        if (!this.isTauri || !settingsApi) {
+            console.warn('Not in Tauri environment, returning default value');
+            return defaultValue;
+        }
 
-    return await this.saveState('expandedSections', expandedSections);
-  }
+        try {
+            const value = await settingsApi.get(key, defaultValue);
+            return value !== undefined ? value : defaultValue;
+        } catch (error) {
+            console.error('Failed to load state:', error);
+            return defaultValue;
+        }
+    }
 
-  async loadExpandedSections() {
+    async deleteState(key) {
+        if (!this.isTauri || !settingsApi) {
+            console.warn('Not in Tauri environment');
+            return false;
+        }
 
-    const result = await this.loadState('expandedSections', []);
+        try {
+            await settingsApi.remove(key);
+            return true;
+        } catch (error) {
+            console.error('Failed to delete state:', error);
+            return false;
+        }
+    }
 
-    return result;
-  }
+    async clearAllStates() {
+        if (!this.isTauri || !settingsApi) {
+            console.warn('Not in Tauri environment');
+            return false;
+        }
 
-  async saveCurrentFile(currentFile) {
+        try {
+            const keysToDelete = [
+                'expandedSections',
+                'currentFile',
+                'treeData',
+                'selectedKeys',
+                'editorSettings',
+                'themeSettings'
+            ];
 
-    return await this.saveState('currentFile', currentFile);
-  }
+            for (const key of keysToDelete) {
+                try {
+                    await settingsApi.remove(key);
+                } catch (error) {
+                }
+            }
+            return true;
+        } catch (error) {
+            console.error('Failed to clear all states:', error);
+            return false;
+        }
+    }
 
-  async loadCurrentFile() {
+    async saveExpandedSections(expandedSections) {
 
-    const result = await this.loadState('currentFile', null);
+        return await this.saveState('expandedSections', expandedSections);
+    }
 
-    return result;
-  }
+    async loadExpandedSections() {
 
-  async saveTreeData(treeData) {
+        const result = await this.loadState('expandedSections', []);
 
-    return await this.saveState('treeData', treeData);
-  }
+        return result;
+    }
 
-  async loadTreeData() {
+    async saveCurrentFile(currentFile) {
 
-    const result = await this.loadState('treeData', []);
+        return await this.saveState('currentFile', currentFile);
+    }
 
-    return result;
-  }
+    async loadCurrentFile() {
 
-  async saveSelectedKeys(selectedKeys) {
+        const result = await this.loadState('currentFile', null);
 
-    return await this.saveState('selectedKeys', selectedKeys);
-  }
+        return result;
+    }
 
-  async loadSelectedKeys() {
+    async saveTreeData(treeData) {
 
-    const result = await this.loadState('selectedKeys', []);
+        return await this.saveState('treeData', treeData);
+    }
 
-    return result;
-  }
+    async loadTreeData() {
+
+        const result = await this.loadState('treeData', []);
+
+        return result;
+    }
+
+    async saveSelectedKeys(selectedKeys) {
+
+        return await this.saveState('selectedKeys', selectedKeys);
+    }
+
+    async loadSelectedKeys() {
+
+        const result = await this.loadState('selectedKeys', []);
+
+        return result;
+    }
 }
 
 const stateManager = new StateManager();

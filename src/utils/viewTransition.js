@@ -10,7 +10,7 @@
  * @returns {boolean} 是否支持
  */
 export const isViewTransitionSupported = () => {
-  return 'startViewTransition' in document;
+    return 'startViewTransition' in document;
 };
 
 /**
@@ -20,33 +20,33 @@ export const isViewTransitionSupported = () => {
  * @returns {Promise} 过渡完成的Promise
  */
 export const withViewTransition = async (updateFunction, transitionName = '') => {
-  if (!isViewTransitionSupported()) {
-    updateFunction();
-    return Promise.resolve();
-  }
-
-  try {
-    const transition = document.startViewTransition(() => {
-      updateFunction();
-    });
-
-    if (transitionName && transition.ready) {
-      await transition.ready;
-      document.documentElement.setAttribute('data-transition', transitionName);
+    if (!isViewTransitionSupported()) {
+        updateFunction();
+        return Promise.resolve();
     }
 
-    await transition.finished;
+    try {
+        const transition = document.startViewTransition(() => {
+            updateFunction();
+        });
 
-    if (transitionName) {
-      document.documentElement.removeAttribute('data-transition');
+        if (transitionName && transition.ready) {
+            await transition.ready;
+            document.documentElement.setAttribute('data-transition', transitionName);
+        }
+
+        await transition.finished;
+
+        if (transitionName) {
+            document.documentElement.removeAttribute('data-transition');
+        }
+
+        return transition;
+    } catch (error) {
+        console.warn('View Transition failed, falling back to immediate update:', error);
+        updateFunction();
+        return Promise.resolve();
     }
-
-    return transition;
-  } catch (error) {
-    console.warn('View Transition failed, falling back to immediate update:', error);
-    updateFunction();
-    return Promise.resolve();
-  }
 };
 
 /**
@@ -55,7 +55,7 @@ export const withViewTransition = async (updateFunction, transitionName = '') =>
  * @returns {Promise} 过渡完成的Promise
  */
 export const withThemeTransition = (themeUpdateFunction) => {
-  return withViewTransition(themeUpdateFunction, 'theme-change');
+    return withViewTransition(themeUpdateFunction, 'theme-change');
 };
 
 /**
@@ -64,7 +64,7 @@ export const withThemeTransition = (themeUpdateFunction) => {
  * @returns {Promise} 过渡完成的Promise
  */
 export const withEditorModeTransition = (modeUpdateFunction) => {
-  return withViewTransition(modeUpdateFunction, 'editor-mode-change');
+    return withViewTransition(modeUpdateFunction, 'editor-mode-change');
 };
 
 /**
@@ -73,23 +73,23 @@ export const withEditorModeTransition = (modeUpdateFunction) => {
  * @returns {Promise} 过渡完成的Promise
  */
 export const withFileTransition = (fileUpdateFunction) => {
-  return withViewTransition(fileUpdateFunction, 'file-change');
+    return withViewTransition(fileUpdateFunction, 'file-change');
 };
 
 /**
  * 预设的过渡配置
  */
 export const TRANSITION_CONFIGS = {
-  FAST: {
-    duration: '0.2s',
-    easing: 'ease-out'
-  },
-  MEDIUM: {
-    duration: '0.3s',
-    easing: 'ease-in-out'
-  },
-  SLOW: {
-    duration: '0.5s',
-    easing: 'ease-in-out'
-  }
+    FAST: {
+        duration: '0.2s',
+        easing: 'ease-out'
+    },
+    MEDIUM: {
+        duration: '0.3s',
+        easing: 'ease-in-out'
+    },
+    SLOW: {
+        duration: '0.5s',
+        easing: 'ease-in-out'
+    }
 };

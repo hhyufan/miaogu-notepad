@@ -5,8 +5,8 @@
  * @version 1.3.0
  */
 
-import { useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import {useEffect} from 'react';
+import {useSelector} from 'react-redux';
 
 /**
  * 主题钩子 - 管理应用的明暗主题状态
@@ -16,28 +16,28 @@ import { useSelector } from 'react-redux';
  * @returns {string} returns.theme - 当前主题名称
  */
 export const useTheme = () => {
-  const theme = useSelector((state) => state.theme.theme);
-  const isDarkMode = theme === 'dark';
+    const theme = useSelector((state) => state.theme.theme);
+    const isDarkMode = theme === 'dark';
 
 
-  // 同步DOM类名，确保CSS主题样式正确应用
-  useEffect(() => {
+    // 同步DOM类名，确保CSS主题样式正确应用
+    useEffect(() => {
 
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-      document.body.classList.add('dark-theme');
-      document.documentElement.setAttribute('data-theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      document.body.classList.remove('dark-theme');
-      document.documentElement.setAttribute('data-theme', 'light');
-    }
-  }, [isDarkMode, theme]);
+        if (isDarkMode) {
+            document.documentElement.classList.add('dark');
+            document.body.classList.add('dark-theme');
+            document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+            document.body.classList.remove('dark-theme');
+            document.documentElement.setAttribute('data-theme', 'light');
+        }
+    }, [isDarkMode, theme]);
 
-  return {
-    isDarkMode,
-    theme
-  };
+    return {
+        isDarkMode,
+        theme
+    };
 };
 
 export default useTheme;
