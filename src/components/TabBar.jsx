@@ -6,11 +6,11 @@
  */
 
 import './TabBar.scss';
-import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
-import { useSelector } from 'react-redux';
-import { EditOutlined, FileAddOutlined } from '@ant-design/icons';
-import { Tabs, Dropdown } from 'antd';
-import { useI18n } from '../hooks/useI18n';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {useSelector} from 'react-redux';
+import {EditOutlined, FileAddOutlined} from '@ant-design/icons';
+import {Dropdown, Tabs} from 'antd';
+import {useI18n} from '../hooks/useI18n';
 import extensionToLanguage from '../configs/file-extensions.json';
 
 /**
@@ -47,8 +47,8 @@ const getLanguageFromFileName = (fileName) => {
  * @example
  * <TabBar fileManager={fileManager} />
  */
-const TabBar = ({ fileManager }) => {
-    const { t } = useI18n();
+const TabBar = ({fileManager}) => {
+    const {t} = useI18n();
     const {
         currentFile,
         openedFiles,
@@ -57,13 +57,13 @@ const TabBar = ({ fileManager }) => {
         createFile
     } = fileManager;
 
-    const { theme, backgroundEnabled, backgroundImage } = useSelector(state => state.theme);
+    const {theme, backgroundEnabled, backgroundImage} = useSelector(state => state.theme);
     const hasBackground = backgroundEnabled && backgroundImage;
 
     /** 标签栏悬停状态 */
     const [isHovered, setIsHovered] = useState(false);
     /** 右键菜单状态 */
-    const [contextMenu, setContextMenu] = useState({ visible: false, tabKey: null });
+    const [contextMenu, setContextMenu] = useState({visible: false, tabKey: null});
     /** 当前正在重命名的标签键 */
     const [renamingTab, setRenamingTab] = useState(null);
     /** 重命名输入框的值 */
@@ -177,7 +177,7 @@ const TabBar = ({ fileManager }) => {
      */
     useEffect(() => {
         if (fileManager) {
-            fileManager.tabBarRef = { languageRef };
+            fileManager.tabBarRef = {languageRef};
         }
     }, [fileManager]);
 
@@ -355,7 +355,7 @@ const TabBar = ({ fileManager }) => {
      */
     const handleCloseTab = useCallback((tabKey) => {
         closeFileByPath(tabKey);
-        setContextMenu({ visible: false, tabKey: null });
+        setContextMenu({visible: false, tabKey: null});
     }, [closeFileByPath]);
 
     /**
@@ -369,7 +369,7 @@ const TabBar = ({ fileManager }) => {
                 closeFileByPath(fileKey);
             }
         });
-        setContextMenu({ visible: false, tabKey: null });
+        setContextMenu({visible: false, tabKey: null});
     }, [openedFiles, closeFileByPath, getFileKey]);
 
     /**
@@ -379,7 +379,7 @@ const TabBar = ({ fileManager }) => {
         openedFiles.forEach(file => {
             closeFileByPath(getFileKey(file));
         });
-        setContextMenu({ visible: false, tabKey: null });
+        setContextMenu({visible: false, tabKey: null});
     }, [openedFiles, closeFileByPath, getFileKey]);
 
     /** 右键菜单选项 */
@@ -392,7 +392,7 @@ const TabBar = ({ fileManager }) => {
                 if (file) {
                     startRename(file);
                 }
-                setContextMenu({ visible: false, tabKey: null });
+                setContextMenu({visible: false, tabKey: null});
             },
         },
         {
@@ -420,13 +420,13 @@ const TabBar = ({ fileManager }) => {
         key: getFileKey(file),
         label: (
             <Dropdown
-                menu={{ items: contextMenuItems }}
+                menu={{items: contextMenuItems}}
                 trigger={['contextMenu']}
                 onOpenChange={(visible) => {
                     if (visible) {
-                        setContextMenu({ visible: true, tabKey: getFileKey(file) });
+                        setContextMenu({visible: true, tabKey: getFileKey(file)});
                     } else {
-                        setContextMenu({ visible: false, tabKey: null });
+                        setContextMenu({visible: false, tabKey: null});
                     }
                 }}
             >
@@ -483,15 +483,15 @@ const TabBar = ({ fileManager }) => {
                             }}
                         />
                     ) : (
-                        <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                        <span style={{display: 'inline-flex', alignItems: 'center'}}>
                             {file.name}
                             {file.isTemporary ? (
                                 <FileAddOutlined
-                                    style={{ marginLeft: '5px', fontSize: '12px', color: '#1890ff' }}
+                                    style={{marginLeft: '5px', fontSize: '12px', color: '#1890ff'}}
                                 />
                             ) : file.isModified ? (
                                 <EditOutlined
-                                    style={{ marginLeft: '5px', fontSize: '12px', color: '#faad14' }}
+                                    style={{marginLeft: '5px', fontSize: '12px', color: '#faad14'}}
                                 />
                             ) : null}
                         </span>

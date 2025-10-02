@@ -5,14 +5,14 @@
  * @version 1.3.0
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Modal } from 'antd'
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react'
+import {Modal} from 'antd'
 import tauriApi from '../utils/tauriApi';
-import { useI18n } from './useI18n'
-import { listen } from '@tauri-apps/api/event'
-import { withFileTransition } from '../utils/viewTransition'
+import {useI18n} from './useI18n'
+import {listen} from '@tauri-apps/api/event'
+import {withFileTransition} from '../utils/viewTransition'
 
-const { file: fileApi } = tauriApi;
+const {file: fileApi} = tauriApi;
 
 /**
  * 防抖函数 - 延迟执行函数调用
@@ -94,12 +94,12 @@ const getSaveFilters = (currentFileName = '', t) => {
 
     if (ext) {
         const recommendedFilter = {
-            name: t('dialog.fileFilter.fileType', { type: ext.toUpperCase() }),
+            name: t('dialog.fileFilter.fileType', {type: ext.toUpperCase()}),
             extensions: [ext]
         }
-        return [recommendedFilter, { name: t('dialog.fileFilter.allFiles'), extensions: ['*'] }]
+        return [recommendedFilter, {name: t('dialog.fileFilter.allFiles'), extensions: ['*']}]
     } else {
-        return [{ name: t('dialog.fileFilter.allFiles'), extensions: ['*'] }]
+        return [{name: t('dialog.fileFilter.allFiles'), extensions: ['*']}]
     }
 }
 
@@ -178,7 +178,7 @@ const createHandleError = (t) => (titleKey, error, params = {}) => {
     const title = t(`messages.error.${titleKey}`)
     const errorMessage = error?.message || error || t('messages.error.unknownError')
     const content = params.fileName ? t(`messages.error.${titleKey}`, params) : errorMessage
-    Modal.error({ title, content })
+    Modal.error({title, content})
 }
 
 /**
@@ -188,7 +188,7 @@ const createHandleError = (t) => (titleKey, error, params = {}) => {
  * @returns {Object} 文件管理器对象，包含所有文件操作方法和状态
  */
 export const useFileManager = () => {
-    const { t } = useI18n()
+    const {t} = useI18n()
     const handleError = createHandleError(t)
     const [currentFilePath, setCurrentFilePath] = useState('')
     const [openedFiles, setOpenedFiles] = useState([])
@@ -241,13 +241,11 @@ export const useFileManager = () => {
         defaultFileNameRef.current = defaultFileName
     }, [defaultFileName])
 
-    const lastOpenedFileRef = useRef({ path: '', timestamp: 0 })
+    const lastOpenedFileRef = useRef({path: '', timestamp: 0})
 
     useEffect(() => {
         const handleFileOpen = async (filePath) => {
             if (filePath) {
-
-
 
 
                 const now = Date.now()
@@ -267,12 +265,12 @@ export const useFileManager = () => {
                     const file = openedFiles[existingFileIndex];
                     throttledEditorUpdate(file.content)
 
-                    lastOpenedFileRef.current = { path: filePath, timestamp: now }
+                    lastOpenedFileRef.current = {path: filePath, timestamp: now}
                     return
                 }
 
 
-                lastOpenedFileRef.current = { path: filePath, timestamp: now }
+                lastOpenedFileRef.current = {path: filePath, timestamp: now}
 
                 try {
                     await setOpenFile(filePath)
@@ -294,7 +292,7 @@ export const useFileManager = () => {
 
                 window.dispatchEvent(new CustomEvent('tauri-drag-leave'));
 
-                const { paths } = event.payload;
+                const {paths} = event.payload;
                 if (Array.isArray(paths) && paths.length > 0) {
                     for (const path of paths) {
                         try {
@@ -305,7 +303,7 @@ export const useFileManager = () => {
                             if (isDirectory) {
 
                                 window.dispatchEvent(new CustomEvent('update-breadcrumb', {
-                                    detail: { path }
+                                    detail: {path}
                                 }));
                             } else {
 
@@ -485,7 +483,7 @@ export const useFileManager = () => {
         try {
             const fileName = getFileName(filePath, t)
             if (isFileBlacklisted(fileName)) {
-                handleError('fileTypeNotSupported', '', { fileName })
+                handleError('fileTypeNotSupported', '', {fileName})
                 return
             }
 
@@ -742,7 +740,7 @@ export const useFileManager = () => {
             if (saveAs || hasNoOpenFile) {
                 const result = await fileApi.saveFileDialog(currentFile['name'], t, saveAs || hasNoOpenFile)
 
-                if (!result) return { success: false, canceled: true }
+                if (!result) return {success: false, canceled: true}
                 targetPath = result
 
                 // 只有在用户选择了保存路径后才检查重复文件
@@ -762,7 +760,7 @@ export const useFileManager = () => {
             const fileEncoding = currentFile['encoding'] || 'UTF-8'
             const saveResult = await fileApi.saveFile(targetPath, contentToSave, fileEncoding)
             if (!saveResult.success) {
-                return { success: false, conflict: true, targetPath }
+                return {success: false, conflict: true, targetPath}
             }
 
             const fileName = targetPath.split(/[\\/]/).pop() || 'unknown'
@@ -806,12 +804,12 @@ export const useFileManager = () => {
 
             handlePathConflict(targetPath)
 
-            window.dispatchEvent(new CustomEvent('file-saved', { detail: { path: targetPath } }));
+            window.dispatchEvent(new CustomEvent('file-saved', {detail: {path: targetPath}}));
 
-            return { success: true, path: targetPath }
+            return {success: true, path: targetPath}
         } catch (error) {
             handleError('fileSaveFailed', error)
-            return { success: false, error: error.message || '未知错误' }
+            return {success: false, error: error.message || '未知错误'}
         } finally {
             if (targetPath) {
                 userSavingFiles.current.delete(targetPath)
@@ -880,7 +878,7 @@ export const useFileManager = () => {
                     const result = await fileApi.saveFileDialog(file.name, t, true)
 
                     if (!result) {
-                        results.push({ path: file.path, success: false, canceled: true })
+                        results.push({path: file.path, success: false, canceled: true})
                         continue
                     }
                     targetPath = result
@@ -897,11 +895,11 @@ export const useFileManager = () => {
                 const fileEncoding = file.encoding || 'UTF-8'
                 const saveResult = await fileApi.saveFile(targetPath, file.content, fileEncoding)
                 if (!saveResult.success) {
-                    results.push({ path: file.path, success: false, message: saveResult.message })
+                    results.push({path: file.path, success: false, message: saveResult.message})
                     continue
                 }
 
-                results.push({ path: file.path, success: true, newPath: targetPath })
+                results.push({path: file.path, success: true, newPath: targetPath})
 
                 setOpenedFiles((prev) =>
                     prev.map((f) =>
@@ -926,7 +924,7 @@ export const useFileManager = () => {
                 }
 
             } catch (error) {
-                results.push({ path: file.path, success: false, error: error.message })
+                results.push({path: file.path, success: false, error: error.message})
             }
         }
 
@@ -939,24 +937,10 @@ export const useFileManager = () => {
                 const newTempPath = `temp://${newName}`
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
                 // 测试getEditorContent.current是否能正常工作
                 if (getEditorContent?.current) {
                     try {
                         const editorRealContent = getEditorContent.current()
-
 
 
                     } catch (error) {
@@ -1009,12 +993,12 @@ export const useFileManager = () => {
                 }
 
 
-                return { success: true, newPath: newTempPath }
+                return {success: true, newPath: newTempPath}
             }
 
             if (!oldPath || oldPath.trim() === '') {
                 handleError('invalidFilePath', '')
-                return { success: false, message: '未提供有效的文件路径' }
+                return {success: false, message: '未提供有效的文件路径'}
             }
 
             const oldDir = oldPath.substring(0, oldPath.lastIndexOf('\\') + 1)
@@ -1023,7 +1007,7 @@ export const useFileManager = () => {
             const result = await fileApi.renameFile(oldPath, newPath)
             if (!result.success) {
                 handleError('fileRenameFailed', result.message)
-                return { success: false, message: result.message }
+                return {success: false, message: result.message}
             }
 
             const actualNewPath = result['file_path'] || newPath
@@ -1046,10 +1030,10 @@ export const useFileManager = () => {
                 setCurrentFilePath(actualNewPath)
             }
 
-            return { success: true, newPath: actualNewPath }
+            return {success: true, newPath: actualNewPath}
         } catch (error) {
             handleError('fileRenameFailed', error)
-            return { success: false, error: error.message }
+            return {success: false, error: error.message}
         }
     }, [currentFilePath])
 
@@ -1248,8 +1232,8 @@ export const useFileManager = () => {
                     title: t('dialog.confirm.title'),
                     content: (
                         <div>
-                            <p>{t('fileConflict.fileConflictMessage', { fileName })}</p>
-                            <p style={{ marginTop: '12px', fontSize: '14px', color: '#666' }}>
+                            <p>{t('fileConflict.fileConflictMessage', {fileName})}</p>
+                            <p style={{marginTop: '12px', fontSize: '14px', color: '#666'}}>
                                 {t('fileConflict.chooseVersion')}
                             </p>
                         </div>
@@ -1304,7 +1288,6 @@ export const useFileManager = () => {
             if (currentFile['isModified']) {
 
 
-
                 // 如果用户正在主动保存该文件，跳过冲突检查
                 if (userSavingFiles.current.has(filePath)) {
 
@@ -1313,7 +1296,6 @@ export const useFileManager = () => {
                 }
 
                 // 显示冲突解决对话框
-
 
 
                 try {
@@ -1398,7 +1380,7 @@ export const useFileManager = () => {
                 unlisten = await listen('file-changed', (event) => {
 
 
-                    const { file_path } = event.payload
+                    const {file_path} = event.payload
                     if (file_path) {
 
 

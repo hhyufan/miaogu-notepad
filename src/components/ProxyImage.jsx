@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Image } from 'antd';
-import { imageProxyLoader } from '../utils/imageProxy';
+import React, {useEffect, useState} from 'react';
+import {Image} from 'antd';
+import {imageProxyLoader} from '../utils/imageProxy';
 
 /**
  * 支持代理加载的图片组件
@@ -22,7 +22,7 @@ import { imageProxyLoader } from '../utils/imageProxy';
  *   style={{ width: 200 }}
  * />
  */
-const ProxyImage = ({ src, alt = '', style, preview = true, ...props }) => {
+const ProxyImage = ({src, alt = '', style, preview = true, ...props}) => {
     /** 图片实际使用的源地址 */
     const [imageSrc, setImageSrc] = useState(src);
     /** 图片加载错误信息 */

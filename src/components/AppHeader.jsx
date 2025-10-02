@@ -5,20 +5,24 @@
  * @version 1.3.0
  */
 
-import { Layout, Button, Dropdown, Modal, Input, Typography, Checkbox } from 'antd';
+import {Button, Checkbox, Dropdown, Input, Layout, Modal, Typography} from 'antd';
 import {
-    MinusOutlined,
     BorderOutlined,
     CloseOutlined,
-    FullscreenExitOutlined,
-    PlusSquareOutlined,
+    FileAddOutlined,
     FileOutlined,
     FolderOpenOutlined,
-    SaveOutlined,
+    FullscreenExitOutlined,
+    MinusOutlined,
+    PlusSquareOutlined,
     SaveFilled,
-    SettingOutlined,
-    FileAddOutlined
+    SaveOutlined,
+    SettingOutlined
 } from '@ant-design/icons';
+import './AppHeader.scss';
+import {useEffect, useRef, useState} from 'react';
+import {useI18n} from '../hooks/useI18n';
+import SettingsModal from './SettingsModal';
 
 /**
  * 内联SVG图标组件 - 支持CSS颜色继承的置顶图标
@@ -27,7 +31,7 @@ import {
  * @param {Object} props.style - 内联样式
  * @returns {JSX.Element} SVG图标元素
  */
-const PinIcon = ({ className, style }) => (
+const PinIcon = ({className, style}) => (
     <svg
         className={className}
         style={style}
@@ -44,13 +48,9 @@ const PinIcon = ({ className, style }) => (
         />
     </svg>
 );
-import './AppHeader.scss';
-import { useState, useEffect, useRef } from 'react';
-import { useI18n } from '../hooks/useI18n';
-import SettingsModal from './SettingsModal';
 
-const { Header } = Layout;
-const { Title, Text } = Typography;
+const {Header} = Layout;
+const {Title, Text} = Typography;
 
 /**
  * 从文件路径中提取文件名
@@ -70,8 +70,8 @@ const getFileNameFromPath = (path, t) => {
  * @param {boolean} props.hasOpenFiles - 是否有打开的文件
  * @returns {JSX.Element} 头部组件
  */
-const AppHeader = ({ fileManager, hasOpenFiles }) => {
-    const { t } = useI18n();
+const AppHeader = ({fileManager, hasOpenFiles}) => {
+    const {t} = useI18n();
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [newFileName, setNewFileName] = useState('');
     const [isEditingFileName, setIsEditingFileName] = useState(false);
@@ -173,7 +173,7 @@ const AppHeader = ({ fileManager, hasOpenFiles }) => {
             return;
         }
         try {
-            const { getCurrentWindow } = await import('@tauri-apps/api/window');
+            const {getCurrentWindow} = await import('@tauri-apps/api/window');
             const appWindow = getCurrentWindow();
             await appWindow.minimize();
         } catch (error) {
@@ -191,7 +191,7 @@ const AppHeader = ({ fileManager, hasOpenFiles }) => {
             return;
         }
         try {
-            const { getCurrentWindow } = await import('@tauri-apps/api/window');
+            const {getCurrentWindow} = await import('@tauri-apps/api/window');
             const appWindow = getCurrentWindow();
             if (isMaximized) {
                 await appWindow.unmaximize();
@@ -215,7 +215,7 @@ const AppHeader = ({ fileManager, hasOpenFiles }) => {
             return;
         }
         try {
-            const { getCurrentWindow } = await import('@tauri-apps/api/window');
+            const {getCurrentWindow} = await import('@tauri-apps/api/window');
             const appWindow = getCurrentWindow();
             const newIsPinned = !isPinned;
             await appWindow.setAlwaysOnTop(newIsPinned);
@@ -279,7 +279,7 @@ const AppHeader = ({ fileManager, hasOpenFiles }) => {
             return;
         }
         try {
-            const { getCurrentWindow } = await import('@tauri-apps/api/window');
+            const {getCurrentWindow} = await import('@tauri-apps/api/window');
             const appWindow = getCurrentWindow();
             await appWindow.close();
         } catch (error) {
@@ -348,7 +348,7 @@ const AppHeader = ({ fileManager, hasOpenFiles }) => {
                 return;
             }
             try {
-                const { getCurrentWindow } = await import('@tauri-apps/api/window');
+                const {getCurrentWindow} = await import('@tauri-apps/api/window');
                 const appWindow = getCurrentWindow();
                 unlisten = await appWindow.onResized(async () => {
                     const maximized = await appWindow.isMaximized();
@@ -366,28 +366,28 @@ const AppHeader = ({ fileManager, hasOpenFiles }) => {
     const fileMenuItems = [
         {
             key: 'open',
-            icon: <FolderOpenOutlined />,
+            icon: <FolderOpenOutlined/>,
             label: t('header.fileMenu.open'),
             onClick: handleOpenFile,
             extra: 'Ctrl + O'
         },
         {
             key: 'save',
-            icon: <SaveOutlined />,
+            icon: <SaveOutlined/>,
             label: t('header.fileMenu.save'),
             onClick: handleSaveFile,
             extra: 'Ctrl + S'
         },
         {
             key: 'saveAs',
-            icon: <SaveFilled />,
+            icon: <SaveFilled/>,
             label: t('header.fileMenu.saveAs'),
             onClick: handleSaveAsFile,
             extra: 'Ctrl + Shift + S'
         },
         {
             key: 'settings',
-            icon: <SettingOutlined />,
+            icon: <SettingOutlined/>,
             label: t('header.settings'),
             onClick: () => setIsSettingsVisible(true),
         },
@@ -397,14 +397,14 @@ const AppHeader = ({ fileManager, hasOpenFiles }) => {
         <>
             <Header className="app-header">
                 <div className="left-container">
-                    <Dropdown menu={{ items: fileMenuItems }} trigger={['click']}>
+                    <Dropdown menu={{items: fileMenuItems}} trigger={['click']}>
                         <Button type="text" className="file-menu-btn">
-                            <FileOutlined /> {t('header.file')}
+                            <FileOutlined/> {t('header.file')}
                         </Button>
                     </Dropdown>
                     <Button
                         type="text"
-                        icon={<PlusSquareOutlined />}
+                        icon={<PlusSquareOutlined/>}
                         onClick={handleNewFile}
                         className="create-file-btn"
                     />
@@ -440,7 +440,7 @@ const AppHeader = ({ fileManager, hasOpenFiles }) => {
                                         setIsEditingFileName(true);
                                         setTimeout(() => fileNameInputRef.current?.focus(), 0);
                                     }}
-                                    style={{ cursor: 'pointer' }}
+                                    style={{cursor: 'pointer'}}
                                 >
                                     {getCurrentFileName()}
                                 </Title>
@@ -457,26 +457,26 @@ const AppHeader = ({ fileManager, hasOpenFiles }) => {
                 <div className="window-controls">
                     <Button
                         type="text"
-                        icon={<PinIcon className={`pin-icon ${isPinned ? '' : 'pinned'}`} />}
+                        icon={<PinIcon className={`pin-icon ${isPinned ? '' : 'pinned'}`}/>}
                         onClick={handlePin}
                         className={`window-control-btn pin-btn ${isPinned ? 'pinned' : ''}`}
                         title={isPinned ? t('window.unpin') : t('window.pin')}
                     />
                     <Button
                         type="text"
-                        icon={<MinusOutlined />}
+                        icon={<MinusOutlined/>}
                         onClick={handleMinimize}
                         className="window-control-btn"
                     />
                     <Button
                         type="text"
-                        icon={isMaximized ? <FullscreenExitOutlined /> : <BorderOutlined />}
+                        icon={isMaximized ? <FullscreenExitOutlined/> : <BorderOutlined/>}
                         onClick={handleMaximize}
                         className="window-control-btn"
                     />
                     <Button
                         type="text"
-                        icon={<CloseOutlined />}
+                        icon={<CloseOutlined/>}
                         onClick={handleClose}
                         className="window-control-btn close-btn"
                     />
@@ -520,10 +520,11 @@ const AppHeader = ({ fileManager, hasOpenFiles }) => {
                             if (!isTauriEnvironment()) {
                                 return;
                             }
-                            import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
+                            import('@tauri-apps/api/window').then(({getCurrentWindow}) => {
                                 const appWindow = getCurrentWindow();
                                 appWindow.close().catch();
-                            }).catch(() => { });
+                            }).catch(() => {
+                            });
                         }}
                     >
                         {t('dialog.dontSave')}
@@ -534,7 +535,7 @@ const AppHeader = ({ fileManager, hasOpenFiles }) => {
                         disabled={selectedFiles.length === 0}
                         onClick={() => saveSelectedFiles(selectedFilesRef.current)}
                     >
-                        {t('dialog.saveSelectedFiles', { count: selectedFiles.length })}
+                        {t('dialog.saveSelectedFiles', {count: selectedFiles.length})}
                     </Button>
                 ]}
             >

@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { useTranslation } from 'react-i18next';
+import {useTranslation} from 'react-i18next';
 
 /**
  * 加载组件
@@ -14,20 +14,20 @@ import { useTranslation } from 'react-i18next';
  * @returns {JSX.Element} 加载组件
  */
 const LoadingComponent = () => {
-  const { t } = useTranslation();
+    const {t} = useTranslation();
 
-  return (
-    <div style={{
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      height: '100vh',
-      fontSize: '16px',
-      color: '#666'
-    }}>
-      {t('common.loading')}
-    </div>
-  );
+    return (
+        <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '100vh',
+            fontSize: '16px',
+            color: '#666'
+        }}>
+            {t('common.loading')}
+        </div>
+    );
 };
 
 export default LoadingComponent;

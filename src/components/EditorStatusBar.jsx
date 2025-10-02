@@ -5,16 +5,17 @@
  * @version 1.3.0
  */
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Breadcrumb, Button, Divider, Dropdown, Tooltip } from 'antd'
-import { FileOutlined, FolderOutlined } from '@ant-design/icons'
-import { useCurrentFile, useFileActions } from '../hooks/useFileManager.jsx'
-import { useTheme } from '../hooks/redux'
-import { useI18n } from '../hooks/useI18n'
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react'
+import {Breadcrumb, Button, Divider, Dropdown, Tooltip} from 'antd'
+import {FileOutlined, FolderOutlined} from '@ant-design/icons'
+import {useCurrentFile, useFileActions} from '../hooks/useFileManager.jsx'
+import {useTheme} from '../hooks/redux'
+import {useI18n} from '../hooks/useI18n'
 import tauriApi from '../utils/tauriApi'
-const { file: fileApi, settings: settingsApi } = tauriApi
-import { splitPath, buildFullPath } from '../utils/pathUtils'
+import {buildFullPath, splitPath} from '../utils/pathUtils'
 import './EditorStatusBar.scss'
+
+const {file: fileApi, settings: settingsApi} = tauriApi
 
 /**
  * 标准化编码名称
@@ -53,15 +54,20 @@ function standardizeEncodingName(encoding) {
  *   hasOpenFiles={true}
  * />
  */
-const EditorStatusBar = ({ fileManager, cursorPosition = { lineNumber: 1, column: 1 }, characterCount = 0, hasOpenFiles }) => {
+const EditorStatusBar = ({
+                             fileManager,
+                             cursorPosition = {lineNumber: 1, column: 1},
+                             characterCount = 0,
+                             hasOpenFiles
+                         }) => {
     /** 当前打开的文件对象 */
     const currentFile = useCurrentFile(fileManager)
     /** 文件操作工具函数 */
-    const { updateFileLineEnding } = useFileActions(fileManager)
+    const {updateFileLineEnding} = useFileActions(fileManager)
     /** 主题配置 */
-    const { backgroundEnabled, backgroundImage } = useTheme()
+    const {backgroundEnabled, backgroundImage} = useTheme()
     /** 国际化工具 */
-    const { t } = useI18n()
+    const {t} = useI18n()
     /** 是否有背景图片 */
     const hasBackground = backgroundEnabled && backgroundImage
     /** 文件路径分段 */
@@ -89,9 +95,9 @@ const EditorStatusBar = ({ fileManager, cursorPosition = { lineNumber: 1, column
      * @type {Array<Object>} 包含value和label的选项数组
      */
     const lineEndingOptions = useMemo(() => [
-        { value: 'LF', label: t('editor.lineEnding.LF') },
-        { value: 'CRLF', label: t('editor.lineEnding.CRLF') },
-        { value: 'CR', label: t('editor.lineEnding.CR') }
+        {value: 'LF', label: t('editor.lineEnding.LF')},
+        {value: 'CRLF', label: t('editor.lineEnding.CRLF')},
+        {value: 'CR', label: t('editor.lineEnding.CR')}
     ], [t])
 
     /**
@@ -131,7 +137,7 @@ const EditorStatusBar = ({ fileManager, cursorPosition = { lineNumber: 1, column
      */
     useEffect(() => {
         const handleBreadcrumbUpdate = (event) => {
-            const { path } = event.detail
+            const {path} = event.detail
             if (path) {
                 const segments = splitPath(path)
                 setPathSegments(segments)
@@ -331,7 +337,7 @@ const EditorStatusBar = ({ fileManager, cursorPosition = { lineNumber: 1, column
             const result = await fileApi.getDirectoryContents(dirPath)
             // Tauri版本直接返回数组，不需要.contents
             const contents = Array.isArray(result) ? result : (result.contents || [])
-            setDirectoryContents(prev => ({ ...prev, [index]: contents }))
+            setDirectoryContents(prev => ({...prev, [index]: contents}))
         } catch (error) {
             // 如果获取目录内容失败，可能是文件，尝试打开文件
             try {
@@ -385,7 +391,7 @@ const EditorStatusBar = ({ fileManager, cursorPosition = { lineNumber: 1, column
         return sortedContents.map((item) => ({
             key: item.path,
             label: item.name,
-            icon: item['is_dir'] ? <FolderOutlined /> : <FileOutlined />,
+            icon: item['is_dir'] ? <FolderOutlined/> : <FileOutlined/>,
             onClick: () => handleFileClick(item.path, item['is_dir'])
         }))
     }, [directoryContents, handleFileClick])
@@ -427,7 +433,7 @@ const EditorStatusBar = ({ fileManager, cursorPosition = { lineNumber: 1, column
             key: index,
             title: (
                 <Dropdown
-                    menu={{ items: getDropdownItems(index) }}
+                    menu={{items: getDropdownItems(index)}}
                     trigger={['click']}
                     placement="topLeft"
                     overlayStyle={{
@@ -440,11 +446,11 @@ const EditorStatusBar = ({ fileManager, cursorPosition = { lineNumber: 1, column
                     }}
                 >
                     <Dropdown
-                        menu={{ items: getContextMenuItems(index) }}
+                        menu={{items: getContextMenuItems(index)}}
                         trigger={['contextMenu']}
                         placement="bottomLeft"
                     >
-                        <span style={{ cursor: 'pointer' }}>
+                        <span style={{cursor: 'pointer'}}>
                             {/^[A-Z]:\\$/i.test(segment) ? segment.substring(0, 2) : segment}
                         </span>
                     </Dropdown>
@@ -500,7 +506,7 @@ const EditorStatusBar = ({ fileManager, cursorPosition = { lineNumber: 1, column
                                     xmlns="http://www.w3.org/2000/svg"
                                     width="14"
                                     height="14"
-                                    style={{ transform: 'translateY(3px)' }}
+                                    style={{transform: 'translateY(3px)'}}
                                 >
                                     <path
                                         d="M704 514.368a52.864 52.864 0 0 1-15.808 37.888L415.872 819.2a55.296 55.296 0 0 1-73.984-2.752 52.608 52.608 0 0 1-2.816-72.512l233.6-228.928-233.6-228.992a52.736 52.736 0 0 1-17.536-53.056 53.952 53.952 0 0 1 40.192-39.424c19.904-4.672 40.832 1.92 54.144 17.216l272.32 266.88c9.92 9.792 15.616 23.04 15.808 36.8z"
@@ -521,13 +527,13 @@ const EditorStatusBar = ({ fileManager, cursorPosition = { lineNumber: 1, column
                     行 {cursorPosition?.lineNumber || 1},&nbsp;&nbsp;列 {cursorPosition?.column || 1}
                 </div>
 
-                <Divider type="vertical" />
+                <Divider type="vertical"/>
 
                 <div className="status-item character-count">
                     {characterCount || 0}个字符
                 </div>
 
-                <Divider type="vertical" />
+                <Divider type="vertical"/>
 
                 <Tooltip title={t('editor.encoding')}>
                     <div className="status-item">
@@ -540,7 +546,7 @@ const EditorStatusBar = ({ fileManager, cursorPosition = { lineNumber: 1, column
                         </Button>
                     </div>
                 </Tooltip>
-                <Divider type="vertical" />
+                <Divider type="vertical"/>
                 <Tooltip title={t('editor.lineEnding.title')}>
                     <div className="status-item">
                         <Dropdown
