@@ -7,13 +7,13 @@
 
 import {useDispatch, useSelector} from 'react-redux';
 import {
-  resetTheme,
-  setBackgroundEnabled,
-  setBackgroundImage,
-  setBackgroundTransparency,
-  setFontFamily,
-  setLineHeight,
-  setTheme
+    resetTheme,
+    setBackgroundEnabled,
+    setBackgroundImage,
+    setBackgroundTransparency,
+    setFontFamily,
+    setLineHeight,
+    setTheme
 } from '../store/slices/themeSlice';
 
 /**

@@ -1,26 +1,26 @@
 /* Mermaid 渲染器样式 */
 .mermaid-container {
-  width: 100%;
-  overflow-x: auto;
-  margin: 16px 0;
-  /* 毛玻璃背景效果 - 亮色主题 */
-  background: rgba(255, 255, 255, 0.2) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
-  border-radius: 12px !important;
-  padding: 1em;
+    width: 100%;
+    overflow-x: auto;
+    margin: 16px 0;
+    /* 毛玻璃背景效果 - 亮色主题 */
+    background: rgba(255, 255, 255, 0.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+    border-radius: 12px !important;
+    padding: 1em;
 }
 
 /* 暗黑主题下的样式调整 */
 .mermaid-container.dark {
-  /* 毛玻璃背景效果 - 暗色主题 */
-  background: rgba(0, 0, 0, 0.2) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+    /* 毛玻璃背景效果 - 暗色主题 */
+    background: rgba(0, 0, 0, 0.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
 }
 
 .mermaid-container.dark svg {
-  background-color: transparent;
+    background-color: transparent;
 }
 
 /* 节点样式 */
@@ -28,53 +28,53 @@
 .mermaid-container.dark .node circle,
 .mermaid-container.dark .node ellipse,
 .mermaid-container.dark .node polygon {
-  fill: #21262d;
-  stroke: #30363d;
-  stroke-width: 2px;
+    fill: #21262d;
+    stroke: #30363d;
+    stroke-width: 2px;
 }
 
 /* 节点文本 */
 .mermaid-container.dark .node .label,
 .mermaid-container.dark .nodeLabel {
-  color: #c9d1d9;
-  fill: #c9d1d9;
+    color: #c9d1d9;
+    fill: #c9d1d9;
 }
 
 /* 关系线 */
 .mermaid-container.dark .edgePath .path {
-  stroke: #58a6ff;
-  stroke-width: 2px;
+    stroke: #58a6ff;
+    stroke-width: 2px;
 }
 
 /* 关系标签 */
 .mermaid-container.dark .edgeLabel {
-  background-color: #0d1117;
-  color: #c9d1d9;
-  fill: #c9d1d9;
+    background-color: #0d1117;
+    color: #c9d1d9;
+    fill: #c9d1d9;
 }
 
 /* 流程图特定样式 */
 .mermaid-container.dark .flowchart-link {
-  stroke: #58a6ff;
+    stroke: #58a6ff;
 }
 
 /* 序列图特定样式 */
 .mermaid-container.dark .actor {
-  fill: #21262d;
-  stroke: #30363d;
+    fill: #21262d;
+    stroke: #30363d;
 }
 
 .mermaid-container.dark .actor-line {
-  stroke: #30363d;
+    stroke: #30363d;
 }
 
 .mermaid-container.dark .messageLine0,
 .mermaid-container.dark .messageLine1 {
-  stroke: #58a6ff;
+    stroke: #58a6ff;
 }
 
 .mermaid-container.dark .messageText {
-  fill: #c9d1d9;
+    fill: #c9d1d9;
 }
 
 /* 甘特图特定样式 */
@@ -82,41 +82,41 @@
 .mermaid-container.dark .section1,
 .mermaid-container.dark .section2,
 .mermaid-container.dark .section3 {
-  fill: #21262d;
+    fill: #21262d;
 }
 
 .mermaid-container.dark .task0,
 .mermaid-container.dark .task1,
 .mermaid-container.dark .task2,
 .mermaid-container.dark .task3 {
-  fill: #58a6ff;
+    fill: #58a6ff;
 }
 
 /* 响应式设计 */
 @media (max-width: 768px) {
-  .mermaid-container {
-    font-size: 12px;
-  }
+    .mermaid-container {
+        font-size: 12px;
+    }
 }
 
 /* 滚动条样式 */
 .mermaid-container::-webkit-scrollbar {
-  height: 8px;
+    height: 8px;
 }
 
 .mermaid-container::-webkit-scrollbar-track {
-  background: transparent;
+    background: transparent;
 }
 
 .mermaid-container::-webkit-scrollbar-thumb {
-  background: #30363d;
-  border-radius: 4px;
+    background: #30363d;
+    border-radius: 4px;
 }
 
 .mermaid-container.dark::-webkit-scrollbar-thumb {
-  background: #484f58;
+    background: #484f58;
 }
 
 .mermaid-container::-webkit-scrollbar-thumb:hover {
-  background: #656c76;
+    background: #656c76;
 }

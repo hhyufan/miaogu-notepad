@@ -10,13 +10,13 @@ import {useSelector} from 'react-redux';
 import {Button, Card, Space, Tooltip, Tree, Typography} from 'antd';
 import {readTextFile} from '@tauri-apps/plugin-fs';
 import {
-  CodeOutlined,
-  ExpandAltOutlined,
-  FileTextOutlined,
-  FolderOpenOutlined,
-  FolderOutlined,
-  ShrinkOutlined,
-  SwitcherOutlined
+    CodeOutlined,
+    ExpandAltOutlined,
+    FileTextOutlined,
+    FolderOpenOutlined,
+    FolderOutlined,
+    ShrinkOutlined,
+    SwitcherOutlined
 } from '@ant-design/icons';
 import {useI18n} from '../hooks/useI18n';
 import './TreeViewer.scss';

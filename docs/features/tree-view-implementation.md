@@ -8,11 +8,11 @@
 
 ### 1. 组件体系
 
-| 组件 | 功能 | 特性 |
-|------|------|------|
+| 组件             | 功能     | 特性              |
+|----------------|--------|-----------------|
 | **TreeViewer** | 树状图查看器 | 只读显示、代码跳转、状态持久化 |
-| **TreeEditor** | 树状图编辑器 | 节点编辑、拖拽排序、实时预览 |
-| **TreeNode** | 树节点组件 | 图标渲染、点击处理、样式适配 |
+| **TreeEditor** | 树状图编辑器 | 节点编辑、拖拽排序、实时预览  |
+| **TreeNode**   | 树节点组件  | 图标渲染、点击处理、样式适配  |
 
 ### 2. 数据结构
 
@@ -87,16 +87,17 @@ const parseTreeText = (text, rootTitle = 'Root') => {
 
 基于 `docs/features/跳转节点解析与工作原理.md` 的详细实现，跳转节点系统支持四种灵活的语法格式：
 
-| 语法模式 | 正则表达式 | 功能描述 | 示例 | 索引计算 |
-|----------|------------|----------|------|----------|
-| **显式索引** | `/>([a-zA-Z]+)\[(\d+)]/` | 跳转到指定索引 | `>java[2]` | 直接使用指定索引 |
-| **递增跳转** | `/>([a-zA-Z]+)\+\+/` | 索引自动递增 | `>java++` | `lastJumpIndex[language] + 1` |
-| **跳跃增加** | `/>([a-zA-Z]+)\+=(\d+)/` | 索引跳跃增加 | `>java+=3` | `lastJumpIndex[language] + 增量` |
-| **同索引复用** | `/>([a-zA-Z]+)(?![\[+])/` | 复用上次索引 | `>java` | 使用 `lastJumpIndex[language]` |
+| 语法模式      | 正则表达式                     | 功能描述    | 示例         | 索引计算                           |
+|-----------|---------------------------|---------|------------|--------------------------------|
+| **显式索引**  | `/>([a-zA-Z]+)\[(\d+)]/`  | 跳转到指定索引 | `>java[2]` | 直接使用指定索引                       |
+| **递增跳转**  | `/>([a-zA-Z]+)\+\+/`      | 索引自动递增  | `>java++`  | `lastJumpIndex[language] + 1`  |
+| **跳跃增加**  | `/>([a-zA-Z]+)\+=(\d+)/`  | 索引跳跃增加  | `>java+=3` | `lastJumpIndex[language] + 增量` |
+| **同索引复用** | `/>([a-zA-Z]+)(?![\[+])/` | 复用上次索引  | `>java`    | 使用 `lastJumpIndex[language]`   |
 
 #### 解析实现详解
 
 **文本预处理**：
+
 ```javascript
 const preprocessText = (line) => {
   // 移除行尾换行符和回车符
@@ -105,6 +106,7 @@ const preprocessText = (line) => {
 ```
 
 **优先级匹配系统**：
+
 ```javascript
 const parseJumpSyntax = (line, lastJumpIndex = {}) => {
   const cleanLine = preprocessText(line);
@@ -179,6 +181,7 @@ const parseJumpSyntax = (line, lastJumpIndex = {}) => {
 #### 索引管理机制
 
 **智能索引计算**：
+
 ```javascript
 const calculateJumpIndex = (syntaxType, language, specifiedValue, lastJumpIndex) => {
   switch (syntaxType) {
@@ -197,6 +200,7 @@ const calculateJumpIndex = (syntaxType, language, specifiedValue, lastJumpIndex)
 ```
 
 **标题清理处理**：
+
 ```javascript
 const cleanNodeTitle = (line) => {
   // 移除跳转语法，保留纯净的节点标题
@@ -261,18 +265,19 @@ const parseJumpSyntax = (line) => {
 
 #### 核心特性
 
-| 特性 | 实现方式 | 功能描述 |
-|------|----------|----------|
+| 特性        | 实现方式         | 功能描述      |
+|-----------|--------------|-----------|
 | **状态持久化** | localStorage | 保存展开/折叠状态 |
-| **主题适配** | CSS变量 | 自动适配明暗主题 |
-| **代码跳转** | 回调函数 | 精确跳转到代码块 |
-| **懒加载** | 异步加载 | 按需加载树文件内容 |
+| **主题适配**  | CSS变量        | 自动适配明暗主题  |
+| **代码跳转**  | 回调函数         | 精确跳转到代码块  |
+| **懒加载**   | 异步加载         | 按需加载树文件内容 |
 
 #### 跳转执行机制
 
 基于 `docs/features/跳转节点解析与工作原理.md` 的跳转执行实现：
 
 **代码块查找算法**：
+
 ```javascript
 const findCodeBlockByLanguageAndIndex = (language, index) => {
   // 1. 获取编辑器内容
@@ -298,6 +303,7 @@ const findCodeBlockByLanguageAndIndex = (language, index) => {
 ```
 
 **精确跳转实现**：
+
 ```javascript
 const executeJump = (language, index) => {
   try {
@@ -331,6 +337,7 @@ const executeJump = (language, index) => {
 ```
 
 **DOM操作优化**：
+
 ```javascript
 const scrollToLine = (lineNumber, options = {}) => {
   const {
@@ -368,6 +375,7 @@ const scrollToLine = (lineNumber, options = {}) => {
 ```
 
 **视觉反馈系统**：
+
 ```javascript
 const highlightCodeBlock = (codeBlock, options = {}) => {
   const {
@@ -418,48 +426,49 @@ const highlightCodeBlock = (codeBlock, options = {}) => {
 #### 状态管理
 
 ```javascript
-const TreeViewer = ({ treeFilePath, treeContent, onJumpToCode }) => {
-  const [treeData, setTreeData] = useState([]);
-  const [expandedKeys, setExpandedKeys] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [currentFileKey, setCurrentFileKey] = useState(null);
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    return document.documentElement.getAttribute('data-theme') === 'dark';
-  });
+const TreeViewer = ({treeFilePath, treeContent, onJumpToCode}) => {
+    const [treeData, setTreeData] = useState([]);
+    const [expandedKeys, setExpandedKeys] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [currentFileKey, setCurrentFileKey] = useState(null);
+    const [isDarkMode, setIsDarkMode] = useState(() => {
+        return document.documentElement.getAttribute('data-theme') === 'dark';
+    });
 
-  // 状态持久化
-  const saveExpandedState = useCallback((keys, fileName) => {
-    const storageKey = getStorageKey(fileName);
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(keys));
-    } catch (error) {
-      console.warn('保存树状图展开状态失败:', error);
-    }
-  }, [getStorageKey]);
+    // 状态持久化
+    const saveExpandedState = useCallback((keys, fileName) => {
+        const storageKey = getStorageKey(fileName);
+        try {
+            localStorage.setItem(storageKey, JSON.stringify(keys));
+        } catch (error) {
+            console.warn('保存树状图展开状态失败:', error);
+        }
+    }, [getStorageKey]);
 
-  const loadExpandedState = useCallback((fileName) => {
-    const storageKey = getStorageKey(fileName);
-    try {
-      const saved = localStorage.getItem(storageKey);
-      return saved ? JSON.parse(saved) : [];
-    } catch (error) {
-      console.warn('恢复树状图展开状态失败:', error);
-      return [];
-    }
-  }, [getStorageKey]);
-  
-  // 跳转处理
-  const handleJumpToCode = useCallback((language, index) => {
-    if (onJumpToCode) {
-      onJumpToCode(language, index);
-    } else {
-      // 默认跳转实现
-      executeJump(language, index);
-    }
-  }, [onJumpToCode]);
+    const loadExpandedState = useCallback((fileName) => {
+        const storageKey = getStorageKey(fileName);
+        try {
+            const saved = localStorage.getItem(storageKey);
+            return saved ? JSON.parse(saved) : [];
+        } catch (error) {
+            console.warn('恢复树状图展开状态失败:', error);
+            return [];
+        }
+    }, [getStorageKey]);
+
+    // 跳转处理
+    const handleJumpToCode = useCallback((language, index) => {
+        if (onJumpToCode) {
+            onJumpToCode(language, index);
+        } else {
+            // 默认跳转实现
+            executeJump(language, index);
+        }
+    }, [onJumpToCode]);
 };
 ```
+
 ```
 
 ### 2. TreeEditor组件
@@ -519,11 +528,11 @@ const getNodeType = (node) => {
 
 #### 图标映射
 
-| 节点类型 | 图标 | 颜色 | 功能 |
-|----------|------|------|------|
-| **代码节点** | `<CodeOutlined />` | 渐变色 | 可点击跳转 |
-| **文件夹节点** | `<FolderOutlined />` | 橙色 | 可展开折叠 |
-| **文件节点** | `<FileTextOutlined />` | 绿色 | 普通显示 |
+| 节点类型      | 图标                     | 颜色  | 功能    |
+|-----------|------------------------|-----|-------|
+| **代码节点**  | `<CodeOutlined />`     | 渐变色 | 可点击跳转 |
+| **文件夹节点** | `<FolderOutlined />`   | 橙色  | 可展开折叠 |
+| **文件节点**  | `<FileTextOutlined />` | 绿色  | 普通显示  |
 
 ### 2. 渲染函数
 
@@ -628,6 +637,7 @@ const handleJumpToCode = (language, index) => {
 #### 可点击节点样式
 
 **基础样式**：
+
 ```scss
 .tree-node-clickable {
   cursor: pointer;
@@ -647,6 +657,7 @@ const handleJumpToCode = (language, index) => {
 ```
 
 **跳转指示器**：
+
 ```scss
 .code-indicator {
   color: var(--primary-color);
@@ -664,6 +675,7 @@ const handleJumpToCode = (language, index) => {
 #### 主题适配系统
 
 **CSS变量定义**：
+
 ```scss
 .tree-viewer {
   // 基础颜色变量
@@ -683,6 +695,7 @@ const handleJumpToCode = (language, index) => {
 ```
 
 **明暗主题切换**：
+
 ```scss
 // 明亮主题
 .tree-viewer[data-theme="light"] {
@@ -708,6 +721,7 @@ const handleJumpToCode = (language, index) => {
 ### 2. 跳转高亮样式
 
 **高亮动画效果**：
+
 ```scss
 @keyframes jumpHighlight {
   0% {
@@ -738,6 +752,7 @@ const handleJumpToCode = (language, index) => {
 ```
 
 **渐隐效果**：
+
 ```scss
 .jump-highlight.fade-out {
   transition: opacity 0.5s ease-out;
@@ -748,6 +763,7 @@ const handleJumpToCode = (language, index) => {
 ### 3. 错误处理样式
 
 **错误状态指示**：
+
 ```scss
 .tree-node-error {
   color: var(--error-color);
@@ -774,6 +790,7 @@ const handleJumpToCode = (language, index) => {
 ### 4. 性能优化样式
 
 **虚拟滚动支持**：
+
 ```scss
 .tree-container {
   height: 100%;
@@ -791,6 +808,7 @@ const handleJumpToCode = (language, index) => {
 ```
 
 **节点渲染优化**：
+
 ```scss
 .tree-node-content {
   // 避免布局抖动
@@ -1250,31 +1268,37 @@ class BehaviorManager {
 基于 `docs/features/跳转节点解析与工作原理.md` 的完整实现，Miaogu NotePad 的 tree-view 系统具备以下核心特性：
 
 #### 1. 灵活的语法支持
+
 - **四种跳转语法模式**：显式索引、递增模式、跳跃递增、同索引复用
 - **智能解析引擎**：优先级匹配、自动索引计算、标题清理
 - **插件化扩展**：支持自定义语法插件和解析规则
 
 #### 2. 智能索引管理
+
 - **lastJumpIndex 机制**：自动跟踪和计算跳转索引
 - **语言分组管理**：按编程语言独立管理索引计数
 - **索引重置策略**：支持显式重置和自动重置
 
 #### 3. 精确的DOM操作
+
 - **缓存查询系统**：避免重复DOM查询，提升性能
 - **平滑滚动控制**：节流机制防止频繁滚动操作
 - **高亮效果复用**：复用高亮元素，减少DOM创建开销
 
 #### 4. 优秀的用户体验
+
 - **视觉反馈系统**：跳转高亮、渐隐效果、错误提示
 - **主题适配支持**：明暗主题切换、CSS变量系统
 - **响应式设计**：适配不同屏幕尺寸和设备类型
 
 #### 5. 高性能优化
+
 - **虚拟滚动**：支持大数据量树结构渲染
 - **懒加载策略**：按需加载节点，减少初始渲染开销
 - **LRU缓存**：智能缓存解析结果，避免重复计算
 
 #### 6. 强扩展性
+
 - **插件化架构**：支持自定义跳转语法和行为
 - **行为管理器**：可扩展的跳转行为系统
 - **组件化设计**：模块化组件便于维护和扩展
@@ -1282,21 +1306,25 @@ class BehaviorManager {
 ### 技术特点
 
 #### 解析引擎
+
 - 基于正则表达式的高效文本解析
 - 优先级匹配确保语法解析的准确性
 - 支持嵌套结构和复杂树形数据
 
 #### 渲染系统
+
 - React Hooks 驱动的状态管理
 - 虚拟滚动支持大数据量渲染
 - Intersection Observer 实现懒加载
 
 #### 交互机制
+
 - 平滑滚动和视觉反馈
 - 键盘快捷键支持
 - 拖拽排序和编辑功能
 
 #### 样式系统
+
 - CSS变量驱动的主题系统
 - 响应式布局和动画效果
 - 无障碍访问支持
@@ -1318,8 +1346,9 @@ class BehaviorManager {
 5. **性能优化**：进一步优化大数据量处理能力
 
 通过这套完整的 tree-view 实现系统，Miaogu NotePad 为用户提供了强大而灵活的文档导航和代码跳转功能，大大提升了开发和文档编写的效率。
-  onJumpToCode?.(language, index);
+onJumpToCode?.(language, index);
 }, [onJumpToCode]);
+
 ```
 
 ## 错误处理

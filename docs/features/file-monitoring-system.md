@@ -7,6 +7,7 @@ Miaogu NotePad 的文件监控系统是一个全面的文件状态管理解决�
 ## 核心架构
 
 ### 技术栈
+
 - **后端监控**: Rust + notify 库 (文件系统事件监听)
 - **前端处理**: React + Tauri Event System
 - **状态管理**: Redux Toolkit + React Hooks
@@ -15,6 +16,7 @@ Miaogu NotePad 的文件监控系统是一个全面的文件状态管理解决�
 - **持久化**: Tauri Store API
 
 ### 系统层次
+
 ```
 ┌─────────────────────────────────────────┐
 │              用户界面层                    │
@@ -39,6 +41,7 @@ Miaogu NotePad 的文件监控系统是一个全面的文件状态管理解决�
 ### 1. 实时文件变化检测
 
 #### 1.1 Rust 后端实现
+
 **位置**: `src-tauri/src/lib.rs`
 
 ```rust
@@ -203,6 +206,7 @@ async fn check_file_external_changes(file_path: String) -> Result<Option<FileCha
 ```
 
 #### 1.2 前端事件监听
+
 **位置**: `src/hooks/useFileManager.jsx`
 
 ```javascript
@@ -238,6 +242,7 @@ useEffect(() => {
 ### 2. 自动保存机制
 
 #### 2.1 防抖自动保存
+
 **位置**: `src/hooks/useFileManager.jsx`
 
 ```javascript
@@ -296,6 +301,7 @@ useEffect(() => {
 ```
 
 #### 2.2 设置持久化自动保存
+
 **位置**: `src/utils/tauriApi.js`
 
 ```javascript
@@ -306,6 +312,7 @@ store = await load('settings.json', { autoSave: true });
 ```
 
 #### 2.3 状态管理自动保存
+
 **位置**: `src/utils/persistenceManager.js`
 
 ```javascript
@@ -333,6 +340,7 @@ class PersistenceManager {
 ### 3. 文件冲突处理
 
 #### 3.1 冲突检测机制
+
 **位置**: `src/hooks/useFileManager.jsx`
 
 ```javascript
@@ -423,6 +431,7 @@ const handleExternalFileChange = useCallback(async (filePath) => {
 ```
 
 #### 3.2 冲突对话框实现
+
 **位置**: `src/hooks/useFileManager.jsx`
 
 ```javascript
@@ -477,6 +486,7 @@ const showFileConflictDialog = useCallback(async (filePath) => {
 ```
 
 #### 3.3 国际化支持
+
 **位置**: `src/i18n/locales/zh-CN.json` 和 `src/i18n/locales/en-US.json`
 
 ```json
@@ -502,6 +512,7 @@ const showFileConflictDialog = useCallback(async (filePath) => {
 ### 4. 文件状态管理
 
 #### 4.1 文件修改状态跟踪
+
 **位置**: `src/store/slices/fileSlice.js`
 
 ```javascript
@@ -557,6 +568,7 @@ const fileSlice = createSlice({
 ```
 
 #### 4.2 未保存文件检测
+
 **位置**: `src/hooks/useFileManager.jsx`
 
 ```javascript
@@ -581,6 +593,7 @@ const hasUnsavedChanges = useMemo(() => {
 ```
 
 #### 4.3 视觉状态指示
+
 **位置**: `src/components/TabBar.jsx`
 
 ```javascript
@@ -600,6 +613,7 @@ const hasUnsavedChanges = useMemo(() => {
 ### 5. 监控生命周期管理
 
 #### 5.1 文件打开时启动监控
+
 **位置**: `src/hooks/useFileManager.jsx`
 
 ```javascript
@@ -624,6 +638,7 @@ const setOpenFile = useCallback(async (filePath, content, options = {}) => {
 ```
 
 #### 5.2 文件关闭时停止监控
+
 **位置**: `src/hooks/useFileManager.jsx`
 
 ```javascript
@@ -645,6 +660,7 @@ const closeFile = useCallback((key) => {
 ```
 
 #### 5.3 组件卸载时清理
+
 **位置**: `src/hooks/useFileManager.jsx`
 
 ```javascript
@@ -665,6 +681,7 @@ useEffect(() => {
 ### 1. 事件防抖和节流
 
 #### 1.1 自动保存防抖
+
 ```javascript
 // 500ms 防抖，避免频繁保存
 const debouncedAutoSave = useMemo(
@@ -676,6 +693,7 @@ const debouncedAutoSave = useMemo(
 ```
 
 #### 1.2 编辑器更新节流
+
 ```javascript
 // 100ms 节流，优化编辑器性能
 const throttledEditorUpdate = useMemo(
@@ -687,6 +705,7 @@ const throttledEditorUpdate = useMemo(
 ```
 
 #### 1.3 文件变更事件去重
+
 ```rust
 // Rust 后端去重处理
 let should_emit = {
@@ -707,6 +726,7 @@ let should_emit = {
 ### 2. 内存管理
 
 #### 2.1 文件缓存管理
+
 ```javascript
 // 文件内容缓存
 const fileCache = new Map()
@@ -719,6 +739,7 @@ const closeFile = useCallback((key) => {
 ```
 
 #### 2.2 监听器状态管理
+
 ```rust
 // Rust 后端状态管理
 struct FileWatcherState {
@@ -742,6 +763,7 @@ async fn stop_file_watching(file_path: String) -> Result<bool, String> {
 ### 3. 冲突处理优化
 
 #### 3.1 重复处理防护
+
 ```javascript
 // 防止重复处理外部文件变更
 const processingExternalChanges = useRef(new Set())
@@ -767,6 +789,7 @@ const handleExternalFileChange = useCallback(async (filePath) => {
 ```
 
 #### 3.2 用户操作冲突避免
+
 ```javascript
 // 用户主动保存时的冲突避免
 const userSavingFiles = useRef(new Set())
@@ -810,6 +833,7 @@ const updateFileLineEnding = useCallback(async (filePath, lineEnding) => {
 ### 1. 监听器错误处理
 
 #### 1.1 创建监听器失败
+
 ```rust
 let mut watcher = match notify::recommended_watcher(/* callback */) {
     Ok(watcher) => watcher,
@@ -818,6 +842,7 @@ let mut watcher = match notify::recommended_watcher(/* callback */) {
 ```
 
 #### 1.2 监听启动失败
+
 ```rust
 if let Err(e) = watcher.watch(parent_dir, RecursiveMode::NonRecursive) {
     return Err(format!("开始监听文件失败: {}", e));
@@ -825,6 +850,7 @@ if let Err(e) = watcher.watch(parent_dir, RecursiveMode::NonRecursive) {
 ```
 
 #### 1.3 前端监听器设置失败
+
 ```javascript
 const setupListener = async () => {
     try {
@@ -840,6 +866,7 @@ const setupListener = async () => {
 ### 2. 文件操作错误处理
 
 #### 2.1 文件不存在处理
+
 ```rust
 async fn check_file_external_changes(file_path: String) -> Result<Option<FileChangeEvent>, String> {
     let path = Path::new(&file_path);
@@ -858,6 +885,7 @@ async fn check_file_external_changes(file_path: String) -> Result<Option<FileCha
 ```
 
 #### 2.2 权限错误处理
+
 ```javascript
 const handleFileError = (error, filePath) => {
     if (error.message.includes('permission')) {
@@ -873,6 +901,7 @@ const handleFileError = (error, filePath) => {
 ### 3. 自动恢复机制
 
 #### 3.1 监听器自动重启
+
 ```javascript
 const restartFileWatching = async (filePath) => {
     try {
@@ -894,6 +923,7 @@ const restartFileWatching = async (filePath) => {
 ```
 
 #### 3.2 状态同步恢复
+
 ```javascript
 const syncFileState = async (filePath) => {
     try {
@@ -915,6 +945,7 @@ const syncFileState = async (filePath) => {
 ### 1. 视觉反馈
 
 #### 1.1 文件状态指示
+
 ```scss
 // 修改状态指示器
 .tab-item {
@@ -953,6 +984,7 @@ const syncFileState = async (filePath) => {
 ```
 
 #### 1.2 冲突对话框样式
+
 ```scss
 .file-conflict-modal {
   .ant-modal-content {
@@ -992,6 +1024,7 @@ const syncFileState = async (filePath) => {
 ### 2. 操作提示
 
 #### 2.1 自动保存提示
+
 ```javascript
 const showAutoSaveNotification = (filePath) => {
     const fileName = filePath.split(/[/\\]/).pop()
@@ -1006,6 +1039,7 @@ const showAutoSaveNotification = (filePath) => {
 ```
 
 #### 2.2 冲突解决提示
+
 ```javascript
 const showConflictResolvedNotification = (filePath, choice) => {
     const fileName = filePath.split(/[/\\]/).pop()
@@ -1025,6 +1059,7 @@ const showConflictResolvedNotification = (filePath, choice) => {
 ### 3. 键盘快捷键
 
 #### 3.1 快速保存
+
 ```javascript
 // Ctrl+S 快速保存
 useEffect(() => {
@@ -1043,6 +1078,7 @@ useEffect(() => {
 ```
 
 #### 3.2 刷新文件内容
+
 ```javascript
 // F5 刷新当前文件
 useEffect(() => {
@@ -1065,6 +1101,7 @@ useEffect(() => {
 ### 1. 插件接口
 
 #### 1.1 文件监控插件
+
 ```javascript
 // 文件监控插件接口
 interface FileMonitorPlugin {
@@ -1086,6 +1123,7 @@ interface FileMonitorPlugin {
 ```
 
 #### 1.2 冲突解决策略
+
 ```javascript
 // 冲突解决策略接口
 interface ConflictResolutionStrategy {
@@ -1118,6 +1156,7 @@ const builtInStrategies = {
 ### 2. 配置系统
 
 #### 2.1 监控配置
+
 ```javascript
 // 文件监控配置
 const monitoringConfig = {
@@ -1154,6 +1193,7 @@ const monitoringConfig = {
 ```
 
 #### 2.2 用户自定义配置
+
 ```javascript
 // 用户配置界面
 const MonitoringSettings = () => {
@@ -1202,24 +1242,28 @@ const MonitoringSettings = () => {
 Miaogu NotePad 的文件监控系统是一个功能完整、性能优化、用户友好的文件状态管理解决方案：
 
 ### 技术特点
+
 - **多层架构**: Rust 后端 + React 前端的完整监控体系
 - **实时响应**: 基于文件系统事件的实时变化检测
 - **智能冲突处理**: 自动检测冲突并提供用户友好的解决方案
 - **性能优化**: 防抖、节流、去重等多重优化策略
 
 ### 功能特点
+
 - **全面监控**: 文件修改、创建、删除等全方位监控
 - **自动保存**: 智能的防抖自动保存机制
 - **冲突解决**: 完善的外部修改冲突处理流程
 - **状态同步**: 实时的文件状态同步和视觉反馈
 
 ### 用户体验
+
 - **无感知操作**: 后台自动处理，不干扰用户工作流
 - **智能提示**: 适时的状态提示和操作反馈
 - **灵活配置**: 丰富的配置选项满足不同需求
 - **国际化支持**: 完整的多语言界面支持
 
 ### 扩展性
+
 - **插件系统**: 支持自定义监控插件和冲突解决策略
 - **配置系统**: 灵活的配置管理和用户自定义选项
 - **API 接口**: 完整的编程接口支持第三方扩展

@@ -572,7 +572,6 @@ body {
 }
 
 
-
 .ant-dropdown {
   .ant-dropdown-menu {
     background: var(--dropdown-bg);
@@ -643,7 +642,6 @@ body {
   --dropdown-bg: #ffffff;
   --dropdown-item-hover-bg: rgba(0, 0, 0, 0.04);
 }
-
 
 
 @media (max-width: 768px) {
@@ -772,7 +770,6 @@ body {
 }
 
 
-
 .main-layout {
   background-color: transparent !important;
   display: flex;
@@ -867,14 +864,14 @@ pre[class*="language-"] {
 }
 
 /* 内联代码的效果 */
-:not(pre)>code[class*="language-"] {
+:not(pre) > code[class*="language-"] {
   background: rgba(255, 255, 255, 0.15) !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
   border-radius: 6px !important;
 }
 
 /* 暗色主题下的内联代码效果 */
-[data-theme="dark"] :not(pre)>code[class*="language-"] {
+[data-theme="dark"] :not(pre) > code[class*="language-"] {
   background: rgba(0, 0, 0, 0.25) !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }

@@ -20,8 +20,8 @@ async function initStore()
 
 #### 返回值
 
-| 类型 | 描述 |
-|------|------|
+| 类型       | 描述     |
+|----------|--------|
 | `Object` | 存储实例对象 |
 
 #### 使用示例
@@ -40,24 +40,24 @@ console.log('存储初始化完成');
 
 #### fileApi 对象结构
 
-| 方法 | 描述 | 参数 | 返回值 |
-|------|------|------|-------|
-| `openDialog` | 打开文件选择对话框 | `options?` | `Promise<string[]>` |
-| `saveDialog` | 打开保存文件对话框 | `options?` | `Promise<string>` |
-| `readFile` | 读取文件内容 | `path: string` | `Promise<FileResult>` |
-| `writeFile` | 写入文件内容 | `path: string, content: string` | `Promise<void>` |
-| `saveFile` | 保存文件（带编码） | `path: string, content: string, encoding?: string` | `Promise<FileResult>` |
-| `exists` | 检查文件是否存在 | `path: string` | `Promise<boolean>` |
-| `getInfo` | 获取文件信息 | `path: string` | `Promise<FileInfo>` |
-| `getDirectoryContents` | 获取目录内容 | `path: string` | `Promise<FileInfo[]>` |
-| `rename` | 重命名文件 | `oldPath: string, newPath: string` | `Promise<FileResult>` |
-| `execute` | 执行文件 | `path: string` | `Promise<string>` |
-| `openInTerminal` | 在终端中打开 | `path: string` | `Promise<string>` |
-| `showInExplorer` | 在文件管理器中显示 | `path: string` | `Promise<string>` |
-| `startWatching` | 开始文件监控 | `path: string` | `Promise<boolean>` |
-| `stopWatching` | 停止文件监控 | `path: string` | `Promise<boolean>` |
-| `checkExternalChanges` | 检查外部变化 | `path: string` | `Promise<FileChangeEvent?>` |
-| `updateLineEnding` | 更新行尾格式 | `path: string, ending: string` | `Promise<FileResult>` |
+| 方法                     | 描述        | 参数                                                 | 返回值                         |
+|------------------------|-----------|----------------------------------------------------|-----------------------------|
+| `openDialog`           | 打开文件选择对话框 | `options?`                                         | `Promise<string[]>`         |
+| `saveDialog`           | 打开保存文件对话框 | `options?`                                         | `Promise<string>`           |
+| `readFile`             | 读取文件内容    | `path: string`                                     | `Promise<FileResult>`       |
+| `writeFile`            | 写入文件内容    | `path: string, content: string`                    | `Promise<void>`             |
+| `saveFile`             | 保存文件（带编码） | `path: string, content: string, encoding?: string` | `Promise<FileResult>`       |
+| `exists`               | 检查文件是否存在  | `path: string`                                     | `Promise<boolean>`          |
+| `getInfo`              | 获取文件信息    | `path: string`                                     | `Promise<FileInfo>`         |
+| `getDirectoryContents` | 获取目录内容    | `path: string`                                     | `Promise<FileInfo[]>`       |
+| `rename`               | 重命名文件     | `oldPath: string, newPath: string`                 | `Promise<FileResult>`       |
+| `execute`              | 执行文件      | `path: string`                                     | `Promise<string>`           |
+| `openInTerminal`       | 在终端中打开    | `path: string`                                     | `Promise<string>`           |
+| `showInExplorer`       | 在文件管理器中显示 | `path: string`                                     | `Promise<string>`           |
+| `startWatching`        | 开始文件监控    | `path: string`                                     | `Promise<boolean>`          |
+| `stopWatching`         | 停止文件监控    | `path: string`                                     | `Promise<boolean>`          |
+| `checkExternalChanges` | 检查外部变化    | `path: string`                                     | `Promise<FileChangeEvent?>` |
+| `updateLineEnding`     | 更新行尾格式    | `path: string, ending: string`                     | `Promise<FileResult>`       |
 
 #### 数据类型定义
 
@@ -415,116 +415,116 @@ changeLineEnding('example.txt', LINE_ENDINGS.LF);
 
 #### settingsApi 对象结构
 
-| 方法 | 描述 | 参数 | 返回值 |
-|------|------|------|-------|
-| `get` | 获取设置值 | `key: string, defaultValue?: any` | `Promise<any>` |
-| `set` | 设置值 | `key: string, value: any` | `Promise<void>` |
-| `remove` | 删除设置 | `key: string` | `Promise<void>` |
-| `clear` | 清空所有设置 | - | `Promise<void>` |
-| `has` | 检查设置是否存在 | `key: string` | `Promise<boolean>` |
-| `keys` | 获取所有设置键 | - | `Promise<string[]>` |
-| `entries` | 获取所有设置条目 | - | `Promise<[string, any][]>` |
+| 方法        | 描述       | 参数                                | 返回值                        |
+|-----------|----------|-----------------------------------|----------------------------|
+| `get`     | 获取设置值    | `key: string, defaultValue?: any` | `Promise<any>`             |
+| `set`     | 设置值      | `key: string, value: any`         | `Promise<void>`            |
+| `remove`  | 删除设置     | `key: string`                     | `Promise<void>`            |
+| `clear`   | 清空所有设置   | -                                 | `Promise<void>`            |
+| `has`     | 检查设置是否存在 | `key: string`                     | `Promise<boolean>`         |
+| `keys`    | 获取所有设置键  | -                                 | `Promise<string[]>`        |
+| `entries` | 获取所有设置条目 | -                                 | `Promise<[string, any][]>` |
 
 #### 使用示例
 
 ```javascript
-import { settingsApi } from '@/utils/tauriApi';
+import {settingsApi} from '@/utils/tauriApi';
 
 // 获取设置
 async function getThemeSetting() {
-  try {
-    const theme = await settingsApi.get('theme', 'light');
-    console.log('当前主题:', theme);
-    return theme;
-  } catch (error) {
-    console.error('获取主题设置失败:', error);
-    return 'light'; // 默认值
-  }
+    try {
+        const theme = await settingsApi.get('theme', 'light');
+        console.log('当前主题:', theme);
+        return theme;
+    } catch (error) {
+        console.error('获取主题设置失败:', error);
+        return 'light'; // 默认值
+    }
 }
 
 // 保存设置
 async function saveThemeSetting(theme) {
-  try {
-    await settingsApi.set('theme', theme);
-    console.log('主题设置已保存:', theme);
-  } catch (error) {
-    console.error('保存主题设置失败:', error);
-    throw error;
-  }
+    try {
+        await settingsApi.set('theme', theme);
+        console.log('主题设置已保存:', theme);
+    } catch (error) {
+        console.error('保存主题设置失败:', error);
+        throw error;
+    }
 }
 
 // 获取编辑器设置
 async function getEditorSettings() {
-  try {
-    const settings = {
-      fontSize: await settingsApi.get('editor.fontSize', 14),
-      fontFamily: await settingsApi.get('editor.fontFamily', 'Monaco'),
-      tabSize: await settingsApi.get('editor.tabSize', 2),
-      wordWrap: await settingsApi.get('editor.wordWrap', true),
-      lineNumbers: await settingsApi.get('editor.lineNumbers', true)
-    };
-    
-    return settings;
-  } catch (error) {
-    console.error('获取编辑器设置失败:', error);
-    throw error;
-  }
+    try {
+        const settings = {
+            fontSize: await settingsApi.get('editor.fontSize', 14),
+            fontFamily: await settingsApi.get('editor.fontFamily', 'Monaco'),
+            tabSize: await settingsApi.get('editor.tabSize', 2),
+            wordWrap: await settingsApi.get('editor.wordWrap', true),
+            lineNumbers: await settingsApi.get('editor.lineNumbers', true)
+        };
+
+        return settings;
+    } catch (error) {
+        console.error('获取编辑器设置失败:', error);
+        throw error;
+    }
 }
 
 // 保存编辑器设置
 async function saveEditorSettings(settings) {
-  try {
-    await Promise.all([
-      settingsApi.set('editor.fontSize', settings.fontSize),
-      settingsApi.set('editor.fontFamily', settings.fontFamily),
-      settingsApi.set('editor.tabSize', settings.tabSize),
-      settingsApi.set('editor.wordWrap', settings.wordWrap),
-      settingsApi.set('editor.lineNumbers', settings.lineNumbers)
-    ]);
-    
-    console.log('编辑器设置已保存');
-  } catch (error) {
-    console.error('保存编辑器设置失败:', error);
-    throw error;
-  }
+    try {
+        await Promise.all([
+            settingsApi.set('editor.fontSize', settings.fontSize),
+            settingsApi.set('editor.fontFamily', settings.fontFamily),
+            settingsApi.set('editor.tabSize', settings.tabSize),
+            settingsApi.set('editor.wordWrap', settings.wordWrap),
+            settingsApi.set('editor.lineNumbers', settings.lineNumbers)
+        ]);
+
+        console.log('编辑器设置已保存');
+    } catch (error) {
+        console.error('保存编辑器设置失败:', error);
+        throw error;
+    }
 }
 
 // 检查设置是否存在
 async function hasCustomSettings() {
-  try {
-    const hasTheme = await settingsApi.has('theme');
-    const hasEditor = await settingsApi.has('editor.fontSize');
-    
-    return hasTheme || hasEditor;
-  } catch (error) {
-    console.error('检查设置失败:', error);
-    return false;
-  }
+    try {
+        const hasTheme = await settingsApi.has('theme');
+        const hasEditor = await settingsApi.has('editor.fontSize');
+
+        return hasTheme || hasEditor;
+    } catch (error) {
+        console.error('检查设置失败:', error);
+        return false;
+    }
 }
 
 // 获取所有设置
 async function getAllSettings() {
-  try {
-    const entries = await settingsApi.entries();
-    const settings = Object.fromEntries(entries);
-    
-    console.log('所有设置:', settings);
-    return settings;
-  } catch (error) {
-    console.error('获取所有设置失败:', error);
-    return {};
-  }
+    try {
+        const entries = await settingsApi.entries();
+        const settings = Object.fromEntries(entries);
+
+        console.log('所有设置:', settings);
+        return settings;
+    } catch (error) {
+        console.error('获取所有设置失败:', error);
+        return {};
+    }
 }
 
 // 重置设置
 async function resetSettings() {
-  try {
-    await settingsApi.clear();
-    console.log('设置已重置');
-  } catch (error) {
-    console.error('重置设置失败:', error);
-    throw error;
-  }
+    try {
+        await settingsApi.clear();
+        console.log('设置已重置');
+    } catch (error) {
+        console.error('重置设置失败:', error);
+        throw error;
+    }
 }
 ```
 
@@ -534,14 +534,14 @@ async function resetSettings() {
 
 #### appApi 对象结构
 
-| 方法 | 描述 | 参数 | 返回值 |
-|------|------|------|-------|
-| `greet` | 问候函数 | `name: string` | `Promise<string>` |
-| `getCliArgs` | 获取命令行参数 | - | `Promise<string[]>` |
-| `openUrl` | 打开URL | `url: string` | `Promise<void>` |
-| `enablePreventSleep` | 启用防休眠 | - | `Promise<string>` |
-| `disablePreventSleep` | 禁用防休眠 | - | `Promise<string>` |
-| `getPreventSleepStatus` | 获取防休眠状态 | - | `Promise<boolean>` |
+| 方法                      | 描述      | 参数             | 返回值                 |
+|-------------------------|---------|----------------|---------------------|
+| `greet`                 | 问候函数    | `name: string` | `Promise<string>`   |
+| `getCliArgs`            | 获取命令行参数 | -              | `Promise<string[]>` |
+| `openUrl`               | 打开URL   | `url: string`  | `Promise<void>`     |
+| `enablePreventSleep`    | 启用防休眠   | -              | `Promise<string>`   |
+| `disablePreventSleep`   | 禁用防休眠   | -              | `Promise<string>`   |
+| `getPreventSleepStatus` | 获取防休眠状态 | -              | `Promise<boolean>`  |
 
 #### 使用示例
 
@@ -681,19 +681,19 @@ function splitPath(filePath)
 
 #### 参数
 
-| 参数 | 类型 | 必需 | 描述 |
-|------|------|------|------|
-| `filePath` | `string` | ✅ | 要分割的文件路径 |
+| 参数         | 类型       | 必需 | 描述       |
+|------------|----------|----|----------|
+| `filePath` | `string` | ✅  | 要分割的文件路径 |
 
 #### 返回值
 
-| 字段 | 类型 | 描述 |
-|------|------|------|
-| `directory` | `string` | 目录路径 |
-| `fileName` | `string` | 文件名（含扩展名） |
-| `baseName` | `string` | 文件名（不含扩展名） |
-| `extension` | `string` | 文件扩展名 |
-| `segments` | `string[]` | 路径段数组 |
+| 字段          | 类型         | 描述         |
+|-------------|------------|------------|
+| `directory` | `string`   | 目录路径       |
+| `fileName`  | `string`   | 文件名（含扩展名）  |
+| `baseName`  | `string`   | 文件名（不含扩展名） |
+| `extension` | `string`   | 文件扩展名      |
+| `segments`  | `string[]` | 路径段数组      |
 
 #### 使用示例
 
@@ -764,15 +764,15 @@ function buildFullPath(directory, fileName)
 
 #### 参数
 
-| 参数 | 类型 | 必需 | 描述 |
-|------|------|------|------|
-| `directory` | `string` | ✅ | 目录路径 |
-| `fileName` | `string` | ✅ | 文件名 |
+| 参数          | 类型       | 必需 | 描述   |
+|-------------|----------|----|------|
+| `directory` | `string` | ✅  | 目录路径 |
+| `fileName`  | `string` | ✅  | 文件名  |
 
 #### 返回值
 
-| 类型 | 描述 |
-|------|------|
+| 类型       | 描述      |
+|----------|---------|
 | `string` | 完整的文件路径 |
 
 #### 使用示例
@@ -916,25 +916,25 @@ function isExternalLink(url)
 
 #### 参数
 
-| 参数 | 类型 | 必需 | 描述 |
-|------|------|------|------|
-| `url` | `string` | ✅ | 要检查的URL |
+| 参数    | 类型       | 必需 | 描述      |
+|-------|----------|----|---------|
+| `url` | `string` | ✅  | 要检查的URL |
 
 #### 返回值
 
-| 类型 | 描述 |
-|------|------|
+| 类型        | 描述      |
+|-----------|---------|
 | `boolean` | 是否为外部链接 |
 
 #### 支持的协议
 
-| 协议 | 描述 | 示例 |
-|------|------|------|
-| `http://` | HTTP协议 | `http://example.com` |
-| `https://` | HTTPS协议 | `https://example.com` |
-| `ftp://` | FTP协议 | `ftp://files.example.com` |
-| `mailto:` | 邮件协议 | `mailto:user@example.com` |
-| `tel:` | 电话协议 | `tel:+1234567890` |
+| 协议         | 描述      | 示例                        |
+|------------|---------|---------------------------|
+| `http://`  | HTTP协议  | `http://example.com`      |
+| `https://` | HTTPS协议 | `https://example.com`     |
+| `ftp://`   | FTP协议   | `ftp://files.example.com` |
+| `mailto:`  | 邮件协议    | `mailto:user@example.com` |
+| `tel:`     | 电话协议    | `tel:+1234567890`         |
 
 #### 使用示例
 
@@ -1015,110 +1015,110 @@ async function checkLocalFile(filePath)
 
 #### 参数
 
-| 参数 | 类型 | 必需 | 描述 |
-|------|------|------|------|
-| `filePath` | `string` | ✅ | 要检查的文件路径 |
+| 参数         | 类型       | 必需 | 描述       |
+|------------|----------|----|----------|
+| `filePath` | `string` | ✅  | 要检查的文件路径 |
 
 #### 返回值
 
-| 字段 | 类型 | 描述 |
-|------|------|------|
-| `exists` | `boolean` | 文件是否存在 |
-| `isFile` | `boolean` | 是否为文件 |
-| `isDirectory` | `boolean` | 是否为目录 |
-| `accessible` | `boolean` | 是否可访问 |
+| 字段            | 类型        | 描述     |
+|---------------|-----------|--------|
+| `exists`      | `boolean` | 文件是否存在 |
+| `isFile`      | `boolean` | 是否为文件  |
+| `isDirectory` | `boolean` | 是否为目录  |
+| `accessible`  | `boolean` | 是否可访问  |
 
 #### 使用示例
 
 ```javascript
-import { checkLocalFile } from '@/utils/linkUtils';
+import {checkLocalFile} from '@/utils/linkUtils';
 
 // 检查单个文件
 async function validateFile(filePath) {
-  try {
-    const result = await checkLocalFile(filePath);
-    
-    if (result.exists) {
-      if (result.isFile) {
-        console.log('文件存在且可访问');
-        return true;
-      } else if (result.isDirectory) {
-        console.log('路径是一个目录');
+    try {
+        const result = await checkLocalFile(filePath);
+
+        if (result.exists) {
+            if (result.isFile) {
+                console.log('文件存在且可访问');
+                return true;
+            } else if (result.isDirectory) {
+                console.log('路径是一个目录');
+                return false;
+            }
+        } else {
+            console.log('文件不存在');
+            return false;
+        }
+    } catch (error) {
+        console.error('检查文件失败:', error);
         return false;
-      }
-    } else {
-      console.log('文件不存在');
-      return false;
     }
-  } catch (error) {
-    console.error('检查文件失败:', error);
-    return false;
-  }
 }
 
 // 批量检查文件
 async function validateMultipleFiles(filePaths) {
-  const results = await Promise.all(
-    filePaths.map(async (path) => {
-      const result = await checkLocalFile(path);
-      return {
-        path,
-        valid: result.exists && result.isFile,
-        ...result
-      };
-    })
-  );
-  
-  return results;
+    const results = await Promise.all(
+        filePaths.map(async (path) => {
+            const result = await checkLocalFile(path);
+            return {
+                path,
+                valid: result.exists && result.isFile,
+                ...result
+            };
+        })
+    );
+
+    return results;
 }
 
 // 文件链接验证器
 class FileLinkValidator {
-  constructor() {
-    this.cache = new Map();
-    this.cacheTimeout = 5000; // 5秒缓存
-  }
-  
-  async validate(filePath) {
-    // 检查缓存
-    const cached = this.cache.get(filePath);
-    if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
-      return cached.result;
+    constructor() {
+        this.cache = new Map();
+        this.cacheTimeout = 5000; // 5秒缓存
     }
-    
-    // 执行检查
-    const result = await checkLocalFile(filePath);
-    
-    // 缓存结果
-    this.cache.set(filePath, {
-      result,
-      timestamp: Date.now()
-    });
-    
-    return result;
-  }
-  
-  clearCache() {
-    this.cache.clear();
-  }
+
+    async validate(filePath) {
+        // 检查缓存
+        const cached = this.cache.get(filePath);
+        if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
+            return cached.result;
+        }
+
+        // 执行检查
+        const result = await checkLocalFile(filePath);
+
+        // 缓存结果
+        this.cache.set(filePath, {
+            result,
+            timestamp: Date.now()
+        });
+
+        return result;
+    }
+
+    clearCache() {
+        this.cache.clear();
+    }
 }
 
 // 使用示例
 const validator = new FileLinkValidator();
 
 async function handleFileLink(filePath) {
-  const result = await validator.validate(filePath);
-  
-  if (result.exists && result.isFile) {
-    // 打开文件
-    await openFile(filePath);
-  } else if (result.exists && result.isDirectory) {
-    // 打开目录
-    await openDirectory(filePath);
-  } else {
-    // 显示错误
-    showError(`文件不存在: ${filePath}`);
-  }
+    const result = await validator.validate(filePath);
+
+    if (result.exists && result.isFile) {
+        // 打开文件
+        await openFile(filePath);
+    } else if (result.exists && result.isDirectory) {
+        // 打开目录
+        await openDirectory(filePath);
+    } else {
+        // 显示错误
+        showError(`文件不存在: ${filePath}`);
+    }
 }
 ```
 
@@ -1272,54 +1272,54 @@ async function createLinkPreview(url) {
 ```javascript
 // 文件信息缓存
 class FileInfoCache {
-  constructor(maxSize = 100, ttl = 30000) {
-    this.cache = new Map();
-    this.maxSize = maxSize;
-    this.ttl = ttl;
-  }
-  
-  get(key) {
-    const item = this.cache.get(key);
-    
-    if (!item) return null;
-    
-    if (Date.now() - item.timestamp > this.ttl) {
-      this.cache.delete(key);
-      return null;
+    constructor(maxSize = 100, ttl = 30000) {
+        this.cache = new Map();
+        this.maxSize = maxSize;
+        this.ttl = ttl;
     }
-    
-    return item.data;
-  }
-  
-  set(key, data) {
-    if (this.cache.size >= this.maxSize) {
-      const firstKey = this.cache.keys().next().value;
-      this.cache.delete(firstKey);
+
+    get(key) {
+        const item = this.cache.get(key);
+
+        if (!item) return null;
+
+        if (Date.now() - item.timestamp > this.ttl) {
+            this.cache.delete(key);
+            return null;
+        }
+
+        return item.data;
     }
-    
-    this.cache.set(key, {
-      data,
-      timestamp: Date.now()
-    });
-  }
-  
-  clear() {
-    this.cache.clear();
-  }
+
+    set(key, data) {
+        if (this.cache.size >= this.maxSize) {
+            const firstKey = this.cache.keys().next().value;
+            this.cache.delete(firstKey);
+        }
+
+        this.cache.set(key, {
+            data,
+            timestamp: Date.now()
+        });
+    }
+
+    clear() {
+        this.cache.clear();
+    }
 }
 
 // 使用缓存的文件API
 const fileInfoCache = new FileInfoCache();
 
 async function getCachedFileInfo(filePath) {
-  let info = fileInfoCache.get(filePath);
-  
-  if (!info) {
-    info = await fileApi.getInfo(filePath);
-    fileInfoCache.set(filePath, info);
-  }
-  
-  return info;
+    let info = fileInfoCache.get(filePath);
+
+    if (!info) {
+        info = await fileApi.getInfo(filePath);
+        fileInfoCache.set(filePath, info);
+    }
+
+    return info;
 }
 ```
 

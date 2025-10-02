@@ -14,7 +14,7 @@
   ::view-transition-old(root) {
     animation-name: theme-fade-out;
   }
-  
+
   ::view-transition-new(root) {
     animation-name: theme-fade-in;
   }
@@ -44,11 +44,11 @@
   ::view-transition-new(editor-content) {
     animation-duration: 0.4s;
   }
-  
+
   ::view-transition-old(editor-content) {
     animation-name: editor-slide-out;
   }
-  
+
   ::view-transition-new(editor-content) {
     animation-name: editor-slide-in;
   }
@@ -82,11 +82,11 @@
   ::view-transition-new(file-content) {
     animation-duration: 0.25s;
   }
-  
+
   ::view-transition-old(file-content) {
     animation-name: file-fade-out;
   }
-  
+
   ::view-transition-new(file-content) {
     animation-name: file-fade-in;
   }
@@ -134,11 +134,11 @@
 /* 按钮交互效果 */
 .theme-toggle-btn {
   transition: all 0.2s ease;
-  
+
   &:hover {
     transform: scale(1.05);
   }
-  
+
   &:active {
     transform: scale(0.95);
   }
@@ -146,11 +146,11 @@
 
 .editor-mode-btn {
   transition: all 0.2s ease;
-  
+
   &:hover {
     transform: scale(1.05);
   }
-  
+
   &:active {
     transform: scale(0.95);
   }
@@ -162,11 +162,11 @@
   ::view-transition-new(*) {
     animation-duration: 0.1s !important;
   }
-  
+
   .theme-toggle-btn,
   .editor-mode-btn {
     transition: none !important;
-    
+
     &:hover,
     &:active {
       transform: none !important;

@@ -46,7 +46,8 @@ lib.rs (Rust 后端)
 const [isHeaderVisible, setIsHeaderVisible] = useState(true);
 
 // 全屏模式样式类控制
-className={`app-layout ${!isHeaderVisible ? 'fullscreen-mode' : ''}`}
+className = {`app-layout ${!isHeaderVisible ? 'fullscreen-mode' : ''}`
+}
 ```
 
 #### F11 键盘事件处理
@@ -128,12 +129,12 @@ const intervalId = setInterval(checkWindowState, 500);
   &.fullscreen-mode {
     // 背景适配
     background-color: var(--editor-background) !important;
-    
+
     // 主题切换时背景更新
     &[data-theme="dark"].has-background::before {
       background-color: var(--editor-background-dark) !important;
     }
-    
+
     &[data-theme="light"].has-background::before {
       background-color: var(--editor-background-light) !important;
     }
@@ -141,7 +142,7 @@ const intervalId = setInterval(checkWindowState, 500);
     // 高度补偿 - 补偿隐藏的 AppHeader 高度
     .app-content {
       height: calc(100vh - var(--tab-bar-height)) !important;
-      
+
       &.with-console {
         height: calc(100vh - var(--tab-bar-height) - var(--console-layout-height)) !important;
       }
@@ -267,8 +268,10 @@ async fn get_prevent_sleep_status() -> Result<bool, String> {
     "windows": [
       {
         "title": "喵咕记事本",
-        "decorations": false,  // 无边框窗口
-        "transparent": true,   // 透明窗口
+        "decorations": false,
+        // 无边框窗口
+        "transparent": true,
+        // 透明窗口
         "resizable": true,
         "maximizable": true
       }

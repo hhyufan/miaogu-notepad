@@ -8,26 +8,26 @@
 
 ### 核心框架与库
 
-| 技术 | 版本 | 职责 | 选择理由 |
-|------|------|------|----------|
-| **Tauri** | 2.1.1 | 应用框架 | 轻量级、安全、跨平台桌面应用框架 |
-| **Rust** | 1.70+ | 系统编程语言 | 内存安全、高性能、零成本抽象 |
-| **Serde** | 1.0 | 序列化框架 | JSON序列化/反序列化，类型安全 |
-| **Tokio** | 1.0 | 异步运行时 | 高性能异步I/O处理 |
-| **Notify** | 6.1 | 文件监控 | 跨平台文件系统事件监控 |
-| **Encoding RS** | 0.8 | 字符编码 | Mozilla的字符编码检测和转换库 |
-| **Once Cell** | 1.19 | 全局状态 | 线程安全的全局状态管理 |
+| 技术              | 版本    | 职责     | 选择理由               |
+|-----------------|-------|--------|--------------------|
+| **Tauri**       | 2.1.1 | 应用框架   | 轻量级、安全、跨平台桌面应用框架   |
+| **Rust**        | 1.70+ | 系统编程语言 | 内存安全、高性能、零成本抽象     |
+| **Serde**       | 1.0   | 序列化框架  | JSON序列化/反序列化，类型安全  |
+| **Tokio**       | 1.0   | 异步运行时  | 高性能异步I/O处理         |
+| **Notify**      | 6.1   | 文件监控   | 跨平台文件系统事件监控        |
+| **Encoding RS** | 0.8   | 字符编码   | Mozilla的字符编码检测和转换库 |
+| **Once Cell**   | 1.19  | 全局状态   | 线程安全的全局状态管理        |
 
 ### Tauri插件生态
 
-| 插件 | 版本 | 功能 | 用途 |
-|------|------|------|------|
-| **tauri-plugin-opener** | 2.0 | 文件打开 | 使用系统默认程序打开文件 |
-| **tauri-plugin-fs** | 2.0 | 文件系统 | 文件读写、目录操作 |
-| **tauri-plugin-dialog** | 2.0 | 系统对话框 | 文件选择、保存对话框 |
-| **tauri-plugin-store** | 2.0 | 数据存储 | 应用配置和状态持久化 |
-| **tauri-plugin-shell** | 2.0 | 系统命令 | 执行系统命令和脚本 |
-| **tauri-plugin-http** | 2.0 | HTTP客户端 | 网络请求和API调用 |
+| 插件                      | 版本  | 功能      | 用途           |
+|-------------------------|-----|---------|--------------|
+| **tauri-plugin-opener** | 2.0 | 文件打开    | 使用系统默认程序打开文件 |
+| **tauri-plugin-fs**     | 2.0 | 文件系统    | 文件读写、目录操作    |
+| **tauri-plugin-dialog** | 2.0 | 系统对话框   | 文件选择、保存对话框   |
+| **tauri-plugin-store**  | 2.0 | 数据存储    | 应用配置和状态持久化   |
+| **tauri-plugin-shell**  | 2.0 | 系统命令    | 执行系统命令和脚本    |
+| **tauri-plugin-http**   | 2.0 | HTTP客户端 | 网络请求和API调用   |
 
 ## 架构设计模式
 
@@ -80,21 +80,25 @@
 ### 层次职责说明
 
 #### 1. Tauri Core Layer
+
 - **Command Router**: 路由前端命令到对应的处理函数
 - **Plugin Manager**: 管理Tauri插件的生命周期
 - **Event Emitter**: 向前端发送事件和通知
 
 #### 2. Business Logic Layer
+
 - **File Commands**: 文件读写、重命名、删除等操作
 - **System Commands**: 系统集成功能，如打开终端、文件管理器
 - **Watch Commands**: 文件监控和变化通知
 
 #### 3. Service Layer
+
 - **File Service**: 文件操作的核心业务逻辑
 - **Encoding Service**: 字符编码检测和转换
 - **Monitor Service**: 文件系统监控服务
 
 #### 4. System Layer
+
 - **File System**: 操作系统文件系统接口
 - **Process Management**: 进程创建和管理
 - **OS APIs**: 操作系统特定的API调用
@@ -119,6 +123,7 @@ fn main() {
 ```
 
 **特性**:
+
 - 生产环境隐藏控制台窗口
 - 委托给库模块处理应用逻辑
 - 简洁的入口点设计
@@ -183,6 +188,7 @@ static FILE_CHANGE_CACHE: Lazy<Arc<Mutex<HashMap<String, u64>>>> =
 ```
 
 **设计特点**:
+
 - 使用`once_cell::sync::Lazy`实现线程安全的全局状态
 - `Arc<Mutex<T>>`提供多线程安全的共享状态
 - 分离不同功能的状态管理
@@ -222,6 +228,7 @@ async fn read_file_content(path: String) -> Result<FileOperationResult, String> 
 ```
 
 **核心特性**:
+
 - **自动编码检测**: 支持UTF-8、UTF-16、GBK、GB2312等多种编码
 - **BOM处理**: 正确处理字节顺序标记
 - **行尾检测**: 自动识别LF、CRLF、CR行尾格式
@@ -668,7 +675,9 @@ async fn get_cli_args() -> Result<Vec<String>, String> {
       "csp": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';",
       "assetProtocol": {
         "enable": true,
-        "scope": ["**"]
+        "scope": [
+          "**"
+        ]
       }
     }
   }
@@ -1053,6 +1062,7 @@ impl Drop for ManagedFile {
 ### 1. 内存安全
 
 **Rust语言特性**:
+
 - **所有权系统**: 编译时防止内存泄漏和悬垂指针
 - **借用检查**: 防止数据竞争和并发访问问题
 - **类型安全**: 强类型系统防止类型混淆攻击

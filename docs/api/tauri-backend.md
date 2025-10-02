@@ -63,41 +63,41 @@ async fn read_file_content(path: String) -> Result<FileOperationResult, String>
 
 #### 参数
 
-| 参数 | 类型 | 必需 | 描述 |
-|------|------|------|------|
-| `path` | `String` | ✅ | 要读取的文件路径 |
+| 参数     | 类型       | 必需 | 描述       |
+|--------|----------|----|----------|
+| `path` | `String` | ✅  | 要读取的文件路径 |
 
 #### 返回值
 
-| 字段 | 类型 | 描述 |
-|------|------|------|
-| `success` | `boolean` | 操作是否成功 |
-| `message` | `string` | 操作结果消息 |
-| `content` | `string?` | 文件内容 |
-| `file_path` | `string?` | 文件完整路径 |
-| `file_name` | `string?` | 文件名 |
-| `encoding` | `string?` | 检测到的文件编码 |
+| 字段            | 类型        | 描述       |
+|---------------|-----------|----------|
+| `success`     | `boolean` | 操作是否成功   |
+| `message`     | `string`  | 操作结果消息   |
+| `content`     | `string?` | 文件内容     |
+| `file_path`   | `string?` | 文件完整路径   |
+| `file_name`   | `string?` | 文件名      |
+| `encoding`    | `string?` | 检测到的文件编码 |
 | `line_ending` | `string?` | 检测到的行尾格式 |
 
 #### 支持的编码格式
 
-| 编码 | 描述 |
-|------|------|
-| `UTF-8` | UTF-8编码 |
-| `UTF-16LE` | UTF-16小端编码 |
-| `UTF-16BE` | UTF-16大端编码 |
-| `GBK` | GBK中文编码 |
-| `GB2312` | GB2312中文编码 |
-| `Big5` | Big5繁体中文编码 |
-| `ISO-8859-1` | Latin-1编码 |
+| 编码           | 描述         |
+|--------------|------------|
+| `UTF-8`      | UTF-8编码    |
+| `UTF-16LE`   | UTF-16小端编码 |
+| `UTF-16BE`   | UTF-16大端编码 |
+| `GBK`        | GBK中文编码    |
+| `GB2312`     | GB2312中文编码 |
+| `Big5`       | Big5繁体中文编码 |
+| `ISO-8859-1` | Latin-1编码  |
 
 #### 支持的行尾格式
 
-| 格式 | 描述 | 系统 |
-|------|------|------|
-| `LF` | `\n` | Unix/Linux/macOS |
-| `CRLF` | `\r\n` | Windows |
-| `CR` | `\r` | 经典Mac OS |
+| 格式     | 描述     | 系统               |
+|--------|--------|------------------|
+| `LF`   | `\n`   | Unix/Linux/macOS |
+| `CRLF` | `\r\n` | Windows          |
+| `CR`   | `\r`   | 经典Mac OS         |
 
 #### 前端调用示例
 
@@ -151,10 +151,10 @@ async fn write_file_content(path: String, content: String) -> Result<(), String>
 
 #### 参数
 
-| 参数 | 类型 | 必需 | 描述 |
-|------|------|------|------|
-| `path` | `String` | ✅ | 目标文件路径 |
-| `content` | `String` | ✅ | 要写入的内容 |
+| 参数        | 类型       | 必需 | 描述     |
+|-----------|----------|----|--------|
+| `path`    | `String` | ✅  | 目标文件路径 |
+| `content` | `String` | ✅  | 要写入的内容 |
 
 #### 前端调用示例
 
@@ -196,11 +196,11 @@ async fn save_file(
 
 #### 参数
 
-| 参数 | 类型 | 必需 | 描述 |
-|------|------|------|------|
-| `file_path` | `String` | ✅ | 文件路径 |
-| `content` | `String` | ✅ | 文件内容 |
-| `encoding` | `Option<String>` | ❌ | 编码格式（默认UTF-8） |
+| 参数          | 类型               | 必需 | 描述            |
+|-------------|------------------|----|---------------|
+| `file_path` | `String`         | ✅  | 文件路径          |
+| `content`   | `String`         | ✅  | 文件内容          |
+| `encoding`  | `Option<String>` | ❌  | 编码格式（默认UTF-8） |
 
 #### 前端调用示例
 
@@ -243,9 +243,9 @@ async fn check_file_exists(path: String) -> bool
 
 #### 参数
 
-| 参数 | 类型 | 必需 | 描述 |
-|------|------|------|------|
-| `path` | `String` | ✅ | 要检查的路径 |
+| 参数     | 类型       | 必需 | 描述     |
+|--------|----------|----|--------|
+| `path` | `String` | ✅  | 要检查的路径 |
 
 #### 前端调用示例
 
@@ -283,9 +283,9 @@ async fn get_file_info(path: String) -> Result<FileInfo, String>
 
 #### 参数
 
-| 参数 | 类型 | 必需 | 描述 |
-|------|------|------|------|
-| `path` | `String` | ✅ | 文件或目录路径 |
+| 参数     | 类型       | 必需 | 描述      |
+|--------|----------|----|---------|
+| `path` | `String` | ✅  | 文件或目录路径 |
 
 #### 前端调用示例
 
@@ -331,9 +331,9 @@ async fn get_directory_contents(dir_path: String) -> Result<Vec<FileInfo>, Strin
 
 #### 参数
 
-| 参数 | 类型 | 必需 | 描述 |
-|------|------|------|------|
-| `dir_path` | `String` | ✅ | 目录路径 |
+| 参数         | 类型       | 必需 | 描述   |
+|------------|----------|----|------|
+| `dir_path` | `String` | ✅  | 目录路径 |
 
 #### 前端调用示例
 
@@ -384,10 +384,10 @@ async fn rename_file(old_path: String, new_path: String) -> Result<FileOperation
 
 #### 参数
 
-| 参数 | 类型 | 必需 | 描述 |
-|------|------|------|------|
-| `old_path` | `String` | ✅ | 原文件路径 |
-| `new_path` | `String` | ✅ | 新文件路径 |
+| 参数         | 类型       | 必需 | 描述    |
+|------------|----------|----|-------|
+| `old_path` | `String` | ✅  | 原文件路径 |
+| `new_path` | `String` | ✅  | 新文件路径 |
 
 #### 前端调用示例
 
@@ -432,10 +432,10 @@ async fn update_file_line_ending(
 
 #### 参数
 
-| 参数 | 类型 | 必需 | 描述 |
-|------|------|------|------|
-| `file_path` | `String` | ✅ | 文件路径 |
-| `line_ending` | `String` | ✅ | 目标行尾格式 (`LF`, `CRLF`, `CR`) |
+| 参数            | 类型       | 必需 | 描述                          |
+|---------------|----------|----|-----------------------------|
+| `file_path`   | `String` | ✅  | 文件路径                        |
+| `line_ending` | `String` | ✅  | 目标行尾格式 (`LF`, `CRLF`, `CR`) |
 
 #### 前端调用示例
 
@@ -479,9 +479,9 @@ async fn execute_file(file_path: String) -> Result<String, String>
 
 #### 参数
 
-| 参数 | 类型 | 必需 | 描述 |
-|------|------|------|------|
-| `file_path` | `String` | ✅ | 要执行的文件路径 |
+| 参数          | 类型       | 必需 | 描述       |
+|-------------|----------|----|----------|
+| `file_path` | `String` | ✅  | 要执行的文件路径 |
 
 #### 前端调用示例
 
@@ -515,17 +515,17 @@ async fn open_in_terminal(path: String) -> Result<String, String>
 
 #### 参数
 
-| 参数 | 类型 | 必需 | 描述 |
-|------|------|------|------|
-| `path` | `String` | ✅ | 要在终端中打开的路径 |
+| 参数     | 类型       | 必需 | 描述         |
+|--------|----------|----|------------|
+| `path` | `String` | ✅  | 要在终端中打开的路径 |
 
 #### 支持的终端
 
-| 系统 | 终端程序 |
-|------|----------|
+| 系统      | 终端程序            |
+|---------|-----------------|
 | Windows | PowerShell, CMD |
-| macOS | Terminal |
-| Linux | 系统默认终端 |
+| macOS   | Terminal        |
+| Linux   | 系统默认终端          |
 
 #### 前端调用示例
 
@@ -559,17 +559,17 @@ async fn show_in_explorer(path: String) -> Result<String, String>
 
 #### 参数
 
-| 参数 | 类型 | 必需 | 描述 |
-|------|------|------|------|
-| `path` | `String` | ✅ | 要显示的文件或目录路径 |
+| 参数     | 类型       | 必需 | 描述          |
+|--------|----------|----|-------------|
+| `path` | `String` | ✅  | 要显示的文件或目录路径 |
 
 #### 支持的文件管理器
 
-| 系统 | 文件管理器 |
-|------|------------|
-| Windows | Explorer |
-| macOS | Finder |
-| Linux | 系统默认文件管理器 |
+| 系统      | 文件管理器     |
+|---------|-----------|
+| Windows | Explorer  |
+| macOS   | Finder    |
+| Linux   | 系统默认文件管理器 |
 
 #### 前端调用示例
 
@@ -603,9 +603,9 @@ async fn open_url(url: String) -> Result<(), String>
 
 #### 参数
 
-| 参数 | 类型 | 必需 | 描述 |
-|------|------|------|------|
-| `url` | `String` | ✅ | 要打开的URL地址 |
+| 参数    | 类型       | 必需 | 描述        |
+|-------|----------|----|-----------|
+| `url` | `String` | ✅  | 要打开的URL地址 |
 
 #### 前端调用示例
 
@@ -644,10 +644,10 @@ async fn start_file_watching(
 
 #### 参数
 
-| 参数 | 类型 | 必需 | 描述 |
-|------|------|------|------|
-| `app_handle` | `AppHandle` | ✅ | Tauri应用句柄（自动传入） |
-| `file_path` | `String` | ✅ | 要监控的文件路径 |
+| 参数           | 类型          | 必需 | 描述              |
+|--------------|-------------|----|-----------------|
+| `app_handle` | `AppHandle` | ✅  | Tauri应用句柄（自动传入） |
+| `file_path`  | `String`    | ✅  | 要监控的文件路径        |
 
 #### 前端调用示例
 
@@ -725,9 +725,9 @@ async fn stop_file_watching(file_path: String) -> Result<bool, String>
 
 #### 参数
 
-| 参数 | 类型 | 必需 | 描述 |
-|------|------|------|------|
-| `file_path` | `String` | ✅ | 要停止监控的文件路径 |
+| 参数          | 类型       | 必需 | 描述         |
+|-------------|----------|----|------------|
+| `file_path` | `String` | ✅  | 要停止监控的文件路径 |
 
 #### 前端调用示例
 
@@ -776,9 +776,9 @@ async fn check_file_external_changes(
 
 #### 参数
 
-| 参数 | 类型 | 必需 | 描述 |
-|------|------|------|------|
-| `file_path` | `String` | ✅ | 要检查的文件路径 |
+| 参数          | 类型       | 必需 | 描述       |
+|-------------|----------|----|----------|
+| `file_path` | `String` | ✅  | 要检查的文件路径 |
 
 #### 返回值
 
@@ -930,27 +930,27 @@ fn greet(name: &str) -> String
 
 #### 参数
 
-| 参数 | 类型 | 必需 | 描述 |
-|------|------|------|------|
-| `name` | `&str` | ✅ | 要问候的名字 |
+| 参数     | 类型     | 必需 | 描述     |
+|--------|--------|----|--------|
+| `name` | `&str` | ✅  | 要问候的名字 |
 
 #### 前端调用示例
 
 ```javascript
 async function greet(name) {
-  try {
-    const greeting = await invoke('greet', { name: name });
-    console.log(greeting);
-    return greeting;
-  } catch (error) {
-    console.error('问候失败:', error);
-    throw error;
-  }
+    try {
+        const greeting = await invoke('greet', {name: name});
+        console.log(greeting);
+        return greeting;
+    } catch (error) {
+        console.error('问候失败:', error);
+        throw error;
+    }
 }
 
 // 使用示例
 greet('世界').then(message => {
-  console.log(message); // "Hello, 世界! You've been greeted from Rust!"
+    console.log(message); // "Hello, 世界! You've been greeted from Rust!"
 });
 ```
 
@@ -971,27 +971,27 @@ async fn get_cli_args() -> Result<Vec<String>, String>
 
 ```javascript
 async function getCliArgs() {
-  try {
-    const args = await invoke('get_cli_args');
-    console.log('命令行参数:', args);
-    return args;
-  } catch (error) {
-    console.error('获取命令行参数失败:', error);
-    return [];
-  }
+    try {
+        const args = await invoke('get_cli_args');
+        console.log('命令行参数:', args);
+        return args;
+    } catch (error) {
+        console.error('获取命令行参数失败:', error);
+        return [];
+    }
 }
 
 // 使用示例 - 应用启动时检查命令行参数
 getCliArgs().then(args => {
-  if (args.length > 0) {
-    console.log('启动参数:', args);
-    // 处理启动参数，如自动打开文件
-    args.forEach(arg => {
-      if (arg.endsWith('.txt') || arg.endsWith('.md')) {
-        openFile(arg);
-      }
-    });
-  }
+    if (args.length > 0) {
+        console.log('启动参数:', args);
+        // 处理启动参数，如自动打开文件
+        args.forEach(arg => {
+            if (arg.endsWith('.txt') || arg.endsWith('.md')) {
+                openFile(arg);
+            }
+        });
+    }
 });
 ```
 
@@ -1001,40 +1001,40 @@ getCliArgs().then(args => {
 
 ### 常见错误类型
 
-| 错误类型 | 描述 | 处理建议 |
-|----------|------|----------|
-| `FileNotFound` | 文件不存在 | 检查文件路径是否正确 |
-| `PermissionDenied` | 权限不足 | 检查文件权限或以管理员身份运行 |
-| `InvalidPath` | 无效路径 | 验证路径格式是否正确 |
-| `EncodingError` | 编码错误 | 尝试其他编码格式 |
-| `IOError` | IO操作失败 | 检查磁盘空间和文件系统状态 |
+| 错误类型               | 描述     | 处理建议            |
+|--------------------|--------|-----------------|
+| `FileNotFound`     | 文件不存在  | 检查文件路径是否正确      |
+| `PermissionDenied` | 权限不足   | 检查文件权限或以管理员身份运行 |
+| `InvalidPath`      | 无效路径   | 验证路径格式是否正确      |
+| `EncodingError`    | 编码错误   | 尝试其他编码格式        |
+| `IOError`          | IO操作失败 | 检查磁盘空间和文件系统状态   |
 
 ### 错误处理最佳实践
 
 ```javascript
 // 统一错误处理函数
 async function safeInvoke(command, args = {}) {
-  try {
-    return await invoke(command, args);
-  } catch (error) {
-    console.error(`调用 ${command} 失败:`, error);
-    
-    // 根据错误类型进行不同处理
-    if (error.includes('FileNotFound')) {
-      showError('文件不存在，请检查路径是否正确');
-    } else if (error.includes('PermissionDenied')) {
-      showError('权限不足，请检查文件权限');
-    } else {
-      showError(`操作失败: ${error}`);
+    try {
+        return await invoke(command, args);
+    } catch (error) {
+        console.error(`调用 ${command} 失败:`, error);
+
+        // 根据错误类型进行不同处理
+        if (error.includes('FileNotFound')) {
+            showError('文件不存在，请检查路径是否正确');
+        } else if (error.includes('PermissionDenied')) {
+            showError('权限不足，请检查文件权限');
+        } else {
+            showError(`操作失败: ${error}`);
+        }
+
+        throw error;
     }
-    
-    throw error;
-  }
 }
 
 // 使用示例
 async function safeReadFile(filePath) {
-  return await safeInvoke('read_file_content', { path: filePath });
+    return await safeInvoke('read_file_content', {path: filePath});
 }
 ```
 
@@ -1045,17 +1045,17 @@ async function safeReadFile(filePath) {
 ```javascript
 // 批量读取多个文件
 async function readMultipleFiles(filePaths) {
-  const promises = filePaths.map(path => 
-    invoke('read_file_content', { path })
-  );
-  
-  try {
-    const results = await Promise.all(promises);
-    return results;
-  } catch (error) {
-    console.error('批量读取失败:', error);
-    throw error;
-  }
+    const promises = filePaths.map(path =>
+        invoke('read_file_content', {path})
+    );
+
+    try {
+        const results = await Promise.all(promises);
+        return results;
+    } catch (error) {
+        console.error('批量读取失败:', error);
+        throw error;
+    }
 }
 ```
 
@@ -1066,13 +1066,13 @@ async function readMultipleFiles(filePaths) {
 const fileInfoCache = new Map();
 
 async function getCachedFileInfo(filePath) {
-  if (fileInfoCache.has(filePath)) {
-    return fileInfoCache.get(filePath);
-  }
-  
-  const info = await invoke('get_file_info', { path: filePath });
-  fileInfoCache.set(filePath, info);
-  return info;
+    if (fileInfoCache.has(filePath)) {
+        return fileInfoCache.get(filePath);
+    }
+
+    const info = await invoke('get_file_info', {path: filePath});
+    fileInfoCache.set(filePath, info);
+    return info;
 }
 ```
 
@@ -1083,10 +1083,10 @@ async function getCachedFileInfo(filePath) {
 let saveTimeout;
 
 function debouncedSave(filePath, content) {
-  clearTimeout(saveTimeout);
-  saveTimeout = setTimeout(() => {
-    invoke('write_file_content', { path: filePath, content });
-  }, 1000); // 1秒后保存
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+        invoke('write_file_content', {path: filePath, content});
+    }, 1000); // 1秒后保存
 }
 ```
 

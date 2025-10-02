@@ -4,9 +4,10 @@
 
 ![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB?logo=tauri) ![React](https://img.shields.io/badge/React-18.3.1-61DAFB?logo=react) ![Monaco Editor](https://img.shields.io/badge/Monaco_Editor-0.52.2-007ACC?logo=visualstudiocode) ![Vite](https://img.shields.io/badge/Vite-6.2.4-646CFF?logo=vite) ![Ant Design](https://img.shields.io/badge/Ant_Design-5.10.0-0170FE?logo=antdesign)
 
-**喵咕记事本** 是一款基于 Tauri + React + Monaco Editor 构建的轻量化代码记事本。结合了桌面应用的性能优势和现代 Web 技术的灵活性，集成 **AI 智能补全引擎**、**树形编辑器**、**Markdown实时渲染**等强大功能，提供简洁、流畅、智能的代码编辑和知识管理体验。
+**喵咕记事本** 是一款基于 Tauri + React + Monaco Editor 构建的轻量化代码记事本。结合了桌面应用的性能优势和现代 Web
+技术的灵活性，集成 **AI 智能补全引擎**、**树形编辑器**、**Markdown实时渲染**等强大功能，提供简洁、流畅、智能的代码编辑和知识管理体验。
 
->  ⚡**Tauri 轻量化优势**：基于 Rust + 系统 WebView 架构，打包生成 **单个 exe 文件**，体积 **< 18MB**
+> ⚡**Tauri 轻量化优势**：基于 Rust + 系统 WebView 架构，打包生成 **单个 exe 文件**，体积 **< 18MB**
 >
 >  **为什么 Tauri 能生成单个 exe 文件？**
 > 1. **静态编译**：Rust 将所有依赖编译成单个二进制文件
@@ -17,6 +18,7 @@
 ## 🚀 核心特性
 
 ### 🌳 树形编辑器
+
 - **可视化编辑**：全新的树状结构编辑器，支持节点的增删改查
 - **拖拽操作**：支持节点拖拽重排，直观调整树形结构
 - **折叠展开**：支持节点折叠/展开，便于管理复杂的层级结构
@@ -24,18 +26,21 @@
 - **mgtree语法**：内置专用树状图语法，支持知识脉络可视化，配备完整的语法高亮支持
 
 ### 📝 Markdown实时渲染
+
 - **实时预览**：支持完整的Markdown语法渲染，包括标题、列表、链接、图片等
 - **代码高亮**：集成Prism.js，支持多种编程语言的语法高亮
 - **缩放功能**：支持Ctrl+滚轮缩放预览内容，提供更好的阅读体验
 - **响应式布局**：自适应不同屏幕尺寸，保持最佳显示效果
 
 ### 📊 Mermaid图表支持
+
 - **流程图**：支持flowchart、graph等流程图语法
 - **时序图**：支持sequenceDiagram时序图绘制
 - **甘特图**：支持gantt甘特图项目管理
 - **主题适配**：图表主题自动适配应用的明暗模式
 
 ### 🤖 AI 智能补全
+
 - **实时代码补全**：基于上下文的智能代码建议，支持多种编程语言
 - **内联补全显示**：代码补全结果直接在编辑器中以灰色文本显示
 - **智能重试机制**：自动处理网络异常，确保补全服务稳定可用
@@ -43,6 +48,7 @@
 - **可配置 API**：支持自定义 AI 补全服务端点和参数
 
 ### 💻 编辑器功能
+
 - **代码高亮**：基于 Monaco Editor 的专业级语法高亮，支持多种编程语言
 - **多标签页**：支持同时编辑多个文件，便捷的标签页管理
 - **文件管理**：完整的文件操作支持（新建、打开、保存、重命名等）
@@ -52,6 +58,7 @@
 - **快速插入**：通过 Ctrl + G 快捷键快速插入预定义文本模板
 
 ### 🎨 界面体验
+
 - **主题切换**：内置明暗主题，适配不同使用场景
 - **View Transition**：使用现代Web API实现丝滑的界面过渡动画
 - **国际化支持**：完整的中英文界面切换支持
@@ -65,21 +72,20 @@
 
 ## 📸 页面截图展示
 
-| 浅色模式                      | 深色模式                     |
-| ----------------------------- | ---------------------------- |
+| 浅色模式                          | 深色模式                         |
+|-------------------------------|------------------------------|
 | ![浅色](images/theme_light.png) | ![深色](images/theme_dark.png) |
 
-
-| 树编辑器                      | Markdown渲染                     |
-| ----------------------------- | ---------------------------- |
+| 树编辑器                            | Markdown渲染                                   |
+|---------------------------------|----------------------------------------------|
 | ![树编辑器](images/tree_editor.png) | ![Markdown渲染](images/markdown_previewer.png) |
 
 ## 🛠 技术架构
 
-| 层级               | 技术组件                           |
-| ------------------ | ---------------------------------- |
-| **桌面层**   | Tauri (Rust)                       |
-| **前端层**   | React + Ant Design + Monaco Editor |
+| 层级       | 技术组件                               |
+|----------|------------------------------------|
+| **桌面层**  | Tauri (Rust)                       |
+| **前端层**  | React + Ant Design + Monaco Editor |
 | **状态管理** | Redux Toolkit + Redux Persist      |
 | **文件系统** | Tauri File System API              |
 | **构建工具** | Vite + Tauri CLI                   |
@@ -122,9 +128,9 @@ miaogu-notepad/
 - **Node.js** ≥ 18.0 (前端构建)
 - **Rust** ≥ 1.70 (后端编译)
 - **系统 WebView**：
-  - Windows: WebView2 (Win10+ 自带)
-  - macOS: WebKit (系统自带)
-  - Linux: WebKitGTK
+    - Windows: WebView2 (Win10+ 自带)
+    - macOS: WebKit (系统自带)
+    - Linux: WebKitGTK
 - **系统要求**：Windows 10+, macOS 10.15+, 或现代 Linux 发行版
 
 ### Tauri 单文件打包原理
@@ -182,6 +188,7 @@ npm run tauri:build
 喵咕记事本支持在Markdown文档中通过三种方式定义和使用树状结构：
 
 **1. 内联树状图 (tree代码块)**
+
 ```tree
 根节点
   子节点1
@@ -193,16 +200,20 @@ npm run tauri:build
 ```
 
 **2. 外部文件引用 (@tree()语法)**
+
 ```tree
 @tree(algorithm-tree)
 ```
+
 这种方式会自动查找 `trees/algorithm-tree.mgtree` 文件并渲染其内容。
 
 **3. 自动关联 (H1标题自动匹配)**
 当Markdown文档中存在H1标题时，系统会自动查找同名的mgtree文件：
+
 ```md
 # 数据结构与算法
 ```
+
 系统会自动查找并渲染 `trees/数据结构与算法.mgtree` 文件。
 
 #### 跳转节点功能详解
@@ -212,31 +223,39 @@ npm run tauri:build
 ##### 四种跳转语法
 
 **1. 显式索引跳转**
+
 ```demo
 节点名称 >java[2]
 ```
+
 跳转到文档中第2个java代码块
 
 **2. 递增跳转**
+
 ```demo
 基础语法 >java[1]
 进阶用法 >java++
 高级特性 >java++
 ```
+
 自动递增索引：1 → 2 → 3
 
 **3. 跳跃增加**
+
 ```demo
 基础概念 >python[1]
 实战项目 >python+=3
 ```
+
 从索引1跳跃到索引4
 
 **4. 同索引复用**
+
 ```demo
 理论基础 >javascript[1]
 相关概念 >javascript
 ```
+
 复用上一个索引值
 
 ##### 跳转功能特性
@@ -294,6 +313,7 @@ npm run tauri:build
 ### AI 补全配置
 
 在设置面板中可以配置：
+
 - **API 端点**：自定义 AI 补全服务地址
 - **启用状态**：开启/关闭 AI 补全功能
 - **请求超时**：设置 API 请求超时时间

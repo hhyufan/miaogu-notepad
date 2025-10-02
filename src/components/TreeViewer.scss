@@ -240,41 +240,41 @@
   max-height: none;
   overflow-y: visible;
   padding: 8px 0;
-  
+
   /* 自定义滚动条样式 */
   &::-webkit-scrollbar {
     width: 6px;
   }
-  
+
   &::-webkit-scrollbar-track {
     background: #f1f1f1;
     border-radius: 3px;
   }
-  
+
   &::-webkit-scrollbar-thumb {
     background: #c1c1c1;
     border-radius: 3px;
-    
+
     &:hover {
       background: #a8a8a8;
     }
   }
-  
+
   /* 深色主题滚动条 */
   .dark & {
     &::-webkit-scrollbar-track {
       background: #2a2a2a;
     }
-    
+
     &::-webkit-scrollbar-thumb {
       background: #4a4a4a;
-      
+
       &:hover {
         background: #6a6a6a;
       }
     }
   }
-  }
+}
 
 /* 自定义展开/折叠图标 */
 .custom-switcher {
@@ -505,7 +505,7 @@
 
   .tree-header .ant-btn {
     color: rgba(255, 255, 255, 0.85);
-    
+
     &:hover {
       background-color: rgba(255, 255, 255, 0.12);
       color: rgba(255, 255, 255, 1);
@@ -610,7 +610,7 @@
 /* 深色主题下的跳转节点样式 */
 .tree-viewer-card.dark .tree-node-content.tree-node-clickable {
   color: #69c0ff;
-  
+
   &:hover {
     background: transparent !important;
     box-shadow: none !important;

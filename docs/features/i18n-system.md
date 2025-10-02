@@ -8,12 +8,12 @@
 
 ### 1. 技术栈
 
-| 组件 | 技术 | 版本 | 功能 |
-|------|------|------|------|
-| **核心库** | react-i18next | ^13.x | React国际化框架 |
-| **语言检测** | i18next-browser-languagedetector | ^7.x | 浏览器语言自动检测 |
-| **自定义Hook** | useI18n | 1.3.0 | 封装翻译和语言管理 |
-| **翻译文件** | JSON | - | 结构化翻译资源 |
+| 组件          | 技术                               | 版本    | 功能         |
+|-------------|----------------------------------|-------|------------|
+| **核心库**     | react-i18next                    | ^13.x | React国际化框架 |
+| **语言检测**    | i18next-browser-languagedetector | ^7.x  | 浏览器语言自动检测  |
+| **自定义Hook** | useI18n                          | 1.3.0 | 封装翻译和语言管理  |
+| **翻译文件**    | JSON                             | -     | 结构化翻译资源    |
 
 ### 2. 文件结构
 
@@ -79,13 +79,13 @@ i18n
 
 #### 配置特性
 
-| 配置项 | 值 | 说明 |
-|--------|-----|------|
-| **fallbackLng** | 'zh-CN' | 默认回退语言 |
-| **detection.order** | localStorage → navigator → htmlTag | 语言检测优先级 |
-| **detection.caches** | localStorage | 语言偏好缓存方式 |
-| **lookupLocalStorage** | 'miaogu-notepad-language' | 本地存储键名 |
-| **interpolation.escapeValue** | false | 禁用HTML转义 |
+| 配置项                           | 值                                  | 说明       |
+|-------------------------------|------------------------------------|----------|
+| **fallbackLng**               | 'zh-CN'                            | 默认回退语言   |
+| **detection.order**           | localStorage → navigator → htmlTag | 语言检测优先级  |
+| **detection.caches**          | localStorage                       | 语言偏好缓存方式 |
+| **lookupLocalStorage**        | 'miaogu-notepad-language'          | 本地存储键名   |
+| **interpolation.escapeValue** | false                              | 禁用HTML转义 |
 
 ### 2. 自定义Hook (useI18n.js)
 
@@ -97,57 +97,57 @@ i18n
  * 封装react-i18next，提供更便捷的国际化操作接口
  */
 export const useI18n = () => {
-  const { t, i18n } = useTranslation();
+        const {t, i18n} = useTranslation();
 
-  const changeLanguage = useCallback(async (language) => {
-    try {
-      await i18n.changeLanguage(language);
-      localStorage.setItem('miaogu-notepad-language', language);
-    } catch (error) {
-      console.error('Language change failed:', error);
-    }
-  }, [i18n]);
+        const changeLanguage = useCallback(async (language) => {
+            try {
+                await i18n.changeLanguage(language);
+                localStorage.setItem('miaogu-notepad-language', language);
+            } catch (error) {
+                console.error('Language change failed:', error);
+            }
+        }, [i18n]);
 
-  const currentLanguage = i18n.language;
+        const currentLanguage = i18n.language;
 
-  const supportedLanguages = [
-    { code: 'zh-CN', name: '简体中文', nativeName: '简体中文' },
-    { code: 'en-US', name: 'English', nativeName: 'English' }
-  ];
+        const supportedLanguages = [
+            {code: 'zh-CN', name: '简体中文', nativeName: '简体中文'},
+            {code: 'en-US', name: 'English', nativeName: 'English'}
+        ];
 
-  const getCurrentLanguageInfo = useCallback(() => {
-    return supportedLanguages.find(lang => lang.code === currentLanguage) || supportedLanguages[0];
-  }, [currentLanguage]);
+        const getCurrentLanguageInfo = useCallback(() => {
+            return supportedLanguages.find(lang => lang.code === currentLanguage) || supportedLanguages[0];
+        }, [currentLanguage]);
 
-  return {
-    t,                        // 翻译函数
-    changeLanguage,           // 切换语言函数
-    currentLanguage,          // 当前语言代码
-    supportedLanguages,       // 支持的语言列表
-    getCurrentLanguageInfo,   // 获取当前语言信息
-    isReady: i18n.isInitialized  // i18n是否已初始化
-  };
-};
+        return {
+            t,                        // 翻译函数
+            changeLanguage,           // 切换语言函数
+            currentLanguage,          // 当前语言代码
+            supportedLanguages,       // 支持的语言列表
+            getCurrentLanguageInfo,   // 获取当前语言信息
+            isReady: i18n.isInitialized  // i18n是否已初始化
+        };
+    };
 
 /**
  * 获取翻译文本的简化hook
  */
 export const useT = (key, options = {}) => {
-  const { t } = useTranslation();
-  return t(key, options);
+    const {t} = useTranslation();
+    return t(key, options);
 };
 ```
 
 #### Hook特性
 
-| 功能 | 返回值 | 类型 | 说明 |
-|------|--------|------|------|
-| **翻译函数** | t | Function | 核心翻译方法 |
-| **语言切换** | changeLanguage | Function | 异步语言切换 |
-| **当前语言** | currentLanguage | String | 当前语言代码 |
-| **支持语言** | supportedLanguages | Array | 语言列表配置 |
-| **语言信息** | getCurrentLanguageInfo | Function | 获取语言详情 |
-| **初始化状态** | isReady | Boolean | 初始化完成标志 |
+| 功能        | 返回值                    | 类型       | 说明      |
+|-----------|------------------------|----------|---------|
+| **翻译函数**  | t                      | Function | 核心翻译方法  |
+| **语言切换**  | changeLanguage         | Function | 异步语言切换  |
+| **当前语言**  | currentLanguage        | String   | 当前语言代码  |
+| **支持语言**  | supportedLanguages     | Array    | 语言列表配置  |
+| **语言信息**  | getCurrentLanguageInfo | Function | 获取语言详情  |
+| **初始化状态** | isReady                | Boolean  | 初始化完成标志 |
 
 ### 3. 翻译文件结构
 
@@ -327,47 +327,47 @@ export const useT = (key, options = {}) => {
 /**
  * 设置弹窗中的语言切换功能
  */
-const SettingsModal = ({ visible, onClose }) => {
-  const { t, changeLanguage, currentLanguage, supportedLanguages } = useI18n();
+const SettingsModal = ({visible, onClose}) => {
+        const {t, changeLanguage, currentLanguage, supportedLanguages} = useI18n();
 
-  const renderGeneralSettings = () => (
-    <div className="settings-section">
-      <Title level={4}>{t('settings.general.title')}</Title>
-      <Space direction="vertical" size="large" style={{ width: '100%' }}>
-        {/* 语言设置卡片 */}
-        <Card size="small" title={t('settings.language.settings')}>
-          <Space direction="vertical" style={{ width: '100%' }}>
-            <div className="setting-item">
-              <Text>{t('settings.language.select')}</Text>
-              <Select
-                value={currentLanguage}
-                onChange={changeLanguage}
-                style={{ width: 150 }}
-              >
-                {supportedLanguages.map(lang => (
-                  <Option key={lang.code} value={lang.code}>
-                    {lang.name}
-                  </Option>
-                ))}
-              </Select>
+        const renderGeneralSettings = () => (
+            <div className="settings-section">
+                <Title level={4}>{t('settings.general.title')}</Title>
+                <Space direction="vertical" size="large" style={{width: '100%'}}>
+                    {/* 语言设置卡片 */}
+                    <Card size="small" title={t('settings.language.settings')}>
+                        <Space direction="vertical" style={{width: '100%'}}>
+                            <div className="setting-item">
+                                <Text>{t('settings.language.select')}</Text>
+                                <Select
+                                    value={currentLanguage}
+                                    onChange={changeLanguage}
+                                    style={{width: 150}}
+                                >
+                                    {supportedLanguages.map(lang => (
+                                        <Option key={lang.code} value={lang.code}>
+                                            {lang.name}
+                                        </Option>
+                                    ))}
+                                </Select>
+                            </div>
+                        </Space>
+                    </Card>
+                </Space>
             </div>
-          </Space>
-        </Card>
-      </Space>
-    </div>
-  );
+        );
 
-  return (
-    <Modal
-      title={t('settings.title')}
-      open={visible}
-      onCancel={onClose}
-      // ... 其他配置
-    >
-      {renderGeneralSettings()}
-    </Modal>
-  );
-};
+        return (
+            <Modal
+                title={t('settings.title')}
+                open={visible}
+                onCancel={onClose}
+                // ... 其他配置
+            >
+                {renderGeneralSettings()}
+            </Modal>
+        );
+    };
 ```
 
 ### 2. 应用组件使用示例
@@ -378,28 +378,28 @@ const SettingsModal = ({ visible, onClose }) => {
 /**
  * 应用头部组件中的i18n使用
  */
-const AppHeader = ({ fileManager, hasOpenFiles }) => {
-  const { t } = useI18n();
+const AppHeader = ({fileManager, hasOpenFiles}) => {
+        const {t} = useI18n();
 
-  return (
-    <Header className="app-header">
-      <Title level={4}>{t('app.title')}</Title>
-      <Menu mode="horizontal">
-        <SubMenu key="file" title={t('header.file')}>
-          <Menu.Item key="new" onClick={fileManager.createNewFile}>
-            {t('header.fileMenu.new')}
-          </Menu.Item>
-          <Menu.Item key="open" onClick={fileManager.openFile}>
-            {t('header.fileMenu.open')}
-          </Menu.Item>
-          <Menu.Item key="save" onClick={fileManager.saveFile}>
-            {t('header.fileMenu.save')}
-          </Menu.Item>
-        </SubMenu>
-      </Menu>
-    </Header>
-  );
-};
+        return (
+            <Header className="app-header">
+                <Title level={4}>{t('app.title')}</Title>
+                <Menu mode="horizontal">
+                    <SubMenu key="file" title={t('header.file')}>
+                        <Menu.Item key="new" onClick={fileManager.createNewFile}>
+                            {t('header.fileMenu.new')}
+                        </Menu.Item>
+                        <Menu.Item key="open" onClick={fileManager.openFile}>
+                            {t('header.fileMenu.open')}
+                        </Menu.Item>
+                        <Menu.Item key="save" onClick={fileManager.saveFile}>
+                            {t('header.fileMenu.save')}
+                        </Menu.Item>
+                    </SubMenu>
+                </Menu>
+            </Header>
+        );
+    };
 ```
 
 #### WelcomeScreen组件
@@ -408,43 +408,43 @@ const AppHeader = ({ fileManager, hasOpenFiles }) => {
 /**
  * 欢迎界面组件中的i18n使用
  */
-const WelcomeScreen = ({ onNewFile, onOpenFile }) => {
-  const { t } = useI18n();
+const WelcomeScreen = ({onNewFile, onOpenFile}) => {
+        const {t} = useI18n();
 
-  return (
-    <div className="welcome-screen">
-      <Title level={2}>{t('welcome.title')}</Title>
-      <Text type="secondary">{t('welcome.description')}</Text>
-      <Space size="large">
-        <Button 
-          type="primary" 
-          icon={<FileAddOutlined />}
-          onClick={onNewFile}
-        >
-          {t('welcome.newFile')}
-        </Button>
-        <Button 
-          icon={<FolderOpenOutlined />}
-          onClick={onOpenFile}
-        >
-          {t('welcome.openFile')}
-        </Button>
-      </Space>
-      <Text type="secondary">{t('welcome.tip')}</Text>
-    </div>
-  );
-};
+        return (
+            <div className="welcome-screen">
+                <Title level={2}>{t('welcome.title')}</Title>
+                <Text type="secondary">{t('welcome.description')}</Text>
+                <Space size="large">
+                    <Button
+                        type="primary"
+                        icon={<FileAddOutlined/>}
+                        onClick={onNewFile}
+                    >
+                        {t('welcome.newFile')}
+                    </Button>
+                    <Button
+                        icon={<FolderOpenOutlined/>}
+                        onClick={onOpenFile}
+                    >
+                        {t('welcome.openFile')}
+                    </Button>
+                </Space>
+                <Text type="secondary">{t('welcome.tip')}</Text>
+            </div>
+        );
+    };
 ```
 
 ## 语言检测机制
 
 ### 1. 检测优先级
 
-| 优先级 | 检测方式 | 说明 |
-|--------|----------|------|
-| **1** | localStorage | 用户手动设置的语言偏好 |
-| **2** | navigator | 浏览器/系统语言设置 |
-| **3** | htmlTag | HTML标签lang属性 |
+| 优先级   | 检测方式         | 说明           |
+|-------|--------------|--------------|
+| **1** | localStorage | 用户手动设置的语言偏好  |
+| **2** | navigator    | 浏览器/系统语言设置   |
+| **3** | htmlTag      | HTML标签lang属性 |
 
 ### 2. 检测流程
 
@@ -482,11 +482,11 @@ const changeLanguage = useCallback(async (language) => {
 
 ### 1. 命名约定
 
-| 层级 | 命名规则 | 示例 |
-|------|----------|------|
-| **模块级** | 功能模块名 | app, header, editor, settings |
-| **组件级** | 组件或功能名 | fileMenu, theme, language |
-| **属性级** | 具体属性或动作 | title, save, open, cancel |
+| 层级      | 命名规则    | 示例                            |
+|---------|---------|-------------------------------|
+| **模块级** | 功能模块名   | app, header, editor, settings |
+| **组件级** | 组件或功能名  | fileMenu, theme, language     |
+| **属性级** | 具体属性或动作 | title, save, open, cancel     |
 
 ### 2. 层级结构
 
@@ -505,14 +505,14 @@ const changeLanguage = useCallback(async (language) => {
 
 ### 3. 特殊键约定
 
-| 键名 | 用途 | 示例 |
-|------|------|------|
-| **title** | 标题文本 | "设置", "Settings" |
-| **label** | 标签文本 | "语言", "Language" |
+| 键名              | 用途    | 示例                          |
+|-----------------|-------|-----------------------------|
+| **title**       | 标题文本  | "设置", "Settings"            |
+| **label**       | 标签文本  | "语言", "Language"            |
 | **placeholder** | 占位符文本 | "请输入...", "Please enter..." |
-| **tooltip** | 提示文本 | "点击切换", "Click to toggle" |
-| **confirm** | 确认操作 | "确认", "Confirm" |
-| **cancel** | 取消操作 | "取消", "Cancel" |
+| **tooltip**     | 提示文本  | "点击切换", "Click to toggle"   |
+| **confirm**     | 确认操作  | "确认", "Confirm"             |
+| **cancel**      | 取消操作  | "取消", "Cancel"              |
 
 ## 性能优化
 
@@ -532,30 +532,30 @@ const loadLanguageAsync = async (language) => {
 
 ### 2. 缓存机制
 
-| 缓存类型 | 实现方式 | 说明 |
-|----------|----------|------|
-| **翻译缓存** | i18next内置 | 自动缓存已加载的翻译 |
-| **语言偏好** | localStorage | 持久化用户语言选择 |
-| **组件缓存** | React.memo | 避免不必要的重渲染 |
+| 缓存类型     | 实现方式         | 说明         |
+|----------|--------------|------------|
+| **翻译缓存** | i18next内置    | 自动缓存已加载的翻译 |
+| **语言偏好** | localStorage | 持久化用户语言选择  |
+| **组件缓存** | React.memo   | 避免不必要的重渲染  |
 
 ### 3. 优化建议
 
 ```javascript
 // 使用React.memo优化翻译组件
-const TranslatedComponent = React.memo(({ translationKey }) => {
-  const { t } = useI18n();
-  return <span>{t(translationKey)}</span>;
+const TranslatedComponent = React.memo(({translationKey}) => {
+    const {t} = useI18n();
+    return <span>{t(translationKey)}</span>;
 });
 
 // 批量翻译优化
 const useBatchTranslation = (keys) => {
-  const { t } = useI18n();
-  return useMemo(() => {
-    return keys.reduce((acc, key) => {
-      acc[key] = t(key);
-      return acc;
-    }, {});
-  }, [t, keys]);
+    const {t} = useI18n();
+    return useMemo(() => {
+        return keys.reduce((acc, key) => {
+            acc[key] = t(key);
+            return acc;
+        }, {});
+    }, [t, keys]);
 };
 ```
 
@@ -600,10 +600,10 @@ const changeLanguage = useCallback(async (language) => {
 
 ```javascript
 // 检查i18n初始化状态
-const { isReady } = useI18n();
+const {isReady} = useI18n();
 
 if (!isReady) {
-  return <div>Loading translations...</div>;
+    return <div>Loading translations...</div>;
 }
 ```
 
@@ -623,26 +623,30 @@ if (!isReady) {
 ```javascript
 // 1. 创建 locales/ja-JP.json
 {
-  "app": {
-    "title": "ミャオグノートパッド"
-  }
-  // ... 其他翻译
+    "app"
+:
+    {
+        "title"
+    :
+        "ミャオグノートパッド"
+    }
+    // ... 其他翻译
 }
 
 // 2. 更新 index.js
 import jaJP from './locales/ja-JP.json';
 
 const resources = {
-  'zh-CN': { translation: zhCN },
-  'en-US': { translation: enUS },
-  'ja-JP': { translation: jaJP }  // 新增
+    'zh-CN': {translation: zhCN},
+    'en-US': {translation: enUS},
+    'ja-JP': {translation: jaJP}  // 新增
 };
 
 // 3. 更新 useI18n.js
 const supportedLanguages = [
-  { code: 'zh-CN', name: '简体中文', nativeName: '简体中文' },
-  { code: 'en-US', name: 'English', nativeName: 'English' },
-  { code: 'ja-JP', name: '日本語', nativeName: '日本語' }  // 新增
+    {code: 'zh-CN', name: '简体中文', nativeName: '简体中文'},
+    {code: 'en-US', name: 'English', nativeName: 'English'},
+    {code: 'ja-JP', name: '日本語', nativeName: '日本語'}  // 新增
 ];
 ```
 
@@ -667,15 +671,21 @@ const loadTranslation = async (language) => {
 ```javascript
 // 支持变量插值的翻译
 {
-  "editor": {
-    "lineColumn": "行 {{line}}, 列 {{column}}",
-    "fileSize": "文件大小: {{size}} KB"
-  }
+    "editor"
+:
+    {
+        "lineColumn"
+    :
+        "行 {{line}}, 列 {{column}}",
+            "fileSize"
+    :
+        "文件大小: {{size}} KB"
+    }
 }
 
 // 使用插值
-const { t } = useI18n();
-const positionText = t('editor.lineColumn', { line: 10, column: 5 });
+const {t} = useI18n();
+const positionText = t('editor.lineColumn', {line: 10, column: 5});
 // 输出: "行 10, 列 5"
 ```
 

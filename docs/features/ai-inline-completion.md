@@ -2,7 +2,8 @@
 
 ## 概述
 
-AI 内联补全是喵咕记事本的核心智能功能之一，基于 Monaco Editor 的 `InlineCompletionsProvider` API 实现，通过调用外部 AI 服务提供上下文感知的代码补全建议。该功能支持多种编程语言，具备智能过滤、重试机制和性能优化等特性。
+AI 内联补全是喵咕记事本的核心智能功能之一，基于 Monaco Editor 的 `InlineCompletionsProvider` API 实现，通过调用外部 AI
+服务提供上下文感知的代码补全建议。该功能支持多种编程语言，具备智能过滤、重试机制和性能优化等特性。
 
 ## 核心架构
 
@@ -17,11 +18,13 @@ AI 内联补全是喵咕记事本的核心智能功能之一，基于 Monaco Edi
 ### 2. 主要组件
 
 #### CodeEditor 组件
+
 - **文件路径**: `src/components/CodeEditor.jsx`
 - **核心功能**: 集成 Monaco Editor，注册内联补全提供器
 - **关键方法**: `registerInlineCompletionsProvider`
 
 #### SettingsModal 组件
+
 - **文件路径**: `src/components/SettingsModal.jsx`
 - **核心功能**: AI 补全配置界面
 - **配置项**: API 端点、密钥、模型、启用状态
@@ -33,35 +36,35 @@ AI 内联补全是喵咕记事本的核心智能功能之一，基于 Monaco Edi
 ```javascript
 // 注册内联补全提供器
 monaco.languages.registerInlineCompletionsProvider(langId, {
-  provideInlineCompletions: async (model, position, context, token) => {
-    // 检查AI设置是否完整
-    if (!aiSettings.enabled || !aiSettings.baseUrl || !aiSettings.apiKey || !aiSettings.model) {
-      return { items: [] };
-    }
-
-    // 获取上下文信息
-    const before = model.getValueInRange(new monaco.Range(1, 1, position.lineNumber, position.column));
-    const after = model.getValueInRange(new monaco.Range(position.lineNumber, position.column, model.getLineCount(), model.getLineMaxColumn(model.getLineCount())));
-    
-    // 调用AI服务获取补全建议
-    const completion = await getAICompletion(before, after, language);
-    
-    return {
-      items: [{
-        insertText: completion,
-        range: {
-          startLineNumber: position.lineNumber,
-          startColumn: position.column,
-          endLineNumber: position.lineNumber,
-          endColumn: position.column
+    provideInlineCompletions: async (model, position, context, token) => {
+        // 检查AI设置是否完整
+        if (!aiSettings.enabled || !aiSettings.baseUrl || !aiSettings.apiKey || !aiSettings.model) {
+            return {items: []};
         }
-      }]
-    };
-  },
-  
-  freeInlineCompletions: () => {
-    // 清理资源
-  }
+
+        // 获取上下文信息
+        const before = model.getValueInRange(new monaco.Range(1, 1, position.lineNumber, position.column));
+        const after = model.getValueInRange(new monaco.Range(position.lineNumber, position.column, model.getLineCount(), model.getLineMaxColumn(model.getLineCount())));
+
+        // 调用AI服务获取补全建议
+        const completion = await getAICompletion(before, after, language);
+
+        return {
+            items: [{
+                insertText: completion,
+                range: {
+                    startLineNumber: position.lineNumber,
+                    startColumn: position.column,
+                    endLineNumber: position.lineNumber,
+                    endColumn: position.column
+                }
+            }]
+        };
+    },
+
+    freeInlineCompletions: () => {
+        // 清理资源
+    }
 });
 ```
 
@@ -159,15 +162,15 @@ const contextAnalysis = {
 ```javascript
 // 检测注释行
 const isCommentLine = trimmedLine.startsWith('//') ||
-  trimmedLine.startsWith('/*') ||
-  trimmedLine.startsWith('*') ||
-  trimmedLine.startsWith('#') ||
-  trimmedLine.startsWith('<!--');
+    trimmedLine.startsWith('/*') ||
+    trimmedLine.startsWith('*') ||
+    trimmedLine.startsWith('#') ||
+    trimmedLine.startsWith('<!--');
 
 // 检测字符串内容
 const inString = (beforeCursor.split('"').length - 1) % 2 === 1 ||
-  (beforeCursor.split("'").length - 1) % 2 === 1 ||
-  (beforeCursor.split('`').length - 1) % 2 === 1;
+    (beforeCursor.split("'").length - 1) % 2 === 1 ||
+    (beforeCursor.split('`').length - 1) % 2 === 1;
 ```
 
 ## 配置管理

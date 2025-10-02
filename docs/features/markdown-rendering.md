@@ -21,12 +21,12 @@ MarkdownViewer (主渲染器)
 
 ### 1. ReactMarkdown - 核心渲染引擎
 
-| 特性                 | 描述                   | 配置                                 |
-| -------------------- | ---------------------- | ------------------------------------ |
-| **基础渲染**   | 标准Markdown语法支持   | `ReactMarkdown` 组件               |
-| **插件系统**   | 支持remark和rehype插件 | `remarkPlugins`, `rehypePlugins` |
-| **组件自定义** | 自定义HTML元素渲染     | `components` 属性                  |
-| **安全性**     | XSS防护和内容过滤      | 内置安全机制                         |
+| 特性        | 描述                | 配置                               |
+|-----------|-------------------|----------------------------------|
+| **基础渲染**  | 标准Markdown语法支持    | `ReactMarkdown` 组件               |
+| **插件系统**  | 支持remark和rehype插件 | `remarkPlugins`, `rehypePlugins` |
+| **组件自定义** | 自定义HTML元素渲染       | `components` 属性                  |
+| **安全性**   | XSS防护和内容过滤        | 内置安全机制                           |
 
 #### 基础配置示例
 
@@ -52,30 +52,30 @@ import rehypeRaw from 'rehype-raw';
 
 #### remark插件 (Markdown AST处理)
 
-| 插件名称               | 功能               | 用途                             |
-| ---------------------- | ------------------ | -------------------------------- |
+| 插件名称             | 功能               | 用途               |
+|------------------|------------------|------------------|
 | **remark-gfm**   | GitHub风格Markdown | 表格、删除线、任务列表、自动链接 |
-| **remark-math**  | 数学公式支持       | LaTeX数学表达式渲染              |
-| **remark-emoji** | Emoji支持          | 😄 等emoji语法                   |
+| **remark-math**  | 数学公式支持           | LaTeX数学表达式渲染     |
+| **remark-emoji** | Emoji支持          | 😄 等emoji语法      |
 
 #### rehype插件 (HTML AST处理)
 
-| 插件名称                   | 功能         | 用途                         |
-| -------------------------- | ------------ | ---------------------------- |
+| 插件名称                 | 功能       | 用途                   |
+|----------------------|----------|----------------------|
 | **rehype-raw**       | 原始HTML支持 | 允许在Markdown中使用HTML标签 |
-| **rehype-sanitize**  | 内容清理     | XSS防护和安全过滤            |
-| **rehype-highlight** | 代码高亮     | 语法高亮处理                 |
+| **rehype-sanitize**  | 内容清理     | XSS防护和安全过滤           |
+| **rehype-highlight** | 代码高亮     | 语法高亮处理               |
 
 ### 3. 代码语法高亮 - Prism.js
 
 #### 高亮特性
 
-| 特性               | 实现方式         | 支持语言      |
-| ------------------ | ---------------- | ------------- |
+| 特性       | 实现方式           | 支持语言      |
+|----------|----------------|-----------|
 | **语法高亮** | Prism.js核心     | 200+ 编程语言 |
-| **主题支持** | CSS主题切换      | 多种内置主题  |
+| **主题支持** | CSS主题切换        | 多种内置主题    |
 | **行号显示** | line-numbers插件 | 可选启用      |
-| **代码复制** | 自定义工具栏     | 一键复制功能  |
+| **代码复制** | 自定义工具栏         | 一键复制功能    |
 
 #### 配置示例
 
@@ -113,12 +113,12 @@ const CustomCodeBlock = ({ className, children, ...props }) => {
 
 #### MermaidRenderer组件
 
-| 功能               | 描述         | 支持类型                       |
-| ------------------ | ------------ | ------------------------------ |
+| 功能       | 描述     | 支持类型            |
+|----------|--------|-----------------|
 | **图表类型** | 多种图表支持 | 流程图、时序图、甘特图、类图等 |
-| **主题适配** | 动态主题切换 | 跟随应用主题变化               |
-| **交互性**   | 图表交互功能 | 点击、缩放、导出               |
-| **错误处理** | 语法错误处理 | 友好的错误提示                 |
+| **主题适配** | 动态主题切换 | 跟随应用主题变化        |
+| **交互性**  | 图表交互功能 | 点击、缩放、导出        |
+| **错误处理** | 语法错误处理 | 友好的错误提示         |
 
 #### 实现架构
 
@@ -126,81 +126,81 @@ const CustomCodeBlock = ({ className, children, ...props }) => {
 // MermaidRenderer.jsx
 import mermaid from 'mermaid';
 
-const MermaidRenderer = ({ chart, theme = 'default' }) => {
-  const [svg, setSvg] = useState('');
-  const [error, setError] = useState(null);
+const MermaidRenderer = ({chart, theme = 'default'}) => {
+    const [svg, setSvg] = useState('');
+    const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const renderChart = async () => {
-      try {
-        // 配置Mermaid主题
-        mermaid.initialize({
-          theme: theme === 'dark' ? 'dark' : 'default',
-          themeVariables: {
-            primaryColor: '#ff6b6b',
-            primaryTextColor: '#333',
-            // 更多主题变量...
-          }
-        });
+    useEffect(() => {
+        const renderChart = async () => {
+            try {
+                // 配置Mermaid主题
+                mermaid.initialize({
+                    theme: theme === 'dark' ? 'dark' : 'default',
+                    themeVariables: {
+                        primaryColor: '#ff6b6b',
+                        primaryTextColor: '#333',
+                        // 更多主题变量...
+                    }
+                });
 
-        // 渲染图表
-        const { svg } = await mermaid.render('mermaid-chart', chart);
-        setSvg(svg);
-        setError(null);
-      } catch (err) {
-        setError(err.message);
-      }
-    };
+                // 渲染图表
+                const {svg} = await mermaid.render('mermaid-chart', chart);
+                setSvg(svg);
+                setError(null);
+            } catch (err) {
+                setError(err.message);
+            }
+        };
 
-    renderChart();
-  }, [chart, theme]);
+        renderChart();
+    }, [chart, theme]);
 
-  if (error) {
-    return <div className="mermaid-error">图表渲染错误: {error}</div>;
-  }
+    if (error) {
+        return <div className="mermaid-error">图表渲染错误: {error}</div>;
+    }
 
-  return (
-    <div 
-      className="mermaid-container"
-      dangerouslySetInnerHTML={{ __html: svg }}
-    />
-  );
+    return (
+        <div
+            className="mermaid-container"
+            dangerouslySetInnerHTML={{__html: svg}}
+        />
+    );
 };
 ```
 
 #### 支持的图表类型
 
-| 图表类型         | 语法标识            | 用途               | 示例                   |
-| ---------------- | ------------------- | ------------------ | ---------------------- |
-| **流程图** | `flowchart`       | 业务流程、算法逻辑 | `flowchart TD`       |
-| **时序图** | `sequenceDiagram` | 系统交互、API调用  | `sequenceDiagram`    |
-| **甘特图** | `gantt`           | 项目管理、时间规划 | `gantt`              |
-| **类图**   | `classDiagram`    | 系统设计、架构图   | `classDiagram`       |
-| **状态图** | `stateDiagram`    | 状态机、工作流     | `stateDiagram-v2`    |
-| **饼图**   | `pie`             | 数据可视化         | `pie title 数据分布` |
+| 图表类型    | 语法标识              | 用途         | 示例                |
+|---------|-------------------|------------|-------------------|
+| **流程图** | `flowchart`       | 业务流程、算法逻辑  | `flowchart TD`    |
+| **时序图** | `sequenceDiagram` | 系统交互、API调用 | `sequenceDiagram` |
+| **甘特图** | `gantt`           | 项目管理、时间规划  | `gantt`           |
+| **类图**  | `classDiagram`    | 系统设计、架构图   | `classDiagram`    |
+| **状态图** | `stateDiagram`    | 状态机、工作流    | `stateDiagram-v2` |
+| **饼图**  | `pie`             | 数据可视化      | `pie title 数据分布`  |
 
 ### 5. TreeViewer集成
 
 #### 树状图渲染
 
-| 特性               | 实现            | 功能                   |
-| ------------------ | --------------- | ---------------------- |
-| **节点渲染** | 自定义React组件 | 可点击、可展开的树节点 |
-| **数据解析** | JSON/YAML解析   | 支持多种数据格式       |
-| **交互功能** | 展开/折叠、搜索 | 用户友好的交互体验     |
-| **样式定制** | CSS模块化       | 主题适配和自定义样式   |
+| 特性       | 实现          | 功能          |
+|----------|-------------|-------------|
+| **节点渲染** | 自定义React组件  | 可点击、可展开的树节点 |
+| **数据解析** | JSON/YAML解析 | 支持多种数据格式    |
+| **交互功能** | 展开/折叠、搜索    | 用户友好的交互体验   |
+| **样式定制** | CSS模块化      | 主题适配和自定义样式  |
 
 #### 使用示例
 
 ```jsx
 // 在Markdown中使用TreeViewer
 const components = {
-  code: ({ className, children }) => {
-    if (className === 'language-tree') {
-      return <TreeViewer data={parseTreeData(children)} />;
+    code: ({className, children}) => {
+        if (className === 'language-tree') {
+            return <TreeViewer data={parseTreeData(children)}/>;
+        }
+        return <CustomCodeBlock className={className}>{children}</CustomCodeBlock>;
     }
-    return <CustomCodeBlock className={className}>{children}</CustomCodeBlock>;
-  }
 };
 ```
 
@@ -224,60 +224,60 @@ flowchart TD
 
 ### 2. 组件渲染映射
 
-| Markdown元素     | 自定义组件          | 功能增强                 |
-| ---------------- | ------------------- | ------------------------ |
-| **代码块** | `CustomCodeBlock` | 语法高亮、复制功能、行号 |
-| **图片**   | `CustomImage`     | 懒加载、预览、缩放       |
-| **链接**   | `CustomLink`      | 外链检测、安全跳转       |
-| **表格**   | `CustomTable`     | 排序、筛选、响应式       |
-| **标题**   | `CustomHeading`   | 锚点生成、目录导航       |
+| Markdown元素 | 自定义组件             | 功能增强         |
+|------------|-------------------|--------------|
+| **代码块**    | `CustomCodeBlock` | 语法高亮、复制功能、行号 |
+| **图片**     | `CustomImage`     | 懒加载、预览、缩放    |
+| **链接**     | `CustomLink`      | 外链检测、安全跳转    |
+| **表格**     | `CustomTable`     | 排序、筛选、响应式    |
+| **标题**     | `CustomHeading`   | 锚点生成、目录导航    |
 
 ### 3. 性能优化策略
 
 #### 渲染优化
 
-| 策略               | 实现方式                       | 效果               |
-| ------------------ | ------------------------------ | ------------------ |
-| **虚拟滚动** | `react-window`               | 大文档性能优化     |
-| **懒加载**   | `IntersectionObserver`       | 图片和图表按需加载 |
-| **缓存机制** | `useMemo` + `localStorage` | 避免重复渲染       |
-| **代码分割** | 动态import                     | 减少初始加载时间   |
+| 策略       | 实现方式                       | 效果        |
+|----------|----------------------------|-----------|
+| **虚拟滚动** | `react-window`             | 大文档性能优化   |
+| **懒加载**  | `IntersectionObserver`     | 图片和图表按需加载 |
+| **缓存机制** | `useMemo` + `localStorage` | 避免重复渲染    |
+| **代码分割** | 动态import                   | 减少初始加载时间  |
 
 #### 缓存实现
 
 ```jsx
-const MarkdownViewer = ({ content, theme }) => {
-  // 内容缓存
-  const cachedContent = useMemo(() => {
-    const cacheKey = `markdown_${hashContent(content)}`;
-    const cached = localStorage.getItem(cacheKey);
-  
-    if (cached) {
-      return JSON.parse(cached);
-    }
-  
-    const processed = processMarkdown(content);
-    localStorage.setItem(cacheKey, JSON.stringify(processed));
-    return processed;
-  }, [content]);
+const MarkdownViewer = ({content, theme}) => {
+    // 内容缓存
+    const cachedContent = useMemo(() => {
+        const cacheKey = `markdown_${hashContent(content)}`;
+        const cached = localStorage.getItem(cacheKey);
 
-  // 主题适配
-  const themeConfig = useMemo(() => ({
-    prism: theme === 'dark' ? 'prism-tomorrow' : 'prism',
-    mermaid: theme === 'dark' ? 'dark' : 'default'
-  }), [theme]);
+        if (cached) {
+            return JSON.parse(cached);
+        }
 
-  return (
-    <div className={`markdown-viewer ${theme}`}>
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw]}
-        components={createComponents(themeConfig)}
-      >
-        {cachedContent}
-      </ReactMarkdown>
-    </div>
-  );
+        const processed = processMarkdown(content);
+        localStorage.setItem(cacheKey, JSON.stringify(processed));
+        return processed;
+    }, [content]);
+
+    // 主题适配
+    const themeConfig = useMemo(() => ({
+        prism: theme === 'dark' ? 'prism-tomorrow' : 'prism',
+        mermaid: theme === 'dark' ? 'dark' : 'default'
+    }), [theme]);
+
+    return (
+        <div className={`markdown-viewer ${theme}`}>
+            <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeRaw]}
+                components={createComponents(themeConfig)}
+            >
+                {cachedContent}
+            </ReactMarkdown>
+        </div>
+    );
 };
 ```
 
@@ -285,11 +285,11 @@ const MarkdownViewer = ({ content, theme }) => {
 
 ### 1. 主题适配机制
 
-| 组件                 | 主题支持     | 实现方式         |
-| -------------------- | ------------ | ---------------- |
-| **Prism.js**   | CSS主题切换  | 动态加载主题文件 |
-| **Mermaid**    | 内置主题系统 | 配置主题变量     |
-| **自定义组件** | CSS变量      | 响应主题变化     |
+| 组件           | 主题支持    | 实现方式     |
+|--------------|---------|----------|
+| **Prism.js** | CSS主题切换 | 动态加载主题文件 |
+| **Mermaid**  | 内置主题系统  | 配置主题变量   |
+| **自定义组件**    | CSS变量   | 响应主题变化   |
 
 ### 2. 主题配置
 
@@ -366,12 +366,12 @@ const highlightSearchTerm = (content, searchTerm) => {
 
 ### 1. 渲染错误处理
 
-| 错误类型           | 处理策略     | 用户体验               |
-| ------------------ | ------------ | ---------------------- |
+| 错误类型     | 处理策略   | 用户体验        |
+|----------|--------|-------------|
 | **语法错误** | 错误边界捕获 | 显示错误信息和原始内容 |
-| **插件错误** | 降级渲染     | 跳过有问题的插件       |
-| **网络错误** | 重试机制     | 自动重试和手动刷新     |
-| **内存溢出** | 分块处理     | 大文档分页渲染         |
+| **插件错误** | 降级渲染   | 跳过有问题的插件    |
+| **网络错误** | 重试机制   | 自动重试和手动刷新   |
+| **内存溢出** | 分块处理   | 大文档分页渲染     |
 
 ### 2. 错误边界实现
 

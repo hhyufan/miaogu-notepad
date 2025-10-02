@@ -10,18 +10,18 @@ import {useSelector} from 'react-redux';
 import {useTranslation} from 'react-i18next';
 import {Button, Card, FloatButton, Input, message, Space, Tooltip, Tree, Typography,} from "antd";
 import {
-  CloseCircleOutlined,
-  CodeOutlined,
-  ExpandAltOutlined,
-  FileTextOutlined,
-  FolderOpenOutlined,
-  FolderOutlined,
-  OneToOneOutlined,
-  PlusOutlined,
-  ShrinkOutlined,
-  VerticalAlignTopOutlined,
-  ZoomInOutlined,
-  ZoomOutOutlined,
+    CloseCircleOutlined,
+    CodeOutlined,
+    ExpandAltOutlined,
+    FileTextOutlined,
+    FolderOpenOutlined,
+    FolderOutlined,
+    OneToOneOutlined,
+    PlusOutlined,
+    ShrinkOutlined,
+    VerticalAlignTopOutlined,
+    ZoomInOutlined,
+    ZoomOutOutlined,
 } from "@ant-design/icons";
 import "./TreeEditor.scss";
 

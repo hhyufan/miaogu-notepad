@@ -674,47 +674,47 @@
 }
 
 /* 输入框样式 - 与node-title保持一致 */
- .tree-node-input {
-   cursor: text !important;
-   padding: 0 !important;
-   margin: 0 !important;
-   border-radius: 3px !important;
-   transition: all 0.2s ease !important;
-   color: var(--text-primary) !important;
-   font-size: var(--tree-font-size, var(--editor-font-size, 14px)) !important;
-   line-height: 1.5715 !important;
-   height: auto !important;
-   min-height: auto !important;
-   background: transparent !important;
-   border: none !important;
-   box-shadow: none !important;
-   font-family: inherit !important;
+.tree-node-input {
+  cursor: text !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 3px !important;
+  transition: all 0.2s ease !important;
+  color: var(--text-primary) !important;
+  font-size: var(--tree-font-size, var(--editor-font-size, 14px)) !important;
+  line-height: 1.5715 !important;
+  height: auto !important;
+  min-height: auto !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  font-family: inherit !important;
 
-   .ant-input {
-     padding: 2px 4px !important;
-     margin: 0 !important;
-     border: none !important;
-     box-shadow: none !important;
-     background: transparent !important;
-     font-size: inherit !important;
-     line-height: inherit !important;
-     color: inherit !important;
-     height: auto !important;
-     min-height: auto !important;
-   }
+  .ant-input {
+    padding: 2px 4px !important;
+    margin: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    font-size: inherit !important;
+    line-height: inherit !important;
+    color: inherit !important;
+    height: auto !important;
+    min-height: auto !important;
+  }
 
-   &:focus {
-     border: none !important;
-     box-shadow: none !important;
-     outline: none !important;
-   }
+  &:focus {
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+  }
 
-   &:focus .ant-input {
-     border: none !important;
-     box-shadow: none !important;
-     outline: none !important;
-   }
- }
+  &:focus .ant-input {
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+  }
+}
 
 /* 按钮样式 */
 .node-actions .ant-btn {
@@ -790,7 +790,7 @@
 /* 深色主题下的跳转节点样式 */
 .tree-viewer-card.dark .tree-node-content.tree-node-clickable {
   color: #69c0ff;
-  
+
   &:hover {
     background: transparent !important;
     box-shadow: none !important;

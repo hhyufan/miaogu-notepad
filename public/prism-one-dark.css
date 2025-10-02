@@ -3,63 +3,63 @@
 
 code[class*="language-"],
 pre[class*="language-"] {
-  color: #abb2bf;
-  background: none;
-  font-family: 'Fira Code', 'Consolas', 'Monaco', 'Andale Mono', 'Ubuntu Mono', monospace;
-  font-size: 14px;
-  text-align: left;
-  white-space: pre;
-  word-spacing: normal;
-  word-break: normal;
-  word-wrap: normal;
-  line-height: 1.5;
-  -moz-tab-size: 4;
-  -o-tab-size: 4;
-  tab-size: 4;
-  -webkit-hyphens: none;
-  -moz-hyphens: none;
-  -ms-hyphens: none;
-  hyphens: none;
+    color: #abb2bf;
+    background: none;
+    font-family: 'Fira Code', 'Consolas', 'Monaco', 'Andale Mono', 'Ubuntu Mono', monospace;
+    font-size: 14px;
+    text-align: left;
+    white-space: pre;
+    word-spacing: normal;
+    word-break: normal;
+    word-wrap: normal;
+    line-height: 1.5;
+    -moz-tab-size: 4;
+    -o-tab-size: 4;
+    tab-size: 4;
+    -webkit-hyphens: none;
+    -moz-hyphens: none;
+    -ms-hyphens: none;
+    hyphens: none;
 }
 
 /* Code blocks */
 pre[class*="language-"] {
-  padding: 1em;
-  margin: .5em 0;
-  overflow: auto;
-  border-radius: 6px;
-  background: #282c34;
-  border: 1px solid #3e4451;
+    padding: 1em;
+    margin: .5em 0;
+    overflow: auto;
+    border-radius: 6px;
+    background: #282c34;
+    border: 1px solid #3e4451;
 }
 
-:not(pre)>code[class*="language-"],
+:not(pre) > code[class*="language-"],
 pre[class*="language-"] {
-  background: #282c34;
+    background: #282c34;
 }
 
 /* Inline code */
-:not(pre)>code[class*="language-"] {
-  padding: .1em .3em;
-  border-radius: .3em;
-  white-space: normal;
-  background: #3e4451;
-  color: #e06c75;
+:not(pre) > code[class*="language-"] {
+    padding: .1em .3em;
+    border-radius: .3em;
+    white-space: normal;
+    background: #3e4451;
+    color: #e06c75;
 }
 
 .token.comment,
 .token.prolog,
 .token.doctype,
 .token.cdata {
-  color: #5c6370;
-  font-style: italic;
+    color: #5c6370;
+    font-style: italic;
 }
 
 .token.punctuation {
-  color: #abb2bf;
+    color: #abb2bf;
 }
 
 .token.namespace {
-  opacity: .7;
+    opacity: .7;
 }
 
 .token.property,
@@ -69,7 +69,7 @@ pre[class*="language-"] {
 .token.constant,
 .token.symbol,
 .token.deleted {
-  color: #e06c75;
+    color: #e06c75;
 }
 
 .token.selector,
@@ -78,7 +78,7 @@ pre[class*="language-"] {
 .token.char,
 .token.builtin,
 .token.inserted {
-  color: #98c379;
+    color: #98c379;
 }
 
 .token.operator,
@@ -86,72 +86,72 @@ pre[class*="language-"] {
 .token.url,
 .language-css .token.string,
 .style .token.string {
-  color: #56b6c2;
-  background: none;
+    color: #56b6c2;
+    background: none;
 }
 
 .token.atrule,
 .token.attr-value,
 .token.keyword {
-  color: #c678dd;
+    color: #c678dd;
 }
 
 .token.function,
 .token.class-name {
-  color: #e5c07b;
+    color: #e5c07b;
 }
 
 .token.regex,
 .token.important,
 .token.variable {
-  color: #e06c75;
+    color: #e06c75;
 }
 
 .token.important,
 .token.bold {
-  font-weight: bold;
+    font-weight: bold;
 }
 
 .token.italic {
-  font-style: italic;
+    font-style: italic;
 }
 
 .token.entity {
-  cursor: help;
+    cursor: help;
 }
 
 /* Line highlighting */
 .line-highlight {
-  background: rgba(171, 178, 191, 0.1);
-  background: linear-gradient(to right, rgba(171, 178, 191, 0.1) 70%, rgba(171, 178, 191, 0));
+    background: rgba(171, 178, 191, 0.1);
+    background: linear-gradient(to right, rgba(171, 178, 191, 0.1) 70%, rgba(171, 178, 191, 0));
 }
 
 /* Line numbers */
 .line-numbers .line-numbers-rows {
-  border-right: 1px solid #4b5263;
+    border-right: 1px solid #4b5263;
 }
 
-.line-numbers-rows>span:before {
-  color: #636d83;
+.line-numbers-rows > span:before {
+    color: #636d83;
 }
 
 /* Language label styling */
 .lang-tag {
-  position: absolute;
-  top: 8px;
-  right: 12px;
-  background: rgba(40, 44, 52, 0.9);
-  color: #abb2bf;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 0.8em;
-  border: 1px solid #3e4451;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  z-index: 1;
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    background: rgba(40, 44, 52, 0.9);
+    color: #abb2bf;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    border: 1px solid #3e4451;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 1;
 }
 
 .lang-tag:hover {
-  background: rgba(40, 44, 52, 1);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    background: rgba(40, 44, 52, 1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }

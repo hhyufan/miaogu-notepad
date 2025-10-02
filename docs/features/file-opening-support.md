@@ -7,6 +7,7 @@ Miaogu NotePad 提供了多种灵活的文件打开方式，支持不同用户�
 ## 核心架构
 
 ### 技术栈
+
 - **前端框架**: React + Redux Toolkit
 - **桌面框架**: Tauri
 - **文件对话框**: @tauri-apps/plugin-dialog
@@ -15,6 +16,7 @@ Miaogu NotePad 提供了多种灵活的文件打开方式，支持不同用户�
 - **文件系统**: Tauri 文件系统 API
 
 ### 核心组件
+
 - `useFileManager.jsx` - 文件管理核心逻辑
 - `App.jsx` - 全局键盘快捷键和拖拽处理
 - `AppHeader.jsx` - 菜单栏文件操作
@@ -27,6 +29,7 @@ Miaogu NotePad 提供了多种灵活的文件打开方式，支持不同用户�
 ### 1. 图形界面操作
 
 #### 1.1 菜单栏操作
+
 **位置**: `src/components/AppHeader.jsx`
 
 ```javascript
@@ -54,12 +57,14 @@ const handleOpenFile = async () => {
 ```
 
 **特性**:
+
 - 支持国际化菜单文本
 - 图标化界面设计
 - 异步文件操作处理
 - 错误处理机制
 
 #### 1.2 欢迎界面操作
+
 **位置**: `src/components/WelcomeScreen.jsx`
 
 ```javascript
@@ -75,12 +80,14 @@ const handleOpenFile = async () => {
 ```
 
 **特性**:
+
 - 新用户友好的引导界面
 - 大按钮设计，易于点击
 - 拖拽提示信息
 - 响应式布局
 
 #### 1.3 标签页操作
+
 **位置**: `src/components/TabBar.jsx`
 
 ```javascript
@@ -103,6 +110,7 @@ const contextMenuItems = [
 ### 2. 键盘快捷键
 
 #### 2.1 全局快捷键实现
+
 **位置**: `src/App.jsx`
 
 ```javascript
@@ -150,16 +158,18 @@ useEffect(() => {
 ```
 
 #### 2.2 支持的快捷键
-| 快捷键 | 功能 | 说明 |
-|--------|------|------|
-| `Ctrl+N` | 新建文件 | 创建新的未命名文件 |
-| `Ctrl+O` | 打开文件 | 打开文件选择对话框 |
-| `Ctrl+S` | 保存文件 | 保存当前文件 |
-| `Ctrl+Shift+S` | 另存为 | 另存为新文件 |
-| `Ctrl+F` | 查找 | 在编辑器中查找文本 |
-| `Ctrl+H` | 替换 | 查找并替换文本 |
+
+| 快捷键            | 功能   | 说明        |
+|----------------|------|-----------|
+| `Ctrl+N`       | 新建文件 | 创建新的未命名文件 |
+| `Ctrl+O`       | 打开文件 | 打开文件选择对话框 |
+| `Ctrl+S`       | 保存文件 | 保存当前文件    |
+| `Ctrl+Shift+S` | 另存为  | 另存为新文件    |
+| `Ctrl+F`       | 查找   | 在编辑器中查找文本 |
+| `Ctrl+H`       | 替换   | 查找并替换文本   |
 
 **特性**:
+
 - 全局快捷键支持，即使在全屏模式下也可使用
 - 事件捕获阶段处理，确保优先级
 - 防止默认行为和事件冒泡
@@ -168,6 +178,7 @@ useEffect(() => {
 ### 3. 拖拽操作
 
 #### 3.1 Tauri 环境拖拽
+
 **位置**: `src/hooks/useFileManager.jsx`
 
 Tauri 环境下使用原生拖拽事件监听，可直接获取系统文件路径：
@@ -220,6 +231,7 @@ const unlistenDragLeave = listen('tauri://drag-leave', (_) => {
 ```
 
 **Tauri 拖拽事件类型**：
+
 - `tauri://drag-drop` - 文件放置事件，payload包含文件路径数组
 - `tauri://drag-enter` - 拖拽进入窗口事件
 - `tauri://drag-leave` - 拖拽离开窗口事件
@@ -240,6 +252,7 @@ const unlistenDragLeave = listen('tauri://drag-leave', (_) => {
 ```
 
 #### 3.2 Web 环境拖拽
+
 **位置**: `src/App.jsx`
 
 Web 环境下使用 HTML5 Drag & Drop API，通过 FileReader 读取文件内容：
@@ -343,11 +356,13 @@ const handleDrop = useCallback(async (e) => {
 #### 3.3 环境检测与处理逻辑分离
 
 **环境检测**：
+
 ```javascript
 const hasTauri = typeof window !== 'undefined' && window['__TAURI_INTERNALS__'] !== undefined;
 ```
 
 **处理逻辑分离**：
+
 - **Tauri环境**：使用原生事件监听，直接获取文件系统路径
 - **Web环境**：使用HTML5 API，通过FileReader读取文件内容
 
@@ -355,10 +370,12 @@ const hasTauri = typeof window !== 'undefined' && window['__TAURI_INTERNALS__'] 
 
 **文件与目录区分**：
 在Tauri环境中，通过 `fileApi.isDirectory(path)` 检查拖拽项是否为目录：
+
 - **目录**：更新面包屑导航，不打开编辑器
 - **文件**：直接在编辑器中打开
 
 **错误处理**：
+
 ```javascript
 try {
     const isDirectory = await fileApi.isDirectory(path);
@@ -380,6 +397,7 @@ try {
 ### 4. 命令行参数支持
 
 #### 4.1 Tauri 后端实现
+
 **位置**: `src-tauri/src/lib.rs`
 
 ```rust
@@ -402,6 +420,7 @@ async fn get_cli_args() -> Result<Vec<String>, String> {
 ```
 
 #### 4.2 前端处理逻辑
+
 **位置**: `src/App.jsx`
 
 ```javascript
@@ -454,6 +473,7 @@ useEffect(() => {
 ```
 
 #### 4.3 使用方式
+
 ```bash
 # Windows
 miaogu-notepad.exe "C:\path\to\file.txt"
@@ -465,6 +485,7 @@ miaogu-notepad.exe "C:\path\to\file.txt"
 ### 5. 文件关联
 
 #### 5.1 配置文件关联
+
 **位置**: `src-tauri/tauri.conf.json`
 
 ```json
@@ -536,6 +557,7 @@ miaogu-notepad.exe "C:\path\to\file.txt"
 ##### Windows 系统设置
 
 **方法一：通过右键菜单设置**
+
 1. 右键点击要关联的文件类型（如 `.txt` 文件）
 2. 选择"打开方式" → "选择其他应用"
 3. 在应用列表中找到"喵咕记事本"
@@ -543,12 +565,14 @@ miaogu-notepad.exe "C:\path\to\file.txt"
 5. 点击"确定"
 
 **方法二：通过系统设置**
+
 1. 打开"设置" → "应用" → "默认应用"
 2. 点击"按文件类型选择默认应用"
 3. 找到要关联的文件扩展名（如 `.txt`）
 4. 点击当前默认应用，选择"喵咕记事本"
 
 **方法三：通过控制面板**
+
 1. 打开"控制面板" → "程序" → "默认程序"
 2. 选择"将文件类型或协议与程序关联"
 3. 找到要关联的文件扩展名
@@ -557,6 +581,7 @@ miaogu-notepad.exe "C:\path\to\file.txt"
 ##### macOS 系统设置
 
 **方法一：通过右键菜单设置**
+
 1. 右键点击要关联的文件
 2. 选择"显示简介"
 3. 在"打开方式"部分选择"喵咕记事本"
@@ -564,6 +589,7 @@ miaogu-notepad.exe "C:\path\to\file.txt"
 5. 确认更改
 
 **方法二：通过系统偏好设置**
+
 1. 选择文件，按 `Cmd + I` 打开简介
 2. 展开"打开方式"部分
 3. 从下拉菜单中选择"喵咕记事本"
@@ -572,12 +598,14 @@ miaogu-notepad.exe "C:\path\to\file.txt"
 ##### Linux 系统设置
 
 **方法一：通过桌面环境设置**
+
 1. 右键点击文件，选择"属性"
 2. 切换到"打开方式"标签页
 3. 选择"喵咕记事本"作为默认应用
 4. 点击"设为默认"
 
 **方法二：通过命令行设置**
+
 ```bash
 # 使用 xdg-mime 设置默认应用
 xdg-mime default miaogu-notepad.desktop text/plain
@@ -648,6 +676,7 @@ async fn get_cli_args() -> Result<Vec<String>, String> {
 ```
 
 **前端参数处理**
+
 ```javascript
 // 前端处理命令行参数
 useEffect(() => {
@@ -673,34 +702,40 @@ useEffect(() => {
 #### 5.5 常见问题与解决方案
 
 **问题1：文件关联未生效**
+
 - **原因**: 安装包未正确注册文件关联
 - **解决**: 重新安装应用，或手动设置文件关联
 
 **问题2：双击文件无法打开**
+
 - **原因**: 命令行参数处理异常
 - **解决**: 检查 `get_cli_args` 函数的实现和错误处理
 
 **问题3：部分文件类型无法关联**
+
 - **原因**: 系统权限限制或文件类型已被其他应用占用
 - **解决**: 以管理员权限运行，或通过系统设置强制更改
 
 **问题4：文件路径包含特殊字符**
+
 - **原因**: 命令行参数解析时特殊字符处理不当
 - **解决**: 在参数处理中添加特殊字符转义和路径规范化
 
 #### 5.2 支持的文件类型
-| 扩展名 | 文件类型 | 描述 |
-|--------|----------|------|
-| `.txt` | 文本文件 | 纯文本文档 |
-| `.md` | Markdown | Markdown 文档 |
-| `.js` | JavaScript | JavaScript 源文件 |
-| `.json` | JSON | JSON 数据文件 |
-| `.html` | HTML | HTML 文档 |
-| `.css` | CSS | CSS 样式表 |
+
+| 扩展名     | 文件类型       | 描述             |
+|---------|------------|----------------|
+| `.txt`  | 文本文件       | 纯文本文档          |
+| `.md`   | Markdown   | Markdown 文档    |
+| `.js`   | JavaScript | JavaScript 源文件 |
+| `.json` | JSON       | JSON 数据文件      |
+| `.html` | HTML       | HTML 文档        |
+| `.css`  | CSS        | CSS 样式表        |
 
 ### 6. 文件对话框
 
 #### 6.1 打开文件对话框
+
 **位置**: `src/utils/tauriApi.js`
 
 ```javascript
@@ -721,6 +756,7 @@ async openFileDialog(t) {
 ```
 
 #### 6.2 保存文件对话框
+
 ```javascript
 async saveFileDialog(defaultName = 'untitled.txt', t, isNewFile = false) {
   try {
@@ -748,6 +784,7 @@ async saveFileDialog(defaultName = 'untitled.txt', t, isNewFile = false) {
 ```
 
 #### 6.3 特殊对话框
+
 ```javascript
 // 图片选择对话框
 async selectImageDialog(t) {
@@ -781,6 +818,7 @@ async selectImageDialog(t) {
 ## 文件处理流程
 
 ### 1. 文件打开流程
+
 ```mermaid
 graph TD
     A[用户操作] --> B{操作类型}
@@ -804,6 +842,7 @@ graph TD
 ```
 
 ### 2. 错误处理机制
+
 ```javascript
 // 统一错误处理
 const handleFileOpen = async (filePath) => {
@@ -847,16 +886,19 @@ const handleFileOpen = async (filePath) => {
 ## 性能优化
 
 ### 1. 异步操作
+
 - 所有文件操作都使用异步处理
 - 避免阻塞 UI 线程
 - 提供加载状态反馈
 
 ### 2. 内存管理
+
 - 大文件分块读取
 - 及时清理文件内容缓存
 - 限制同时打开的文件数量
 
 ### 3. 事件优化
+
 - 使用事件委托减少监听器数量
 - 防抖处理频繁的拖拽事件
 - 及时清理事件监听器
@@ -864,16 +906,19 @@ const handleFileOpen = async (filePath) => {
 ## 用户体验
 
 ### 1. 视觉反馈
+
 - 拖拽时显示覆盖层提示
 - 文件打开过程中显示加载状态
 - 操作成功/失败的消息提示
 
 ### 2. 国际化支持
+
 - 所有界面文本支持多语言
 - 文件对话框标题本地化
 - 错误消息本地化
 
 ### 3. 无障碍访问
+
 - 键盘快捷键支持
 - 屏幕阅读器友好
 - 高对比度主题支持
@@ -881,6 +926,7 @@ const handleFileOpen = async (filePath) => {
 ## 扩展性
 
 ### 1. 新文件类型支持
+
 ```javascript
 // 在 tauri.conf.json 中添加新的文件关联
 {
@@ -891,6 +937,7 @@ const handleFileOpen = async (filePath) => {
 ```
 
 ### 2. 自定义打开方式
+
 ```javascript
 // 扩展文件管理器
 const customFileOpener = {
@@ -903,6 +950,7 @@ fileManager.registerCustomOpener('special', customFileOpener);
 ```
 
 ### 3. 插件系统
+
 ```javascript
 // 文件打开插件接口
 interface FileOpenPlugin {
@@ -917,18 +965,21 @@ interface FileOpenPlugin {
 Miaogu NotePad 的文件打开支持系统具有以下特点：
 
 ### 技术特点
+
 - **多方式支持**: 图形界面、快捷键、拖拽、命令行、文件关联
 - **跨平台兼容**: 同时支持桌面和 Web 环境
 - **原生性能**: Tauri 环境下直接使用系统 API
 - **优雅降级**: Web 环境下提供完整的文件读取功能
 
 ### 功能特点
+
 - **用户友好**: 直观的操作界面和视觉反馈
 - **错误恢复**: 完善的错误处理和回退机制
 - **国际化**: 全面的多语言支持
 - **可扩展**: 灵活的插件和扩展机制
 
 ### 性能特点
+
 - **异步处理**: 非阻塞的文件操作
 - **内存优化**: 高效的文件内容管理
 - **事件优化**: 优化的事件处理机制

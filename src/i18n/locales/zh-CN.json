@@ -125,7 +125,6 @@
         "family": "字体系列",
         "lineHeight": "行高"
       }
-
     },
     "appearance": {
       "title": "外观",
@@ -272,14 +271,14 @@
       "backgroundUploadError": "上传背景图片失败"
     },
     "warning": {
-        "unsavedChanges": "有未保存的更改",
-        "fileNotFound": "文件未找到",
-        "openFileFirst": "请先打开一个文件",
-        "markdownOnly": "只有Markdown文件支持预览功能",
-        "saveFileFirst": "请先保存文件",
-        "nodeContentEmpty": "节点内容不能为空",
-        "noGhostTextAvailable": "没有可用的幽灵文本",
-        "noGhostTextAtCurrentPosition": "当前位置没有可补充的幽灵文本"
+      "unsavedChanges": "有未保存的更改",
+      "fileNotFound": "文件未找到",
+      "openFileFirst": "请先打开一个文件",
+      "markdownOnly": "只有Markdown文件支持预览功能",
+      "saveFileFirst": "请先保存文件",
+      "nodeContentEmpty": "节点内容不能为空",
+      "noGhostTextAvailable": "没有可用的幽灵文本",
+      "noGhostTextAtCurrentPosition": "当前位置没有可补充的幽灵文本"
     }
   },
   "window": {
