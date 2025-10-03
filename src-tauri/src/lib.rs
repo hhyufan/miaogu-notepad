@@ -17,7 +17,7 @@ use serde::{Deserialize, Serialize};
 use encoding_rs::{Encoding, UTF_8};
 use notify::{Watcher, RecursiveMode, Event, EventKind};
 use once_cell::sync::Lazy;
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_http::reqwest;
 use base64::Engine;
 
@@ -1236,10 +1236,25 @@ async fn get_prevent_sleep_status() -> Result<bool, String> {
     }
 }
 
+/// 显示主窗口 - 由前端在加载完成后调用
+#[tauri::command]
+async fn show_main_window(app: tauri::AppHandle) -> Result<(), String> {
+    match app.get_webview_window("main") {
+        Some(window) => {
+            window.show().map_err(|e| format!("显示窗口失败: {}", e))?;
+            println!("主窗口已显示");
+            Ok(())
+        }
+        None => Err("未找到主窗口".to_string()),
+    }
+}
+
 /// Tauri应用程序运行函数
 /// 初始化并启动Tauri应用程序，配置插件和命令处理器
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    use tauri::Manager;
+    
     let builder = tauri::Builder::default();
 
     builder
@@ -1248,6 +1263,15 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_http::init())
+        .setup(|app| {
+            // 获取主窗口
+            let main_window = app.get_webview_window("main").expect("failed to get main window");
+            
+            // 将窗口句柄存储到应用状态中，供前端调用
+            app.manage(main_window);
+            
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             greet,
             read_file_content,
@@ -1270,6 +1294,7 @@ pub fn run() {
             enable_prevent_sleep,
             disable_prevent_sleep,
             get_prevent_sleep_status,
+            show_main_window,
             load_image_with_proxy,
             get_system_proxy,
             set_proxy_config

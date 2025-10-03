@@ -41,14 +41,20 @@ const initStore = async () => {
                 // 使用 load 函数创建 Store 实例
                 if (load) {
                     store = await load('settings.json', {autoSave: true});
-                    useLocalStorage = false;
-                    storeInitialized = true;
-
+                    // 验证 store 对象是否正确初始化
+                    if (store && typeof store.get === 'function') {
+                        useLocalStorage = false;
+                        storeInitialized = true;
+                        console.log('Tauri Store 初始化成功');
+                    } else {
+                        throw new Error('Store 对象初始化不完整');
+                    }
                 } else {
                     throw new Error('load 函数不可用');
                 }
             } catch (storeError) {
                 console.error('Tauri Store 初始化失败，回退到 localStorage:', storeError);
+                store = null;
                 useLocalStorage = true;
                 storeInitialized = true;
             }
@@ -406,11 +412,20 @@ export const settingsApi = {
             await initStore();
             const currentStore = useLocalStorage ? localStorageStore : store;
             if (!currentStore) {
+                console.warn(`Store 不可用，返回默认值: ${key} = ${defaultValue}`);
                 return defaultValue;
             }
+            
+            // 添加额外的安全检查
+            if (typeof currentStore.get !== 'function') {
+                console.warn(`Store.get 方法不可用，返回默认值: ${key} = ${defaultValue}`);
+                return defaultValue;
+            }
+            
             const value = await currentStore.get(key);
-            return value !== null ? value : defaultValue;
+            return value !== null && value !== undefined ? value : defaultValue;
         } catch (error) {
+            console.error(`获取设置失败: ${key}`, error);
             return defaultValue;
         }
     },
@@ -501,8 +516,8 @@ export const settingsApi = {
 };
 
 /**
- * 应用 API
- * 提供应用级别的功能，如命令行参数获取等
+ * 应用程序API
+ * 提供应用级别的功能，如命令行参数获取、窗口控制等
  */
 export const appApi = {
     async greet(name) {
@@ -534,6 +549,20 @@ export const appApi = {
             }
         } catch (error) {
             return [];
+        }
+    },
+
+    async showMainWindow() {
+        try {
+            if (typeof window !== 'undefined' && window.__TAURI_INTERNALS__ !== undefined) {
+                await invoke('show_main_window');
+                console.log('主窗口显示命令已发送');
+            } else {
+                console.log('非Tauri环境，跳过窗口显示');
+            }
+        } catch (error) {
+            console.error('显示主窗口失败:', error);
+            throw error;
         }
     }
 };

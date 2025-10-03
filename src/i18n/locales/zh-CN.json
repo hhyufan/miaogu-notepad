@@ -240,7 +240,6 @@
       "copiedToClipboard": "已复制到剪贴板",
       "currentLineCompleted": "当前行已完整输入",
       "beyondGhostTextRange": "已超出幽灵文本范围",
-      "restoringSession": "正在恢复会话...",
       "loading": "加载中..."
     },
     "error": {

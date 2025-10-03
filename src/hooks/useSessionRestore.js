@@ -44,19 +44,17 @@ const {file: fileApi} = tauriApi;
  * 会话恢复Hook - 负责在应用启动时恢复上次的工作状态
  * 包括文件状态、编辑器配置、主题设置等的完整恢复
  * @returns {Object} 包含恢复状态和操作函数的对象
- * @returns {boolean} returns.isRestoring - 是否正在恢复中
- * @returns {boolean} returns.isRestored - 是否已完成恢复
- * @returns {Function} returns.restoreSession - 手动触发会话恢复
+ * @returns {string|null} returns.restoreError - 恢复过程中的错误信息
+ * @returns {Function} returns.saveSession - 手动触发会话保存
+ * @returns {Function} returns.clearSession - 清除会话数据
  */
 export const useSessionRestore = () => {
     const dispatch = useDispatch();
-    const [isRestoring, setIsRestoring] = useState(true);
     const [restoreError, setRestoreError] = useState(null);
 
     useEffect(() => {
         const restoreSession = async () => {
             try {
-                setIsRestoring(true);
                 setRestoreError(null);
 
                 await persistenceManager.initialize();
@@ -66,8 +64,6 @@ export const useSessionRestore = () => {
 
             } catch (error) {
                 setRestoreError(error.message);
-            } finally {
-                setIsRestoring(false);
             }
         };
 
@@ -271,7 +267,6 @@ export const useSessionRestore = () => {
     };
 
     return {
-        isRestoring,
         restoreError,
         saveSession,
         clearSession

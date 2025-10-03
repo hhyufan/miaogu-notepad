@@ -6,7 +6,7 @@
  */
 
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {App as AntdApp, Button, ConfigProvider, Layout, Spin, theme} from 'antd';
+import {App as AntdApp, Button, ConfigProvider, Layout, theme} from 'antd';
 import {CodeOutlined, EyeOutlined, InboxOutlined, MoonFilled, PartitionOutlined, SunOutlined} from '@ant-design/icons';
 import {Provider, useSelector} from 'react-redux';
 import {invoke} from '@tauri-apps/api/core';
@@ -235,7 +235,6 @@ const MainApp = () => {
     useThemeSync();
 
     const {t} = useI18n();
-    const [loading, setLoading] = useState(true);
     const [isDragOver, setIsDragOver] = useState(false);
     const [isHeaderVisible, setIsHeaderVisible] = useState(true);
     const [cursorPosition, setCursorPosition] = useState({lineNumber: 1, column: 1});
@@ -342,7 +341,6 @@ const MainApp = () => {
                     const appWindow = getCurrentWindow();
 
                     const isFullscreen = await appWindow.isFullscreen();
-                    const isMaximized = await appWindow.isMaximized();
 
                     // 如果当前Header是隐藏的，但窗口既不是全屏也不是最大化状态，则显示Header
                     // 或者如果窗口从全屏退出到最大化状态，也应该显示Header
@@ -366,7 +364,7 @@ const MainApp = () => {
         };
     }, [isHeaderVisible]);
 
-    const {isRestoring, restoreError} = useSessionRestore();
+    const {restoreError} = useSessionRestore();
     const {backgroundEnabled, backgroundImage} = useSelector((state) => state.theme);
     const fileManager = useFileManager();
 
@@ -629,8 +627,6 @@ const MainApp = () => {
             window.setDebugFile = setDebugFile;
             window.testFileOpen = testFileOpen;
             window.showFileStatus = showFileStatus;
-
-            if (!isRestoring && !loading) {
                 cliArgsProcessedRef.current = true;
 
                 try {
@@ -670,10 +666,9 @@ const MainApp = () => {
                     // 不在这里创建初始文件，让useSessionRestore处理
                 }
             }
-        };
 
         handleCliArgs().then();
-    }, [isRestoring, loading, fileManager]);
+    }, [fileManager]);
 
     /**
      * 初始化应用程序设置
@@ -692,7 +687,6 @@ const MainApp = () => {
                 // 使用与 tauriApi.js 一致的环境检测
                 if (typeof window !== 'undefined' && window.__TAURI_INTERNALS__ !== undefined) {
                     const savedTheme = await settingsApi.get('theme', 'light');
-                    const savedFontSize = await settingsApi.get('fontSize', 14);
                     const savedFontFamily = await settingsApi.get('fontFamily', 'Consolas, Monaco, monospace');
                     const savedLineHeight = await settingsApi.get('lineHeight', 1.5);
                     const savedBackgroundImage = await settingsApi.get('backgroundImage', '');
@@ -766,10 +760,9 @@ const MainApp = () => {
                     document.documentElement.setAttribute('data-theme', 'light');
                 }
             } finally {
-                setLoading(false);
+                await appApi.showMainWindow();
             }
         };
-
         initializeApp().then();
     }, []);
 
@@ -866,23 +859,6 @@ const MainApp = () => {
             unsubscribe();
         };
     }, [currentTheme]);
-
-    if (loading || isRestoring) {
-        return (
-            <div className="app-loading">
-                <Spin size="large"/>
-                <div className="loading-spinner">
-                    {isRestoring ? t('message.info.restoringSession') : t('message.info.loading')}
-                </div>
-                {restoreError && (
-                    <div className="restore-error">
-                        {t('message.error.restoreSessionFailed')}: {restoreError}
-                    </div>
-                )}
-            </div>
-        );
-    }
-
     return (
         <ConfigProvider
             theme={{

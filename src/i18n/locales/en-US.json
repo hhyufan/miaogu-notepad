@@ -249,7 +249,6 @@
       "copiedToClipboard": "Copied to clipboard",
       "currentLineCompleted": "Current line is fully entered",
       "beyondGhostTextRange": "Beyond ghost text range",
-      "restoringSession": "Restoring session...",
       "loading": "Loading..."
     },
     "error": {
