@@ -5,18 +5,18 @@
  * @version 1.3.0
  */
 
-import {useCallback, useEffect, useRef, useState} from 'react';
-import {App as AntdApp, Button, ConfigProvider, Layout, theme} from 'antd';
-import {CodeOutlined, EyeOutlined, InboxOutlined, MoonFilled, PartitionOutlined, SunOutlined} from '@ant-design/icons';
-import {Provider, useSelector} from 'react-redux';
-import {invoke} from '@tauri-apps/api/core';
-import {store} from './store';
-import {useTheme} from './hooks/redux';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { App as AntdApp, Button, ConfigProvider, Layout, theme } from 'antd';
+import { CodeOutlined, EyeOutlined, InboxOutlined, MoonFilled, PartitionOutlined, SunOutlined } from '@ant-design/icons';
+import { Provider, useSelector } from 'react-redux';
+import { invoke } from '@tauri-apps/api/core';
+import { store } from './store';
+import { useTheme } from './hooks/redux';
 import useThemeSync from './hooks/useTheme'; // 导入主题同步 hook
-import {useI18n} from './hooks/useI18n';
-import {initImageProxyLoader} from './utils/imageProxy';
-import tauriApi, {fileApi} from './utils/tauriApi';
-import {useSessionRestore} from './hooks/useSessionRestore';
+import { useI18n } from './hooks/useI18n';
+import { initImageProxyLoader } from './utils/imageProxy';
+import tauriApi, { fileApi } from './utils/tauriApi';
+import { useSessionRestore } from './hooks/useSessionRestore';
 import AppHeader from './components/AppHeader';
 import TabBar from './components/TabBar';
 import CodeEditor from './components/CodeEditor';
@@ -25,12 +25,12 @@ import EditorStatusBar from './components/EditorStatusBar';
 
 import WelcomeScreen from './components/WelcomeScreen';
 
-import {useFileManager} from './hooks/useFileManager.jsx';
-import {withEditorModeTransition} from './utils/viewTransition';
+import { useFileManager } from './hooks/useFileManager.jsx';
+import { withEditorModeTransition } from './utils/viewTransition';
 import './App.scss';
 
-const {settings: settingsApi, app: appApi} = tauriApi;
-const {Content} = Layout;
+const { settings: settingsApi, app: appApi } = tauriApi;
+const { Content } = Layout;
 
 /**
  * 编辑器模式枚举
@@ -53,11 +53,11 @@ const EDITOR_MODES = {
  * @param {Function} props.setCharacterCount - 设置字符计数的回调函数
  * @returns {JSX.Element} 应用内容组件
  */
-const AppContent = ({isDarkMode, toggleTheme, fileManager, isHeaderVisible, setCursorPosition, setCharacterCount}) => {
-    const {t} = useI18n();
+const AppContent = ({ isDarkMode, toggleTheme, fileManager, isHeaderVisible, setCursorPosition, setCharacterCount }) => {
+    const { t } = useI18n();
     const [isTreeMode, setIsTreeMode] = useState(false);
     const [editorMode, setEditorMode] = useState(EDITOR_MODES.MONACO);
-    const {currentFile, openedFiles, newFile, openFile} = fileManager;
+    const { currentFile, openedFiles, newFile, openFile } = fileManager;
 
     const isMgtreeFile = currentFile && currentFile['name'] && currentFile['name'].endsWith('.mgtree');
     const isMarkdownFile = currentFile && currentFile['name'] &&
@@ -96,11 +96,11 @@ const AppContent = ({isDarkMode, toggleTheme, fileManager, isHeaderVisible, setC
      */
     const getEditorModeIcon = () => {
         if (isMgtreeFile) {
-            return editorMode === EDITOR_MODES.MGTREE ? <CodeOutlined/> : <PartitionOutlined/>;
+            return editorMode === EDITOR_MODES.MGTREE ? <CodeOutlined /> : <PartitionOutlined />;
         } else if (isMarkdownFile) {
-            return editorMode === EDITOR_MODES.MARKDOWN ? <CodeOutlined/> : <EyeOutlined/>;
+            return editorMode === EDITOR_MODES.MARKDOWN ? <CodeOutlined /> : <EyeOutlined />;
         }
-        return <CodeOutlined/>;
+        return <CodeOutlined />;
     };
 
     /**
@@ -159,7 +159,7 @@ const AppContent = ({isDarkMode, toggleTheme, fileManager, isHeaderVisible, setC
             <div className="theme-toggle">
                 <Button
                     type="text"
-                    icon={isDarkMode ? <MoonFilled/> : <SunOutlined/>}
+                    icon={isDarkMode ? <MoonFilled /> : <SunOutlined />}
                     onClick={toggleTheme}
                     title={isDarkMode ? t('app.theme.light') : t('app.theme.dark')}
                     className="theme-toggle-btn"
@@ -185,7 +185,7 @@ const AppContent = ({isDarkMode, toggleTheme, fileManager, isHeaderVisible, setC
                     <div className="code-editor-container">
                         <div
                             className="monaco-editor-wrapper"
-                            style={{display: (isMgtreeFile && isTreeMode) ? 'none' : 'block'}}
+                            style={{ display: (isMgtreeFile && isTreeMode) ? 'none' : 'block' }}
                         >
                             <CodeEditor
                                 isDarkMode={isDarkMode}
@@ -200,7 +200,7 @@ const AppContent = ({isDarkMode, toggleTheme, fileManager, isHeaderVisible, setC
                         {isMgtreeFile && (
                             <div
                                 className="tree-editor-wrapper"
-                                style={{display: isTreeMode ? 'block' : 'none'}}
+                                style={{ display: isTreeMode ? 'block' : 'none' }}
                             >
                                 <TreeEditor
                                     isDarkMode={isDarkMode}
@@ -234,10 +234,10 @@ const MainApp = () => {
     // 使用主题同步 hook 确保 DOM 属性正确设置
     useThemeSync();
 
-    const {t} = useI18n();
+    const { t } = useI18n();
     const [isDragOver, setIsDragOver] = useState(false);
     const [isHeaderVisible, setIsHeaderVisible] = useState(true);
-    const [cursorPosition, setCursorPosition] = useState({lineNumber: 1, column: 1});
+    const [cursorPosition, setCursorPosition] = useState({ lineNumber: 1, column: 1 });
     const [characterCount, setCharacterCount] = useState(0);
 
     /**
@@ -292,7 +292,7 @@ const MainApp = () => {
                 // 检查是否在Tauri环境中
                 if (typeof window !== 'undefined' && window['__TAURI_INTERNALS__']) {
                     try {
-                        const {getCurrentWindow} = await import('@tauri-apps/api/window');
+                        const { getCurrentWindow } = await import('@tauri-apps/api/window');
                         const appWindow = getCurrentWindow();
 
                         if (newHeaderVisible) {
@@ -337,7 +337,7 @@ const MainApp = () => {
         const checkWindowState = async () => {
             if (typeof window !== 'undefined' && window['__TAURI_INTERNALS__']) {
                 try {
-                    const {getCurrentWindow} = await import('@tauri-apps/api/window');
+                    const { getCurrentWindow } = await import('@tauri-apps/api/window');
                     const appWindow = getCurrentWindow();
 
                     const isFullscreen = await appWindow.isFullscreen();
@@ -364,8 +364,8 @@ const MainApp = () => {
         };
     }, [isHeaderVisible]);
 
-    const {restoreError} = useSessionRestore();
-    const {backgroundEnabled, backgroundImage} = useSelector((state) => state.theme);
+    const { isRestoring, restoreError } = useSessionRestore();
+    const { backgroundEnabled, backgroundImage } = useSelector((state) => state.theme);
     const fileManager = useFileManager();
 
     /**
@@ -434,7 +434,7 @@ const MainApp = () => {
         };
     }, [fileManager]);
 
-    const {openedFiles} = fileManager;
+    const { openedFiles } = fileManager;
     const hasOpenFiles = openedFiles && openedFiles.length > 0;
 
     /**
@@ -583,25 +583,25 @@ const MainApp = () => {
 
                 try {
                     await fileManager.setOpenFile(filePath);
-                    return {success: true, filePath};
+                    return { success: true, filePath };
                 } catch (error) {
-                    return {success: false, error};
+                    return { success: false, error };
                 }
             } else {
                 const debugFile = localStorage.getItem('miaogu-notepad-debug-file');
                 if (debugFile) {
                     try {
                         await fileManager.setOpenFile(debugFile);
-                        return {success: true, filePath: debugFile};
+                        return { success: true, filePath: debugFile };
                     } catch (error) {
-                        return {success: false, error};
+                        return { success: false, error };
                     }
                 }
             }
         } catch (error) {
-            return {success: false, error};
+            return { success: false, error };
         }
-        return {success: false};
+        return { success: false };
     };
 
     const cliArgsProcessedRef = useRef(false);
@@ -627,45 +627,45 @@ const MainApp = () => {
             window.setDebugFile = setDebugFile;
             window.testFileOpen = testFileOpen;
             window.showFileStatus = showFileStatus;
-                cliArgsProcessedRef.current = true;
+            cliArgsProcessedRef.current = true;
 
-                try {
-                    const args = await appApi.getCliArgs();
+            try {
+                const args = await appApi.getCliArgs();
 
-                    if (args && args.length > 0) {
-                        const filePath = args[0];
+                if (args && args.length > 0) {
+                    const filePath = args[0];
 
-                        if (filePath && typeof filePath === 'string') {
-                            try {
-                                await fileApi.fileExists(filePath);
-                            } catch (error) {
-                            }
-
-                            try {
-                                await fileManager.setOpenFile(filePath);
-                                return;
-                            } catch (error) {
-                            }
-                        }
-                    }
-                } catch (error) {
-                }
-
-                if (!window['__TAURI__']) {
-                    const debugFile = localStorage.getItem('miaogu-notepad-debug-file');
-                    if (debugFile) {
+                    if (filePath && typeof filePath === 'string') {
                         try {
-                            await fileManager.setOpenFile(debugFile);
+                            await fileApi.fileExists(filePath);
+                        } catch (error) {
+                        }
+
+                        try {
+                            await fileManager.setOpenFile(filePath);
                             return;
                         } catch (error) {
                         }
                     }
                 }
+            } catch (error) {
+            }
 
-                if (fileManager.openedFiles.length === 0) {
-                    // 不在这里创建初始文件，让useSessionRestore处理
+            if (!window['__TAURI__']) {
+                const debugFile = localStorage.getItem('miaogu-notepad-debug-file');
+                if (debugFile) {
+                    try {
+                        await fileManager.setOpenFile(debugFile);
+                        return;
+                    } catch (error) {
+                    }
                 }
             }
+
+            if (fileManager.openedFiles.length === 0) {
+                // 不在这里创建初始文件，让useSessionRestore处理
+            }
+        }
 
         handleCliArgs().then();
     }, [fileManager]);
@@ -724,7 +724,7 @@ const MainApp = () => {
                         } else {
                             // 如果是文件路径，使用convertFileSrc转换
                             try {
-                                const {convertFileSrc} = await import('@tauri-apps/api/core');
+                                const { convertFileSrc } = await import('@tauri-apps/api/core');
                                 const convertedUrl = convertFileSrc(savedBackgroundImage);
                                 imageUrl = `url("${convertedUrl}")`;
                             } catch (error) {
@@ -759,11 +759,9 @@ const MainApp = () => {
                     setTheme('light');
                     document.documentElement.setAttribute('data-theme', 'light');
                 }
-            } finally {
-                await appApi.showMainWindow();
             }
         };
-        initializeApp().then();
+        initializeApp().catch(console.error);
     }, []);
 
     /**
@@ -775,7 +773,7 @@ const MainApp = () => {
         // 强制更新背景透明度变量以确保主题切换时正确应用
         const updateBackgroundForTheme = () => {
             const state = store.getState();
-            const {backgroundEnabled, backgroundTransparency, backgroundImage} = state.theme;
+            const { backgroundEnabled, backgroundTransparency, backgroundImage } = state.theme;
 
             if (backgroundEnabled && backgroundImage) {
                 const darkTransparency = backgroundTransparency.dark / 100;
@@ -798,7 +796,7 @@ const MainApp = () => {
     useEffect(() => {
         const updateBackgroundStyles = async () => {
             const state = store.getState();
-            const {backgroundEnabled, backgroundTransparency, backgroundImage} = state.theme;
+            const { backgroundEnabled, backgroundTransparency, backgroundImage } = state.theme;
 
             if (backgroundEnabled && backgroundImage) {
                 // 检查是否为文件路径，如果是则使用convertFileSrc转换
@@ -809,7 +807,7 @@ const MainApp = () => {
                 } else {
                     // 如果是文件路径，使用convertFileSrc转换
                     try {
-                        const {convertFileSrc} = await import('@tauri-apps/api/core');
+                        const { convertFileSrc } = await import('@tauri-apps/api/core');
                         const convertedUrl = convertFileSrc(backgroundImage);
                         imageUrl = `url("${convertedUrl}")`;
                     } catch (error) {
@@ -835,7 +833,7 @@ const MainApp = () => {
                     testImg.src = backgroundImage;
                 } else {
                     try {
-                        const {convertFileSrc} = await import('@tauri-apps/api/core');
+                        const { convertFileSrc } = await import('@tauri-apps/api/core');
                         testImg.src = convertFileSrc(backgroundImage);
                     } catch (error) {
                         testImg.src = backgroundImage;
@@ -859,6 +857,22 @@ const MainApp = () => {
             unsubscribe();
         };
     }, [currentTheme]);
+
+    /**
+     * 在应用加载完成且会话恢复完成后显示窗口
+     */
+    useEffect(() => {
+        if (!isRestoring && !restoreError) {
+            (async () => {
+                try {
+                    await appApi.showMainWindow();
+                } catch (error) {
+                    console.error('显示主窗口失败:', error);
+                }
+            })();
+        }
+    }, [isRestoring, restoreError]);
+
     return (
         <ConfigProvider
             theme={{
@@ -879,8 +893,8 @@ const MainApp = () => {
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
                 >
-                    {isHeaderVisible && <AppHeader fileManager={fileManager} hasOpenFiles={hasOpenFiles}/>}
-                    <TabBar fileManager={fileManager}/>
+                    {isHeaderVisible && <AppHeader fileManager={fileManager} hasOpenFiles={hasOpenFiles} />}
+                    <TabBar fileManager={fileManager} />
                     <Layout className="main-layout">
                         <Content className="app-content">
                             <AppContent
@@ -903,7 +917,7 @@ const MainApp = () => {
                         <div className="drag-overlay">
                             <div className="drag-overlay-content">
                                 <div className="drag-icon">
-                                    <InboxOutlined style={{fontSize: '48px', color: '#1890ff'}}/>
+                                    <InboxOutlined style={{ fontSize: '48px', color: '#1890ff' }} />
                                 </div>
                                 <div className="drag-text">{t('editor.dragFiles')}</div>
                                 <div className="drag-subtext">{t('editor.dragSubtext')}</div>
@@ -924,7 +938,7 @@ const MainApp = () => {
 function App() {
     return (
         <Provider store={store}>
-            <MainApp/>
+            <MainApp />
         </Provider>
     );
 }

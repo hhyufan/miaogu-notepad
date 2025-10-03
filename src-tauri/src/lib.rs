@@ -1039,7 +1039,7 @@ async fn enable_prevent_sleep() -> Result<String, String> {
             let result = SetThreadExecutionState(
                 ES_CONTINUOUS | ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED
             );
-            
+
             if result != 0 {
                 // 更新全局状态
                 if let Ok(mut enabled) = PREVENT_SLEEP_ENABLED.lock() {
@@ -1051,7 +1051,7 @@ async fn enable_prevent_sleep() -> Result<String, String> {
             }
         }
     }
-    
+
     #[cfg(not(windows))]
     {
         // 非Windows平台暂不支持
@@ -1067,7 +1067,7 @@ async fn disable_prevent_sleep() -> Result<String, String> {
     {
         unsafe {
             let result = SetThreadExecutionState(ES_CONTINUOUS);
-            
+
             if result != 0 {
                 // 更新全局状态
                 if let Ok(mut enabled) = PREVENT_SLEEP_ENABLED.lock() {
@@ -1079,7 +1079,7 @@ async fn disable_prevent_sleep() -> Result<String, String> {
             }
         }
     }
-    
+
     #[cfg(not(windows))]
     {
         // 非Windows平台暂不支持
@@ -1088,22 +1088,22 @@ async fn disable_prevent_sleep() -> Result<String, String> {
 }
 
 /// 通过代理加载图片资源
-/// 
+///
 /// # 参数
 /// * `url` - 图片URL
 /// * `proxy_config` - 代理配置
-/// 
+///
 /// # 返回值
 /// 返回包含图片数据的 ImageLoadResult
 #[tauri::command]
 async fn load_image_with_proxy(url: String, proxy_config: Option<ProxyConfig>) -> Result<ImageLoadResult, String> {
     println!("Loading image: {} with proxy config: {:?}", url, proxy_config);
-    
+
     // 创建 HTTP 客户端
     let mut client_builder = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(30))
         .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
-    
+
     // 配置代理
     if let Some(config) = proxy_config {
         if config.enabled {
@@ -1113,14 +1113,14 @@ async fn load_image_with_proxy(url: String, proxy_config: Option<ProxyConfig>) -
                     client_builder = client_builder.proxy(proxy);
                 }
             }
-            
+
             // 配置 HTTPS 代理
             if let Some(ref https_proxy) = config.https_proxy {
                 if let Ok(proxy) = reqwest::Proxy::https(https_proxy) {
                     client_builder = client_builder.proxy(proxy);
                 }
             }
-            
+
             // 配置不使用代理的地址
             if let Some(no_proxy) = config.no_proxy {
                 // 如果有 HTTPS 代理配置，使用它来设置 no_proxy
@@ -1133,9 +1133,9 @@ async fn load_image_with_proxy(url: String, proxy_config: Option<ProxyConfig>) -
             }
         }
     }
-    
+
     let client = client_builder.build().map_err(|e| format!("Failed to create HTTP client: {}", e))?;
-    
+
     // 发送请求
     match client.get(&url).send().await {
         Ok(response) => {
@@ -1144,12 +1144,12 @@ async fn load_image_with_proxy(url: String, proxy_config: Option<ProxyConfig>) -
                     .get("content-type")
                     .and_then(|ct| ct.to_str().ok())
                     .map(|s| s.to_string());
-                
+
                 match response.bytes().await {
                     Ok(bytes) => {
                         // 将图片数据转换为 Base64
                         let base64_data = base64::engine::general_purpose::STANDARD.encode(&bytes);
-                        
+
                         Ok(ImageLoadResult {
                             success: true,
                             data: Some(base64_data),
@@ -1183,7 +1183,7 @@ async fn load_image_with_proxy(url: String, proxy_config: Option<ProxyConfig>) -
 }
 
 /// 获取系统代理设置
-/// 
+///
 /// # 返回值
 /// 返回系统代理配置
 #[tauri::command]
@@ -1192,17 +1192,17 @@ async fn get_system_proxy() -> Result<ProxyConfig, String> {
     let http_proxy = std::env::var("HTTP_PROXY")
         .or_else(|_| std::env::var("http_proxy"))
         .ok();
-    
+
     let https_proxy = std::env::var("HTTPS_PROXY")
         .or_else(|_| std::env::var("https_proxy"))
         .ok();
-    
+
     let no_proxy = std::env::var("NO_PROXY")
         .or_else(|_| std::env::var("no_proxy"))
         .ok();
-    
+
     let enabled = http_proxy.is_some() || https_proxy.is_some();
-    
+
     Ok(ProxyConfig {
         enabled,
         http_proxy,
@@ -1212,10 +1212,10 @@ async fn get_system_proxy() -> Result<ProxyConfig, String> {
 }
 
 /// 设置代理配置
-/// 
+///
 /// # 参数
 /// * `config` - 代理配置
-/// 
+///
 /// # 返回值
 /// 返回操作结果
 #[tauri::command]
@@ -1232,7 +1232,7 @@ async fn set_proxy_config(config: ProxyConfig) -> Result<(), String> {
 async fn get_prevent_sleep_status() -> Result<bool, String> {
     match PREVENT_SLEEP_ENABLED.lock() {
         Ok(enabled) => Ok(*enabled),
-        Err(_) => Err("获取防休眠状态失败".to_string()),
+        Err(_) => Err("Failed to get sleep prevention status".to_string()),
     }
 }
 
@@ -1241,11 +1241,11 @@ async fn get_prevent_sleep_status() -> Result<bool, String> {
 async fn show_main_window(app: tauri::AppHandle) -> Result<(), String> {
     match app.get_webview_window("main") {
         Some(window) => {
-            window.show().map_err(|e| format!("显示窗口失败: {}", e))?;
-            println!("主窗口已显示");
+            window.show().map_err(|e| format!("Failed to show window: {}", e))?;
+            println!("Main window displayed");
             Ok(())
         }
-        None => Err("未找到主窗口".to_string()),
+        None => Err("Main window not found".to_string()),
     }
 }
 
@@ -1254,7 +1254,7 @@ async fn show_main_window(app: tauri::AppHandle) -> Result<(), String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     use tauri::Manager;
-    
+
     let builder = tauri::Builder::default();
 
     builder
@@ -1266,10 +1266,10 @@ pub fn run() {
         .setup(|app| {
             // 获取主窗口
             let main_window = app.get_webview_window("main").expect("failed to get main window");
-            
+
             // 将窗口句柄存储到应用状态中，供前端调用
             app.manage(main_window);
-            
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
