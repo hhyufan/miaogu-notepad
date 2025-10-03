@@ -116,7 +116,7 @@ const TabBar = ({fileManager}) => {
     // 初始更新语言引用
     useEffect(() => {
         updateLanguageRef();
-    }, [updateLanguageRef]);
+    });
 
     /**
      * 监听标签页变化并更新语言引用
