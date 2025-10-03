@@ -7,19 +7,19 @@
  * @version 1.3.0
  */
 
+use base64::Engine;
+use encoding_rs::{Encoding, UTF_8};
+use notify::{Event, EventKind, RecursiveMode, Watcher};
+use once_cell::sync::Lazy;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 use std::process::Command;
 use std::sync::{Arc, Mutex};
-use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
-use serde::{Deserialize, Serialize};
-use encoding_rs::{Encoding, UTF_8};
-use notify::{Watcher, RecursiveMode, Event, EventKind};
-use once_cell::sync::Lazy;
 use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_http::reqwest;
-use base64::Engine;
 
 // Windows API相关导入
 #[cfg(windows)]
@@ -190,7 +190,7 @@ async fn read_file_content(path: String) -> Result<FileOperationResult, String> 
                 encoding: Some(encoding.name().to_string()),
                 line_ending: Some(line_ending),
             })
-        },
+        }
         Err(e) => Ok(FileOperationResult {
             success: false,
             message: format!("Failed to read file: {}", e),
@@ -199,7 +199,7 @@ async fn read_file_content(path: String) -> Result<FileOperationResult, String> 
             file_name: None,
             encoding: None,
             line_ending: None,
-        })
+        }),
     }
 }
 
@@ -253,7 +253,8 @@ async fn get_file_info(path: String) -> Result<FileInfo, String> {
     let file_path = Path::new(&path);
     match fs::metadata(&path) {
         Ok(metadata) => {
-            let file_name = file_path.file_name()
+            let file_name = file_path
+                .file_name()
                 .unwrap_or_default()
                 .to_string_lossy()
                 .to_string();
@@ -263,12 +264,16 @@ async fn get_file_info(path: String) -> Result<FileInfo, String> {
                 size: metadata.len(),
                 is_file: metadata.is_file(),
                 is_dir: metadata.is_dir(),
-                modified: metadata.modified()
-                    .map(|time| time.duration_since(std::time::UNIX_EPOCH)
-                        .unwrap_or_default().as_secs())
+                modified: metadata
+                    .modified()
+                    .map(|time| {
+                        time.duration_since(UNIX_EPOCH)
+                            .unwrap_or_default()
+                            .as_secs()
+                    })
                     .unwrap_or(0),
             })
-        },
+        }
         Err(e) => Err(format!("Failed to get file info: {}", e)),
     }
 }
@@ -330,7 +335,8 @@ async fn set_open_file(file_path: String) -> Result<FileOperationResult, String>
             let (content, _, _) = encoding.decode(&bytes);
             let content_str = content.to_string();
             let line_ending = detect_line_ending(&content_str);
-            let file_name = path.file_name()
+            let file_name = path
+                .file_name()
                 .and_then(|name| name.to_str())
                 .unwrap_or("未知文件")
                 .to_string();
@@ -344,7 +350,7 @@ async fn set_open_file(file_path: String) -> Result<FileOperationResult, String>
                 encoding: Some(encoding.name().to_string()),
                 line_ending: Some(line_ending),
             })
-        },
+        }
         Err(e) => Ok(FileOperationResult {
             success: false,
             message: format!("读取文件失败: {}", e),
@@ -353,7 +359,7 @@ async fn set_open_file(file_path: String) -> Result<FileOperationResult, String>
             file_name: None,
             encoding: None,
             line_ending: None,
-        })
+        }),
     }
 }
 
@@ -368,7 +374,11 @@ async fn set_open_file(file_path: String) -> Result<FileOperationResult, String>
 /// # Returns
 /// * `Result<FileOperationResult, String>` - 保存操作结果
 #[tauri::command]
-async fn save_file(file_path: String, content: String, encoding: Option<String>) -> Result<FileOperationResult, String> {
+async fn save_file(
+    file_path: String,
+    content: String,
+    encoding: Option<String>,
+) -> Result<FileOperationResult, String> {
     if file_path.is_empty() {
         return Ok(FileOperationResult {
             success: false,
@@ -408,7 +418,8 @@ async fn save_file(file_path: String, content: String, encoding: Option<String>)
     // 写入文件
     match fs::write(&file_path, &encoded_bytes) {
         Ok(_) => {
-            let file_name = path.file_name()
+            let file_name = path
+                .file_name()
                 .and_then(|name| name.to_str())
                 .unwrap_or("未知文件")
                 .to_string();
@@ -422,7 +433,7 @@ async fn save_file(file_path: String, content: String, encoding: Option<String>)
                 encoding: Some(encoding_obj.name().to_string()),
                 line_ending: Some(detect_line_ending(&content)),
             })
-        },
+        }
         Err(e) => Ok(FileOperationResult {
             success: false,
             message: format!("保存文件失败: {}", e),
@@ -431,7 +442,7 @@ async fn save_file(file_path: String, content: String, encoding: Option<String>)
             file_name: None,
             encoding: None,
             line_ending: None,
-        })
+        }),
     }
 }
 
@@ -462,17 +473,21 @@ async fn get_directory_contents(dir_path: String) -> Result<Vec<FileInfo>, Strin
                             size: metadata.len(),
                             is_file: metadata.is_file(),
                             is_dir: metadata.is_dir(),
-                            modified: metadata.modified()
-                                .map(|time| time.duration_since(std::time::UNIX_EPOCH)
-                                    .unwrap_or_default().as_secs())
+                            modified: metadata
+                                .modified()
+                                .map(|time| {
+                                    time.duration_since(UNIX_EPOCH)
+                                        .unwrap_or_default()
+                                        .as_secs()
+                                })
                                 .unwrap_or(0),
                         });
                     }
                 }
             }
             Ok(contents)
-        },
-        Err(e) => Err(format!("读取目录失败: {}", e))
+        }
+        Err(e) => Err(format!("读取目录失败: {}", e)),
     }
 }
 
@@ -538,7 +553,8 @@ async fn rename_file(old_path: String, new_path: String) -> Result<FileOperation
     // 执行重命名操作
     match fs::rename(&old_path, &new_path) {
         Ok(_) => {
-            let new_file_name = new_file_path.file_name()
+            let new_file_name = new_file_path
+                .file_name()
                 .and_then(|name| name.to_str())
                 .unwrap_or("未知文件")
                 .to_string();
@@ -552,7 +568,7 @@ async fn rename_file(old_path: String, new_path: String) -> Result<FileOperation
                 encoding: None,
                 line_ending: None,
             })
-        },
+        }
         Err(e) => Ok(FileOperationResult {
             success: false,
             message: format!("文件重命名失败: {}", e),
@@ -561,13 +577,16 @@ async fn rename_file(old_path: String, new_path: String) -> Result<FileOperation
             file_name: None,
             encoding: None,
             line_ending: None,
-        })
+        }),
     }
 }
 
 // 更新文件行尾序列
 #[tauri::command]
-async fn update_file_line_ending(file_path: String, line_ending: String) -> Result<FileOperationResult, String> {
+async fn update_file_line_ending(
+    file_path: String,
+    line_ending: String,
+) -> Result<FileOperationResult, String> {
     if file_path.is_empty() {
         return Ok(FileOperationResult {
             success: false,
@@ -618,7 +637,7 @@ async fn update_file_line_ending(file_path: String, line_ending: String) -> Resu
             match line_ending.as_str() {
                 "CRLF" => content = content.replace('\n', "\r\n"),
                 "CR" => content = content.replace('\n', "\r"),
-                "LF" => {}, // LF是默认格式，无需转换
+                "LF" => {} // LF是默认格式，无需转换
                 _ => {
                     return Ok(FileOperationResult {
                         success: false,
@@ -638,7 +657,8 @@ async fn update_file_line_ending(file_path: String, line_ending: String) -> Resu
 
             match fs::write(&file_path, &encoded_bytes) {
                 Ok(_) => {
-                    let file_name = path.file_name()
+                    let file_name = path
+                        .file_name()
                         .and_then(|name| name.to_str())
                         .unwrap_or("未知文件")
                         .to_string();
@@ -652,7 +672,7 @@ async fn update_file_line_ending(file_path: String, line_ending: String) -> Resu
                         encoding: Some(encoding.name().to_string()),
                         line_ending: Some(line_ending),
                     })
-                },
+                }
                 Err(e) => Ok(FileOperationResult {
                     success: false,
                     message: format!("写入文件失败: {}", e),
@@ -661,9 +681,9 @@ async fn update_file_line_ending(file_path: String, line_ending: String) -> Resu
                     file_name: None,
                     encoding: None,
                     line_ending: None,
-                })
+                }),
             }
-        },
+        }
         Err(e) => Ok(FileOperationResult {
             success: false,
             message: format!("读取文件失败: {}", e),
@@ -672,7 +692,7 @@ async fn update_file_line_ending(file_path: String, line_ending: String) -> Resu
             file_name: None,
             encoding: None,
             line_ending: None,
-        })
+        }),
     }
 }
 
@@ -690,61 +710,56 @@ async fn execute_file(file_path: String) -> Result<String, String> {
     }
 
     // 获取文件扩展名
-    let extension = path.extension()
-        .and_then(|ext| ext.to_str())
-        .unwrap_or("");
+    let extension = path.extension().and_then(|ext| ext.to_str()).unwrap_or("");
 
     match extension.to_lowercase().as_str() {
         "exe" | "bat" | "cmd" => {
             // 直接执行可执行文件
             match Command::new(&file_path).spawn() {
                 Ok(_) => Ok(format!("成功启动文件: {}", file_path)),
-                Err(e) => Err(format!("执行文件失败: {}", e))
+                Err(e) => Err(format!("执行文件失败: {}", e)),
             }
-        },
+        }
         "ps1" => {
             // PowerShell 脚本
             match Command::new("powershell")
                 .args(["-ExecutionPolicy", "Bypass", "-File", &file_path])
-                .spawn() {
+                .spawn()
+            {
                 Ok(_) => Ok(format!("成功执行PowerShell脚本: {}", file_path)),
-                Err(e) => Err(format!("执行PowerShell脚本失败: {}", e))
+                Err(e) => Err(format!("执行PowerShell脚本失败: {}", e)),
             }
-        },
+        }
         "py" => {
             // Python 脚本
-            match Command::new("python")
-                .arg(&file_path)
-                .spawn() {
+            match Command::new("python").arg(&file_path).spawn() {
                 Ok(_) => Ok(format!("成功执行Python脚本: {}", file_path)),
-                Err(e) => Err(format!("执行Python脚本失败: {}", e))
+                Err(e) => Err(format!("执行Python脚本失败: {}", e)),
             }
-        },
+        }
         "js" => {
             // JavaScript 文件
-            match Command::new("node")
-                .arg(&file_path)
-                .spawn() {
+            match Command::new("node").arg(&file_path).spawn() {
                 Ok(_) => Ok(format!("成功执行JavaScript文件: {}", file_path)),
-                Err(e) => Err(format!("执行JavaScript文件失败: {}", e))
+                Err(e) => Err(format!("执行JavaScript文件失败: {}", e)),
             }
-        },
+        }
         _ => {
-             // 尝试使用系统默认程序打开
-             #[cfg(target_os = "windows")]
-             {
-                 match Command::new("cmd")
-                     .args(["/c", "start", "", &file_path])
-                     .spawn() {
-                     Ok(_) => Ok(format!("成功使用默认程序打开: {}", file_path)),
-                     Err(e) => Err(format!("打开文件失败: {}", e))
-                 }
-             }
-             #[cfg(not(target_os = "windows"))]
-             {
-                 Err("当前平台不支持此操作".to_string())
-             }
-         }
+            // 尝试使用系统默认程序打开
+            #[cfg(target_os = "windows")]
+            match Command::new("cmd")
+                .args(["/c", "start", "", &file_path])
+                .spawn()
+            {
+                Ok(_) => Ok(format!("成功使用默认程序打开: {}", file_path)),
+                Err(e) => Err(format!("打开文件失败: {}", e)),
+            }
+
+            #[cfg(not(target_os = "windows"))]
+            {
+                Err("当前平台不支持此操作".to_string())
+            }
+        }
     }
 }
 
@@ -767,23 +782,33 @@ async fn open_in_terminal(path: String) -> Result<String, String> {
     // 尝试使用 Windows Terminal
     if let Ok(_) = Command::new("wt")
         .args(["-d", work_dir.to_str().unwrap_or(".")])
-        .spawn() {
-        return Ok(format!("成功在Windows Terminal中打开: {}", work_dir.display()));
+        .spawn()
+    {
+        return Ok(format!(
+            "成功在Windows Terminal中打开: {}",
+            work_dir.display()
+        ));
     }
 
     // 备用方案：使用 PowerShell
     if let Ok(_) = Command::new("powershell")
-        .args(["-NoExit", "-Command", &format!("cd '{}'", work_dir.display())])
-        .spawn() {
+        .args([
+            "-NoExit",
+            "-Command",
+            &format!("cd '{}'", work_dir.display()),
+        ])
+        .spawn()
+    {
         return Ok(format!("成功在PowerShell中打开: {}", work_dir.display()));
     }
 
     // 最后备用方案：使用 cmd
     match Command::new("cmd")
         .args(["/k", &format!("cd /d {}", work_dir.display())])
-        .spawn() {
+        .spawn()
+    {
         Ok(_) => Ok(format!("成功在命令提示符中打开: {}", work_dir.display())),
-        Err(e) => Err(format!("打开终端失败: {}", e))
+        Err(e) => Err(format!("打开终端失败: {}", e)),
     }
 }
 
@@ -804,7 +829,7 @@ async fn show_in_explorer(path: String) -> Result<String, String> {
 
     match Command::new("explorer").args(&args).spawn() {
         Ok(_) => Ok("成功在资源管理器中显示".to_string()),
-        Err(e) => Err(format!("打开资源管理器失败: {}", e))
+        Err(e) => Err(format!("打开资源管理器失败: {}", e)),
     }
 }
 
@@ -820,14 +845,15 @@ async fn get_cli_args() -> Result<Vec<String>, String> {
     let args: Vec<String> = std::env::args().collect();
 
     // 过滤掉Tauri开发模式的参数
-    let filtered_args: Vec<String> = args.into_iter()
+    let filtered_args: Vec<String> = args
+        .into_iter()
         .skip(1) // 跳过程序路径
         .filter(|arg| {
             // 过滤掉Tauri开发模式的参数
-            !arg.starts_with("--no-default-features") &&
-            !arg.starts_with("--color") &&
-            arg != "--" &&
-            !arg.is_empty()
+            !arg.starts_with("--no-default-features")
+                && !arg.starts_with("--color")
+                && arg != "--"
+                && !arg.is_empty()
         })
         .map(|arg| {
             // 将相对路径转换为绝对路径
@@ -840,8 +866,8 @@ async fn get_cli_args() -> Result<Vec<String>, String> {
                     Ok(current_dir) => {
                         let absolute_path = current_dir.join(path);
                         absolute_path.to_string_lossy().to_string()
-                    },
-                    Err(_) => arg // 如果获取当前目录失败，返回原始参数
+                    }
+                    Err(_) => arg, // 如果获取当前目录失败，返回原始参数
                 }
             } else {
                 // 如果已经是绝对路径，直接返回
@@ -865,8 +891,13 @@ async fn start_file_watching(app_handle: AppHandle, file_path: String) -> Result
 
     // 获取文件的初始修改时间
     let initial_modified = match fs::metadata(&file_path) {
-        Ok(metadata) => metadata.modified()
-            .map(|time| time.duration_since(UNIX_EPOCH).unwrap_or_default().as_secs())
+        Ok(metadata) => metadata
+            .modified()
+            .map(|time| {
+                time.duration_since(UNIX_EPOCH)
+                    .unwrap_or_default()
+                    .as_secs()
+            })
             .unwrap_or(0),
         Err(_) => 0,
     };
@@ -889,7 +920,9 @@ async fn start_file_watching(app_handle: AppHandle, file_path: String) -> Result
                             // 检查是否需要发送事件（去重处理）
                             let should_emit = {
                                 let mut state = FILE_WATCHER_STATE.lock().unwrap();
-                                if let Some(last_modified) = state.watched_files.get_mut(&file_path_clone) {
+                                if let Some(last_modified) =
+                                    state.watched_files.get_mut(&file_path_clone)
+                                {
                                     // 只有当文件修改时间发生变化时才发送事件
                                     if let Ok(metadata) = fs::metadata(&path) {
                                         if let Ok(modified_time) = metadata.modified() {
@@ -949,7 +982,9 @@ async fn start_file_watching(app_handle: AppHandle, file_path: String) -> Result
     {
         let mut state = FILE_WATCHER_STATE.lock().unwrap();
         state.watchers.insert(file_path.clone(), Box::new(watcher));
-        state.watched_files.insert(file_path.clone(), initial_modified);
+        state
+            .watched_files
+            .insert(file_path.clone(), initial_modified);
     }
 
     Ok(true)
@@ -984,8 +1019,13 @@ async fn check_file_external_changes(file_path: String) -> Result<Option<FileCha
     }
 
     let current_modified = match fs::metadata(&file_path) {
-        Ok(metadata) => metadata.modified()
-            .map(|time| time.duration_since(UNIX_EPOCH).unwrap_or_default().as_secs())
+        Ok(metadata) => metadata
+            .modified()
+            .map(|time| {
+                time.duration_since(UNIX_EPOCH)
+                    .unwrap_or_default()
+                    .as_secs()
+            })
             .unwrap_or(0),
         Err(_) => return Err("无法获取文件信息".to_string()),
     };
@@ -1015,7 +1055,7 @@ async fn check_file_external_changes(file_path: String) -> Result<Option<FileCha
 #[tauri::command]
 async fn open_url(url: String) -> Result<(), String> {
     // 如果是本地文件路径，直接使用系统默认程序打开
-    if std::path::Path::new(&url).exists() {
+    if Path::new(&url).exists() {
         match open::that(&url) {
             Ok(_) => Ok(()),
             Err(e) => Err(format!("无法打开文件: {}", e)),
@@ -1034,22 +1074,18 @@ async fn open_url(url: String) -> Result<(), String> {
 #[tauri::command]
 async fn enable_prevent_sleep() -> Result<String, String> {
     #[cfg(windows)]
-    {
-        unsafe {
-            let result = SetThreadExecutionState(
-                ES_CONTINUOUS | ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED
-            );
+    let result = unsafe {
+        SetThreadExecutionState(ES_CONTINUOUS | ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED)
+    };
 
-            if result != 0 {
-                // 更新全局状态
-                if let Ok(mut enabled) = PREVENT_SLEEP_ENABLED.lock() {
-                    *enabled = true;
-                }
-                Ok("防休眠模式已启用".to_string())
-            } else {
-                Err("启用防休眠模式失败".to_string())
-            }
+    if result != 0 {
+        // 更新全局状态
+        if let Ok(mut enabled) = PREVENT_SLEEP_ENABLED.lock() {
+            *enabled = true;
         }
+        Ok("防休眠模式已启用".to_string())
+    } else {
+        Err("启用防休眠模式失败".to_string())
     }
 
     #[cfg(not(windows))]
@@ -1064,20 +1100,16 @@ async fn enable_prevent_sleep() -> Result<String, String> {
 #[tauri::command]
 async fn disable_prevent_sleep() -> Result<String, String> {
     #[cfg(windows)]
-    {
-        unsafe {
-            let result = SetThreadExecutionState(ES_CONTINUOUS);
+    let result = unsafe { SetThreadExecutionState(ES_CONTINUOUS) };
 
-            if result != 0 {
-                // 更新全局状态
-                if let Ok(mut enabled) = PREVENT_SLEEP_ENABLED.lock() {
-                    *enabled = false;
-                }
-                Ok("防休眠模式已禁用".to_string())
-            } else {
-                Err("禁用防休眠模式失败".to_string())
-            }
+    if result != 0 {
+        // 更新全局状态
+        if let Ok(mut enabled) = PREVENT_SLEEP_ENABLED.lock() {
+            *enabled = false;
         }
+        Ok("防休眠模式已禁用".to_string())
+    } else {
+        Err("禁用防休眠模式失败".to_string())
     }
 
     #[cfg(not(windows))]
@@ -1096,8 +1128,14 @@ async fn disable_prevent_sleep() -> Result<String, String> {
 /// # 返回值
 /// 返回包含图片数据的 ImageLoadResult
 #[tauri::command]
-async fn load_image_with_proxy(url: String, proxy_config: Option<ProxyConfig>) -> Result<ImageLoadResult, String> {
-    println!("Loading image: {} with proxy config: {:?}", url, proxy_config);
+async fn load_image_with_proxy(
+    url: String,
+    proxy_config: Option<ProxyConfig>,
+) -> Result<ImageLoadResult, String> {
+    println!(
+        "Loading image: {} with proxy config: {:?}",
+        url, proxy_config
+    );
 
     // 创建 HTTP 客户端
     let mut client_builder = reqwest::Client::builder()
@@ -1126,7 +1164,8 @@ async fn load_image_with_proxy(url: String, proxy_config: Option<ProxyConfig>) -
                 // 如果有 HTTPS 代理配置，使用它来设置 no_proxy
                 if let Some(ref https_proxy_url) = config.https_proxy {
                     if let Ok(proxy) = reqwest::Proxy::all(https_proxy_url) {
-                        let proxy_with_no_proxy = proxy.no_proxy(reqwest::NoProxy::from_string(&no_proxy));
+                        let proxy_with_no_proxy =
+                            proxy.no_proxy(reqwest::NoProxy::from_string(&no_proxy));
                         client_builder = client_builder.proxy(proxy_with_no_proxy);
                     }
                 }
@@ -1134,13 +1173,16 @@ async fn load_image_with_proxy(url: String, proxy_config: Option<ProxyConfig>) -
         }
     }
 
-    let client = client_builder.build().map_err(|e| format!("Failed to create HTTP client: {}", e))?;
+    let client = client_builder
+        .build()
+        .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
 
     // 发送请求
     match client.get(&url).send().await {
         Ok(response) => {
             if response.status().is_success() {
-                let content_type = response.headers()
+                let content_type = response
+                    .headers()
                     .get("content-type")
                     .and_then(|ct| ct.to_str().ok())
                     .map(|s| s.to_string());
@@ -1162,7 +1204,7 @@ async fn load_image_with_proxy(url: String, proxy_config: Option<ProxyConfig>) -
                         data: None,
                         content_type: None,
                         error: Some(format!("Failed to read response body: {}", e)),
-                    })
+                    }),
                 }
             } else {
                 Ok(ImageLoadResult {
@@ -1178,7 +1220,7 @@ async fn load_image_with_proxy(url: String, proxy_config: Option<ProxyConfig>) -
             data: None,
             content_type: None,
             error: Some(format!("Request failed: {}", e)),
-        })
+        }),
     }
 }
 
@@ -1238,10 +1280,12 @@ async fn get_prevent_sleep_status() -> Result<bool, String> {
 
 /// 显示主窗口 - 由前端在加载完成后调用
 #[tauri::command]
-async fn show_main_window(app: tauri::AppHandle) -> Result<(), String> {
+async fn show_main_window(app: AppHandle) -> Result<(), String> {
     match app.get_webview_window("main") {
         Some(window) => {
-            window.show().map_err(|e| format!("Failed to show window: {}", e))?;
+            window
+                .show()
+                .map_err(|e| format!("Failed to show window: {}", e))?;
             println!("Main window displayed");
             Ok(())
         }
@@ -1265,7 +1309,9 @@ pub fn run() {
         .plugin(tauri_plugin_http::init())
         .setup(|app| {
             // 获取主窗口
-            let main_window = app.get_webview_window("main").expect("failed to get main window");
+            let main_window = app
+                .get_webview_window("main")
+                .expect("failed to get main window");
 
             // 将窗口句柄存储到应用状态中，供前端调用
             app.manage(main_window);

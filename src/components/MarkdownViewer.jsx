@@ -18,6 +18,7 @@ import MermaidRenderer from './MermaidRenderer';
 import {useTheme} from '../hooks/redux';
 import {useI18n} from '../hooks/useI18n';
 import {convertFileSrc} from '@tauri-apps/api/core';
+import {readTextFile} from '@tauri-apps/plugin-fs';
 import ProxyImage from './ProxyImage';
 import {resolvePath} from '../utils/pathUtils';
 import {handleLinkClick} from '../utils/linkUtils';
@@ -79,7 +80,6 @@ const AutoTreeH1 = ({titleText, isDarkMode, containerRef, children, currentFileN
 
                     // 使用readTextFile直接读取文件，避免convertFileSrc的500错误
                     try {
-                        const {readTextFile} = await import('@tauri-apps/plugin-fs');
                         const text = await readTextFile(fullPath);
 
                         // 确保有实际内容
