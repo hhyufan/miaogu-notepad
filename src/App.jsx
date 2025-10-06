@@ -19,8 +19,8 @@ import tauriApi, { fileApi } from './utils/tauriApi';
 import { useSessionRestore } from './hooks/useSessionRestore';
 import AppHeader from './components/AppHeader';
 import TabBar from './components/TabBar';
-import CodeEditor from './components/CodeEditor';
-import TreeEditor from './components/TreeEditor';
+import LazyCodeEditor from './components/LazyCodeEditor';
+import LazyTreeEditor from './components/LazyTreeEditor';
 import EditorStatusBar from './components/EditorStatusBar';
 
 import WelcomeScreen from './components/WelcomeScreen';
@@ -187,7 +187,7 @@ const AppContent = ({ isDarkMode, toggleTheme, fileManager, isHeaderVisible, set
                             className="monaco-editor-wrapper"
                             style={{ display: (isMgtreeFile && isTreeMode) ? 'none' : 'block' }}
                         >
-                            <CodeEditor
+                            <LazyCodeEditor
                                 isDarkMode={isDarkMode}
                                 fileManager={fileManager}
                                 showMarkdownPreview={isMarkdownFile && editorMode === EDITOR_MODES.MARKDOWN}
@@ -202,7 +202,7 @@ const AppContent = ({ isDarkMode, toggleTheme, fileManager, isHeaderVisible, set
                                 className="tree-editor-wrapper"
                                 style={{ display: isTreeMode ? 'block' : 'none' }}
                             >
-                                <TreeEditor
+                                <LazyTreeEditor
                                     isDarkMode={isDarkMode}
                                     fileManager={fileManager}
                                     isHeaderVisible={isHeaderVisible}

@@ -21,24 +21,31 @@
  *   showMarkdownPreview={false}
  * />
  */
-import {useCallback, useEffect, useRef, useState} from 'react';
-import {Empty, FloatButton, message} from 'antd';
-import {VerticalAlignTopOutlined} from '@ant-design/icons';
-import {useTranslation} from 'react-i18next';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Empty, FloatButton, message, Dropdown } from 'antd';
+import { VerticalAlignTopOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import '../monaco-worker';
 import * as monaco from 'monaco-editor';
-import {shikiToMonaco} from '@shikijs/monaco';
-import {createHighlighter} from 'shiki';
-import {useEditor, useTheme} from '../hooks/redux';
+import { shikiToMonaco } from '@shikijs/monaco';
+import { createHighlighter } from 'shiki';
+import { useEditor, useTheme } from '../hooks/redux';
 import tauriApi from '../utils/tauriApi';
-import {handleLinkClick} from '../utils/linkUtils';
-import MarkdownViewer from './MarkdownViewer';
+import { handleLinkClick } from '../utils/linkUtils';
+import LazyMarkdownViewer from './LazyMarkdownViewer';
 import extensionToLanguage from '../configs/file-extensions.json';
-import {mgtreeLanguageConfig, mgtreeThemeConfig} from '../configs/mgtree-language';
-import {mgtreeShikiTheme, mgtreeTextMateGrammar} from '../configs/mgtree-textmate';
+import languageFormatConfig from '../configs/language-format-config.json';
+import { mgtreeLanguageConfig, mgtreeThemeConfig } from '../configs/mgtree-language';
+import { mgtreeShikiTheme, mgtreeTextMateGrammar } from '../configs/mgtree-textmate';
+import * as prettier from 'prettier/standalone';
+import * as prettierPluginBabel from 'prettier/plugins/babel';
+import * as prettierPluginEstree from 'prettier/plugins/estree';
+import * as prettierPluginTypescript from 'prettier/plugins/typescript';
+import * as prettierPluginHtml from 'prettier/plugins/html';
+import * as prettierPluginCss from 'prettier/plugins/postcss';
 import './CodeEditor.scss';
 
-const {file: fileApi, settings: settingsApi} = tauriApi;
+const { file: fileApi, settings: settingsApi } = tauriApi;
 
 /** 主题配置映射表 */
 const themes = {
@@ -46,24 +53,54 @@ const themes = {
 };
 
 function CodeEditor({
-                        isDarkMode,
-                        fileManager,
-                        showMarkdownPreview = false,
-                        languageRef,
-                        isHeaderVisible = true,
-                        setCursorPosition,
-                        setCharacterCount
-                    }) {
-    const {t} = useTranslation();
+    isDarkMode,
+    fileManager,
+    showMarkdownPreview = false,
+    languageRef,
+    isHeaderVisible = true,
+    setCursorPosition,
+    setCharacterCount
+}) {
+    const { t } = useTranslation();
     const editorRef = useRef(null);
     const containerRef = useRef(null);
     const isInternalChange = useRef(false);
+    const isFormattingRef = useRef(false); // 格式化操作标志
     const [highlighterReady, setHighlighterReady] = useState(false);
     const [internalShowMarkdownPreview, setInternalShowMarkdownPreview] = useState(false);
     const [showBackToTop, setShowBackToTop] = useState(false);
+    
+    // 右键菜单相关状态
+    const [contextMenuVisible, setContextMenuVisible] = useState(false);
+    const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
+    const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
+    // 全局鼠标位置跟踪
+    useEffect(() => {
+        const handleMouseMove = (e) => {
+            setMousePosition({ x: e.clientX, y: e.clientY });
+        };
+
+        document.addEventListener('mousemove', handleMouseMove);
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+        };
+    }, []);
+
+    // 点击其他地方关闭右键菜单
+    useEffect(() => {
+        const handleClickOutside = () => {
+            setContextMenuVisible(false);
+        };
+
+        if (contextMenuVisible) {
+            document.addEventListener('click', handleClickOutside);
+            return () => document.removeEventListener('click', handleClickOutside);
+        }
+    }, [contextMenuVisible]);
 
     const actualShowMarkdownPreview = showMarkdownPreview || internalShowMarkdownPreview;
-    const {fontSize, fontFamily, lineHeight} = useTheme();
+    const { fontSize, fontFamily, lineHeight } = useTheme();
     const {
         wordWrap,
         scrollBeyondLastLine,
@@ -82,7 +119,7 @@ function CodeEditor({
         glyphMargin,
         showFoldingControls
     } = useEditor();
-    const {currentFile, updateCode: updateContent} = fileManager;
+    const { currentFile, updateCode: updateContent } = fileManager;
 
     /**
      * 向文件管理器暴露获取编辑器内容的方法
@@ -91,9 +128,14 @@ function CodeEditor({
     useEffect(() => {
         if (fileManager && editorRef.current) {
             if (!fileManager.getEditorContent) {
-                fileManager.getEditorContent = {current: null};
+                fileManager.getEditorContent = { current: null };
             }
-            fileManager.getEditorContent.current = () => editorRef.current.getValue();
+            fileManager.getEditorContent.current = () => {
+                if (editorRef.current && editorRef.current.getValue) {
+                    return editorRef.current.getValue();
+                }
+                return '';
+            };
         }
     }, [fileManager, editorRef.current]);
 
@@ -182,6 +224,598 @@ function CodeEditor({
         setInternalShowMarkdownPreview(false);
     }, []);
 
+    // 右键菜单功能函数
+    const handleSelectAll = useCallback(() => {
+        if (editorRef.current) {
+            try {
+                // 直接使用编辑器API进行全选
+                const model = editorRef.current.getModel();
+                if (model) {
+                    const fullRange = model.getFullModelRange();
+                    editorRef.current.setSelection(fullRange);
+                    editorRef.current.focus();
+                }
+            } catch (error) {
+                console.warn('全选操作失败:', error);
+            }
+        }
+        setContextMenuVisible(false);
+    }, []);
+
+    const handleCut = useCallback(async () => {
+        if (editorRef.current) {
+            try {
+                const selection = editorRef.current.getSelection();
+                if (selection && !selection.isEmpty()) {
+                    const selectedText = editorRef.current.getModel().getValueInRange(selection);
+                    
+                    // 使用浏览器剪贴板API
+                    await navigator.clipboard.writeText(selectedText);
+                    
+                    // 删除选中的文本
+                    editorRef.current.executeEdits('cut', [{
+                        range: selection,
+                        text: ''
+                    }]);
+                }
+            } catch (error) {
+                console.warn('剪切操作失败:', error);
+            }
+        }
+        setContextMenuVisible(false);
+    }, []);
+
+    const handleCopy = useCallback(async () => {
+        if (editorRef.current) {
+            try {
+                const selection = editorRef.current.getSelection();
+                if (selection && !selection.isEmpty()) {
+                    const selectedText = editorRef.current.getModel().getValueInRange(selection);
+                    
+                    // 使用浏览器剪贴板API
+                    await navigator.clipboard.writeText(selectedText);
+                }
+            } catch (error) {
+                console.warn('复制操作失败:', error);
+            }
+        }
+        setContextMenuVisible(false);
+    }, []);
+
+    const handlePaste = useCallback(async () => {
+        if (editorRef.current) {
+            try {
+                // 使用浏览器剪贴板API读取文本
+                const text = await navigator.clipboard.readText();
+                
+                if (text) {
+                    const selection = editorRef.current.getSelection();
+                    if (selection) {
+                        editorRef.current.executeEdits('paste', [{
+                            range: selection,
+                            text: text
+                        }]);
+                    }
+                }
+            } catch (error) {
+                console.warn('粘贴操作失败:', error);
+            }
+        }
+        setContextMenuVisible(false);
+    }, []);
+
+    /**
+     * 获取语言特定的格式化选项
+     * @param {string} language - 编程语言标识
+     * @returns {Object} 格式化选项配置
+     */
+    const getLanguageFormatOptions = useCallback((language) => {
+        // 从JSON配置文件中获取语言特定配置
+        const config = languageFormatConfig.languageConfigs[language];
+        
+        // 返回语言特定配置，如果没有则使用默认配置
+        return config || languageFormatConfig._defaultConfig;
+    }, []);
+
+    // 格式化提供程序注册表
+    const formatterRegistry = useRef(new Map());
+
+    // 注册Monaco Editor格式化提供程序
+    const registerMonacoFormatters = useCallback(() => {
+        // JavaScript/TypeScript格式化器（使用Prettier）
+        const jsFormatter = {
+            provideDocumentFormattingEdits: async (model, options, token) => {
+                const code = model.getValue();
+                const language = model.getLanguageId();
+                
+                try {
+                    let formatted;
+                    if (language === 'javascript' || language === 'typescript') {
+                        // 使用Prettier格式化JavaScript/TypeScript
+                        formatted = await prettier.format(code, {
+                            parser: language === 'typescript' ? 'typescript' : 'babel',
+                            plugins: [prettierPluginBabel, prettierPluginEstree, prettierPluginTypescript],
+                            tabWidth: options.tabSize || 4,
+                            useTabs: !options.insertSpaces,
+                            semi: true,
+                            singleQuote: true,
+                            trailingComma: 'es5',
+                            bracketSpacing: true,
+                            arrowParens: 'avoid'
+                        });
+                    } else {
+                        // 不支持的语言
+                        console.warn(`暂不支持 ${language} 语言的代码格式化功能`);
+                        return [];
+                    }
+                    
+                    if (formatted === code) {
+                        return [];
+                    }
+                    
+                    return [{
+                        range: model.getFullModelRange(),
+                        text: formatted
+                    }];
+                } catch (error) {
+                    console.warn(`格式化失败 (${language}):`, error);
+                    return [];
+                }
+            }
+        };
+
+        // HTML格式化器（使用Prettier）
+        const htmlFormatter = {
+            provideDocumentFormattingEdits: async (model, options, token) => {
+                const code = model.getValue();
+                
+                try {
+                    const formatted = await prettier.format(code, {
+                        parser: 'html',
+                        plugins: [prettierPluginHtml],
+                        tabWidth: options.tabSize || 4,
+                        useTabs: !options.insertSpaces,
+                        htmlWhitespaceSensitivity: 'css',
+                        bracketSameLine: false
+                    });
+                    
+                    if (formatted === code) {
+                        return [];
+                    }
+                    
+                    return [{
+                        range: model.getFullModelRange(),
+                        text: formatted
+                    }];
+                } catch (error) {
+                    console.warn('HTML格式化失败:', error);
+                    return [];
+                }
+            }
+        };
+
+        // CSS格式化器（使用Prettier）
+        const cssFormatter = {
+            provideDocumentFormattingEdits: async (model, options, token) => {
+                const code = model.getValue();
+                
+                try {
+                    const formatted = await prettier.format(code, {
+                        parser: 'css',
+                        plugins: [prettierPluginCss],
+                        tabWidth: options.tabSize || 4,
+                        useTabs: !options.insertSpaces
+                    });
+                    
+                    if (formatted === code) {
+                        return [];
+                    }
+                    
+                    return [{
+                        range: model.getFullModelRange(),
+                        text: formatted
+                    }];
+                } catch (error) {
+                    console.warn('CSS格式化失败:', error);
+                    return [];
+                }
+            }
+        };
+
+        // JSON格式化器（使用Prettier）
+        const jsonFormatter = {
+            provideDocumentFormattingEdits: async (model, options, token) => {
+                const code = model.getValue();
+                
+                try {
+                    const formatted = await prettier.format(code, {
+                        parser: 'json',
+                        plugins: [prettierPluginBabel, prettierPluginEstree],
+                        tabWidth: options.tabSize || 4,
+                        useTabs: !options.insertSpaces
+                    });
+                    
+                    if (formatted === code) {
+                        return [];
+                    }
+                    
+                    return [{
+                        range: model.getFullModelRange(),
+                        text: formatted
+                    }];
+                } catch (error) {
+                    console.warn('JSON格式化失败:', error);
+                    return [];
+                }
+            }
+        };
+
+        // YAML格式化器（使用Prettier）
+        const yamlFormatter = {
+            provideDocumentFormattingEdits: async (model, options, token) => {
+                const code = model.getValue();
+                
+                try {
+                    const formatted = await prettier.format(code, {
+                        parser: 'yaml',
+                        tabWidth: options.tabSize || 4,
+                        useTabs: !options.insertSpaces
+                    });
+                    
+                    if (formatted === code) {
+                        return [];
+                    }
+                    
+                    return [{
+                        range: model.getFullModelRange(),
+                        text: formatted
+                    }];
+                } catch (error) {
+                    console.warn('YAML格式化失败:', error);
+                    return [];
+                }
+            }
+        };
+
+        // Markdown格式化器（使用Prettier）
+        const markdownFormatter = {
+            provideDocumentFormattingEdits: async (model, options, token) => {
+                const code = model.getValue();
+                
+                try {
+                    const formatted = await prettier.format(code, {
+                        parser: 'markdown',
+                        tabWidth: options.tabSize || 4,
+                        useTabs: !options.insertSpaces,
+                        proseWrap: 'preserve'
+                    });
+                    
+                    if (formatted === code) {
+                        return [];
+                    }
+                    
+                    return [{
+                        range: model.getFullModelRange(),
+                        text: formatted
+                    }];
+                } catch (error) {
+                    console.warn('Markdown格式化失败:', error);
+                    return [];
+                }
+            }
+        };
+
+        // 不支持格式化的语言警告器
+        const unsupportedFormatter = {
+            provideDocumentFormattingEdits: (model, options, token) => {
+                const language = model.getLanguageId();
+                console.warn(`暂不支持 ${language} 语言的代码格式化功能`);
+                // 使用 Ant Design message 显示用户友好的提示
+                message.warning(`暂不支持 ${language} 语言的代码格式化功能`);
+                return [];
+            }
+        };
+
+        // 定义 Prettier 支持的语言白名单
+        const prettierSupportedLanguages = [
+            // JavaScript/TypeScript 系列
+            'javascript', 'typescript', 'jsx', 'tsx',
+            // Web 前端语言
+            'html', 'css', 'scss', 'less',
+            // 数据格式
+            'json', 'yaml', 'yml',
+            // 文档格式
+            'markdown', 'md'
+        ];
+
+        // 只为 Prettier 支持的语言注册格式化器
+        const formatters = [
+            { languages: ['javascript', 'typescript', 'jsx', 'tsx'], formatter: jsFormatter },
+            { languages: ['html'], formatter: htmlFormatter },
+            { languages: ['css', 'scss', 'less'], formatter: cssFormatter },
+            { languages: ['json'], formatter: jsonFormatter },
+            { languages: ['yaml', 'yml'], formatter: yamlFormatter },
+            { languages: ['markdown', 'md'], formatter: markdownFormatter }
+        ];
+
+        // 注册支持的格式化器
+        formatters.forEach(({ languages, formatter }) => {
+            languages.forEach(lang => {
+                if (!formatterRegistry.current.has(lang)) {
+                    const disposable = monaco.languages.registerDocumentFormattingEditProvider(lang, formatter);
+                    formatterRegistry.current.set(lang, disposable);
+                }
+            });
+        });
+
+        // 为所有其他语言注册不支持的警告处理器
+        const allMonacoLanguages = monaco.languages.getLanguages().map(lang => lang.id);
+        const registeredLanguages = new Set(formatters.flatMap(f => f.languages));
+        
+        allMonacoLanguages.forEach(lang => {
+            if (!registeredLanguages.has(lang) && !formatterRegistry.current.has(lang)) {
+                const disposable = monaco.languages.registerDocumentFormattingEditProvider(lang, unsupportedFormatter);
+                formatterRegistry.current.set(lang, disposable);
+            }
+        });
+    }, []);
+
+    // 清理格式化提供程序
+    const cleanupFormatters = useCallback(() => {
+        formatterRegistry.current.forEach((disposable, language) => {
+            try {
+                disposable?.dispose?.();
+            } catch (error) {
+                console.warn(`清理格式化器失败 (${language}):`, error);
+            }
+        });
+        formatterRegistry.current.clear();
+    }, []);
+
+
+
+    // mgtree缩进验证和修正函数
+    const validateAndFixMgtreeIndentation = useCallback((code) => {
+        const lines = code.split('\n');
+        const fixedLines = [];
+        const indentStack = []; // 用于跟踪缩进层级
+        
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            
+            // 跳过空行，保持原样
+            if (line.trim() === '') {
+                fixedLines.push(line);
+                continue;
+            }
+            
+            // 计算当前行的缩进
+            const match = line.match(/^(\s*)/);
+            const indentStr = match ? match[1] : '';
+            let indentLength = indentStr.length;
+            
+            // 处理制表符转换为空格
+            if (indentStr.includes('\t')) {
+                const tabCount = (indentStr.match(/\t/g) || []).length;
+                const spaceCount = indentStr.length - tabCount;
+                indentLength = spaceCount + (tabCount * 2);
+            }
+            
+            // 智能缩进修正逻辑
+            let correctedIndent = 0;
+            
+            if (indentLength === 0) {
+                // 顶级行，无缩进
+                correctedIndent = 0;
+                indentStack.length = 0; // 清空缩进栈
+                indentStack.push(0);
+            } else {
+                // 查找合适的缩进层级
+                let targetLevel = -1;
+                
+                // 首先检查是否与现有层级匹配（允许2的倍数）
+                for (let j = indentStack.length - 1; j >= 0; j--) {
+                    const stackLevel = indentStack[j];
+                    // 如果当前缩进接近某个已存在的层级（误差在1个空格内）
+                    if (Math.abs(indentLength - stackLevel) <= 1) {
+                        targetLevel = j;
+                        correctedIndent = stackLevel;
+                        break;
+                    }
+                }
+                
+                // 如果没有找到匹配的层级，创建新层级
+                if (targetLevel === -1) {
+                    const lastLevel = indentStack[indentStack.length - 1] || 0;
+                    
+                    if (indentLength > lastLevel) {
+                        // 增加缩进层级，标准化为2的倍数
+                        correctedIndent = lastLevel + 2;
+                        indentStack.push(correctedIndent);
+                    } else {
+                        // 减少缩进层级，找到合适的父级
+                        const targetIndent = Math.floor(indentLength / 2) * 2;
+                        
+                        // 清理缩进栈，保留小于等于目标缩进的层级
+                        while (indentStack.length > 0 && indentStack[indentStack.length - 1] > targetIndent) {
+                            indentStack.pop();
+                        }
+                        
+                        // 如果栈为空或目标缩进不在栈中，添加它
+                        if (indentStack.length === 0 || indentStack[indentStack.length - 1] !== targetIndent) {
+                            if (targetIndent > 0) {
+                                indentStack.push(targetIndent);
+                            }
+                        }
+                        
+                        correctedIndent = targetIndent;
+                    }
+                } else {
+                    // 找到匹配层级，清理栈到该层级
+                    indentStack.length = targetLevel + 1;
+                }
+            }
+            
+            // 应用修正后的缩进
+            const newIndent = ' '.repeat(correctedIndent);
+            fixedLines.push(newIndent + line.trim());
+        }
+        
+        return fixedLines.join('\n');
+    }, []);
+
+
+
+    // 使用Prettier进行代码格式化
+    const formatWithPrettier = useCallback(async (code, language) => {
+        try {
+            console.log(`formatWithPrettier called with language: ${language}`);
+            
+            // 语言映射到Prettier支持的parser和所需插件
+            const parserConfig = {
+                'javascript': { parser: 'babel', plugins: [prettierPluginBabel, prettierPluginEstree] },
+                'typescript': { parser: 'typescript', plugins: [prettierPluginTypescript, prettierPluginEstree] },
+                'json': { parser: 'json', plugins: [prettierPluginBabel, prettierPluginEstree] },
+                'html': { parser: 'html', plugins: [prettierPluginHtml] },
+                'css': { parser: 'css', plugins: [prettierPluginCss] },
+                'scss': { parser: 'scss', plugins: [prettierPluginCss] },
+                'less': { parser: 'less', plugins: [prettierPluginCss] },
+                'markdown': { parser: 'markdown', plugins: [prettierPluginBabel, prettierPluginEstree] },
+                'yaml': { parser: 'yaml', plugins: [prettierPluginBabel, prettierPluginEstree] }
+            };
+
+            const config = parserConfig[language];
+            if (!config) {
+                console.log(`No parser config found for language: ${language}`);
+                // 如果Prettier不支持该语言，回退到Monaco的格式化
+                return null;
+            }
+            
+            console.log(`Using parser config:`, config);
+
+            // 从TabBar获取真实的文件扩展名信息
+            const tabBarLanguage = fileManager?.tabBarRef?.languageRef?.current;
+            
+            // 获取格式化配置
+            let formatOptions = getLanguageFormatOptions(tabBarLanguage === 'mgtree' ? 'mgtree' : language);
+            
+            // 合并默认配置和语言特定配置
+            const defaultPrettierConfig = languageFormatConfig._defaultConfig.prettier || {};
+            const languagePrettierConfig = formatOptions.prettier || {};
+            
+            // 转换为Prettier配置
+            const prettierOptions = {
+                parser: config.parser,
+                plugins: config.plugins,
+                tabWidth: formatOptions.tabSize || 4,
+                useTabs: formatOptions.insertSpaces === false,
+                ...defaultPrettierConfig,
+                ...languagePrettierConfig
+            };
+
+            // 特殊处理mgtree文件
+            if (tabBarLanguage === 'mgtree') {
+                prettierOptions.tabWidth = 2;
+                prettierOptions.useTabs = false;
+                
+                // 对mgtree文件进行严格的缩进检查和修正
+                const correctedCode = validateAndFixMgtreeIndentation(code);
+                const formatted = await prettier.format(correctedCode, prettierOptions);
+                return formatted;
+            }
+
+            const formatted = await prettier.format(code, prettierOptions);
+            return formatted;
+        } catch (error) {
+            console.warn('Prettier格式化失败:', error);
+            return null;
+        }
+    }, [fileManager]);
+
+    const handleFormatDocument = useCallback(async () => {
+        if (editorRef.current) {
+            try {
+                const model = editorRef.current.getModel();
+                const code = model.getValue();
+                let language = model.getLanguageId();
+                
+                // 从TabBar获取真实的文件扩展名信息
+                const tabBarLanguage = fileManager?.tabBarRef?.languageRef?.current;
+                
+                // 特殊处理：如果TabBar检测到是mgtree文件，使用mgtree配置
+                if (tabBarLanguage === 'mgtree') {
+                    language = 'mgtree';
+                    
+                    // 对于mgtree文件，直接进行缩进修正，不依赖Prettier
+                    const correctedCode = validateAndFixMgtreeIndentation(code);
+                    
+                    if (correctedCode !== code) {
+                        const selection = editorRef.current.getSelection();
+                        const range = model.getFullModelRange();
+                        
+                        editorRef.current.executeEdits('mgtree-indent-fix', [{
+                            range: range,
+                            text: correctedCode
+                        }]);
+                        
+                        // 恢复选择
+                        if (selection) {
+                            editorRef.current.setSelection(selection);
+                        }
+                        
+                        return;
+                    } else {
+                        return;
+                    }
+                }
+
+                // 尝试使用Prettier格式化
+                const formattedCode = await formatWithPrettier(code, language);
+                
+                if (formattedCode && formattedCode !== code) {
+                    // 使用Prettier格式化成功
+                    isFormattingRef.current = true; // 标记为格式化操作
+                    
+                    // 保存当前文件的修改状态
+                    const currentModifiedState = currentFile ? currentFile.isModified : false;
+                    
+                    const selection = editorRef.current.getSelection();
+                    const range = model.getFullModelRange();
+                    
+                    editorRef.current.executeEdits('prettier-format', [{
+                        range: range,
+                        text: formattedCode
+                    }]);
+                    
+                    // 恢复选择
+                    if (selection) {
+                        editorRef.current.setSelection(selection);
+                    }
+                    
+                    // 如果格式化前文件未修改，格式化后也应保持未修改状态
+                    if (!currentModifiedState && currentFile && updateContent) {
+                        setTimeout(() => {
+                            // 更新文件状态，保持原有的修改状态
+                            updateContent(formattedCode, { preserveModifiedState: !currentModifiedState });
+                        }, 10);
+                    }
+                    
+                    // 重置格式化标志
+                    setTimeout(() => {
+                        isFormattingRef.current = false;
+                    }, 50);
+                } else {
+                    // 不支持的语言，显示警告
+                    console.warn(`暂不支持 ${language} 语言的代码格式化功能`);
+                    message.warning(`暂不支持 ${language} 语言的代码格式化功能`);
+                }
+            } catch (error) {
+                console.warn('格式化操作失败:', error);
+            }
+        }
+        setContextMenuVisible(false);
+    }, [fileManager, formatWithPrettier]);
+
     /**
      * 加载AI补全服务配置
      * 从本地存储或配置系统读取相关参数
@@ -244,14 +878,14 @@ function CodeEditor({
             if (ghostPos.lineNumber === range.startLineNumber) {
                 const ghostEndColumn = ghostPos.column + ghostData.originalText.length;
                 if (ghostEndColumn === range.startColumn) {
-                    leftGhost = {id, ghostData};
+                    leftGhost = { id, ghostData };
                 }
             } else if (ghostPos.lineNumber === range.startLineNumber - 1) {
                 const lineContent = model.getLineContent(ghostPos.lineNumber);
                 const ghostEndColumn = ghostPos.column + ghostData.originalText.length;
                 const hasNewline = ghostData.originalText.includes('\n');
                 if ((hasNewline || ghostEndColumn > lineContent.length) && range.startColumn === 1) {
-                    leftGhost = {id, ghostData};
+                    leftGhost = { id, ghostData };
                 }
             }
         }
@@ -260,13 +894,13 @@ function CodeEditor({
         for (const [id, ghostData] of ghostTextsRef.current) {
             const ghostPos = ghostData.originalPosition;
             if (ghostPos.lineNumber === range.endLineNumber && ghostPos.column === range.endColumn) {
-                rightGhost = {id, ghostData};
+                rightGhost = { id, ghostData };
             } else if (ghostPos.lineNumber === range.endLineNumber + 1) {
                 const lineContent = model.getLineContent(range.endLineNumber);
                 const selectedText = model.getValueInRange(range);
                 const hasNewline = selectedText.includes('\n');
                 if ((hasNewline || range.endColumn > lineContent.length) && ghostPos.column === 1) {
-                    rightGhost = {id, ghostData};
+                    rightGhost = { id, ghostData };
                 }
             }
         }
@@ -305,7 +939,7 @@ function CodeEditor({
                     text += '\n';
                 }
                 mergedText = text + rightText;
-                mergedPosition = {lineNumber: range.startLineNumber, column: range.startColumn};
+                mergedPosition = { lineNumber: range.startLineNumber, column: range.startColumn };
                 ghostsToRemove = [rightGhost.id];
             }
 
@@ -339,13 +973,13 @@ function CodeEditor({
 
         // 创建新幽灵文本并注册补全提供者
         const ghostId = `ghost-${++ghostTextCounterRef.current}`;
-        const position = {lineNumber: range.startLineNumber, column: range.startColumn};
+        const position = { lineNumber: range.startLineNumber, column: range.startColumn };
 
         ghostTextsRef.current.set(ghostId, {
             text,
             originalRange: range,
             currentPosition: position,
-            originalPosition: {...position},
+            originalPosition: { ...position },
             originalText: text
         });
 
@@ -393,7 +1027,7 @@ function CodeEditor({
                     }
                 }
 
-                if (relevantGhosts.length === 0) return {items: []};
+                if (relevantGhosts.length === 0) return { items: [] };
 
                 // 排序并选择最佳匹配的幽灵文本
                 relevantGhosts.sort((a, b) => {
@@ -509,7 +1143,7 @@ function CodeEditor({
                 }
             }
 
-            for (const {text, range} of mergedTexts) {
+            for (const { text, range } of mergedTexts) {
                 createGhostText(text, range);
             }
         }, 100);
@@ -541,7 +1175,7 @@ function CodeEditor({
         };
 
         if (shouldCreateGhost()) {
-            pendingGhostTextsRef.current.push({text, range});
+            pendingGhostTextsRef.current.push({ text, range });
             debouncedCreateGhostTexts();
         }
     }, [debouncedCreateGhostTexts]);
@@ -727,12 +1361,12 @@ function CodeEditor({
         if (!model) return;
 
         changeEvent.changes.forEach(change => {
-            const {range, text} = change;
+            const { range, text } = change;
 
             ghostTextsRef.current.forEach((ghostData, ghostId) => {
                 const originalPos = ghostData.originalPosition;
-                const changeStartPos = {lineNumber: range.startLineNumber, column: range.startColumn};
-                const changeEndPos = {lineNumber: range.endLineNumber, column: range.endColumn};
+                const changeStartPos = { lineNumber: range.startLineNumber, column: range.startColumn };
+                const changeEndPos = { lineNumber: range.endLineNumber, column: range.endColumn };
 
                 const isAfterGhostStart = changeStartPos.lineNumber > originalPos.lineNumber ||
                     (changeStartPos.lineNumber === originalPos.lineNumber && changeStartPos.column >= originalPos.column);
@@ -827,7 +1461,7 @@ function CodeEditor({
         try {
             await fileApi.executeFile(currentFile['path']);
         } catch (error) {
-            message.error(t('message.error.executionFailed', {error}));
+            message.error(t('message.error.executionFailed', { error }));
         }
     }, [currentFile, t]);
 
@@ -844,7 +1478,7 @@ function CodeEditor({
         try {
             await fileApi.openInTerminal(currentFile['path']);
         } catch (error) {
-            message.error(t('message.error.openTerminalFailed', {error}));
+            message.error(t('message.error.openTerminalFailed', { error }));
         }
     }, [currentFile, t]);
 
@@ -861,7 +1495,7 @@ function CodeEditor({
         try {
             await fileApi.showInExplorer(currentFile['path']);
         } catch (error) {
-            message.error(t('message.error.openExplorerFailed', {error}));
+            message.error(t('message.error.openExplorerFailed', { error }));
         }
     }, [currentFile, t]);
 
@@ -1088,7 +1722,7 @@ function CodeEditor({
                     roundedSelection: false,
                     readOnly: false,
                     cursorSmoothCaretAnimation: 'on',
-                    contextmenu: false,
+                    contextmenu: false, // 禁用默认右键菜单，使用自定义菜单
                     mouseWheelZoom: true,
                     smoothScrolling: true,
                     multiCursorModifier: 'ctrlCmd',
@@ -1263,6 +1897,12 @@ function CodeEditor({
                             e.preventDefault();
                             e.stopPropagation();
                         }
+                        // Shift+Alt+F格式化文档
+                        else if (e.keyCode === monaco.KeyCode.KeyF && e.shiftKey && e.altKey) {
+                            handleFormatDocument();
+                            e.preventDefault();
+                            e.stopPropagation();
+                        }
                     });
                 }
 
@@ -1343,6 +1983,50 @@ function CodeEditor({
                     setShowBackToTop(e.scrollTop > 300);
                 });
 
+                // 右键菜单事件监听
+                editorRef.current.onContextMenu((e) => {
+                    e.event.preventDefault();
+                    e.event.stopPropagation();
+                    
+                    // Monaco编辑器的事件对象结构不同，需要从原始事件中获取坐标
+                    const originalEvent = e.event.browserEvent || e.event;
+                    const mouseX = originalEvent.clientX || originalEvent.pageX || e.event.posx || 0;
+                    const mouseY = originalEvent.clientY || originalEvent.pageY || e.event.posy || 0;
+                    
+                    console.log('右键菜单位置:', { 
+                        mouseX, 
+                        mouseY, 
+                        originalEvent,
+                        eventKeys: Object.keys(e.event),
+                        eventPosx: e.event.posx,
+                        eventPosy: e.event.posy
+                    });
+                    
+                    // 确保菜单不会超出视口边界
+                    const menuWidth = 120;
+                    const menuHeight = 200;
+                    const viewportWidth = window.innerWidth;
+                    const viewportHeight = window.innerHeight;
+                    
+                    let finalX = mouseX;
+                    let finalY = mouseY;
+                    
+                    // 边界检查
+                    if (mouseX + menuWidth > viewportWidth) {
+                        finalX = Math.max(0, viewportWidth - menuWidth - 10);
+                    }
+                    
+                    if (mouseY + menuHeight > viewportHeight) {
+                        finalY = Math.max(0, viewportHeight - menuHeight - 10);
+                    }
+                    
+                    setContextMenuPosition({
+                        x: finalX,
+                        y: finalY
+                    });
+                    setContextMenuVisible(true);
+                });
+
                 // 设置核心监听器
                 const setupCoreListeners = () => {
                     if (!editorRef.current) return [];
@@ -1397,6 +2081,9 @@ function CodeEditor({
                 const coreDisposables = setupCoreListeners();
                 coreDisposablesRef.current = coreDisposables;
 
+                // 注册Monaco格式化提供程序
+                registerMonacoFormatters();
+
                 // 初始化编辑器内容和语言
                 setTimeout(() => {
                     if (editorRef.current && currentFile && currentFile['content'] !== undefined) {
@@ -1426,7 +2113,7 @@ function CodeEditor({
 
                         // 更新光标位置
                         if (setCursorPosition) {
-                            const position = editorRef.current.getPosition() || {lineNumber: 1, column: 1};
+                            const position = editorRef.current.getPosition() || { lineNumber: 1, column: 1 };
                             setCursorPosition(position);
                         }
                     } else if (editorRef.current) {
@@ -1435,7 +2122,7 @@ function CodeEditor({
                         monaco.editor.setModelLanguage(editorRef.current.getModel(), 'plaintext');
 
                         if (setCharacterCount) setCharacterCount(0);
-                        if (setCursorPosition) setCursorPosition({lineNumber: 1, column: 1});
+                        if (setCursorPosition) setCursorPosition({ lineNumber: 1, column: 1 });
                     }
                 }, 0);
 
@@ -1458,6 +2145,9 @@ function CodeEditor({
 
                 coreDisposablesRef.current.forEach(d => d?.dispose?.());
                 coreDisposablesRef.current = [];
+
+                // 清理格式化提供程序
+                cleanupFormatters();
 
                 editorRef.current.dispose();
                 editorRef.current = null;
@@ -1499,7 +2189,7 @@ function CodeEditor({
                 }
 
                 if (setCursorPosition) {
-                    const position = editorRef.current.getPosition() || {lineNumber: 1, column: 1};
+                    const position = editorRef.current.getPosition() || { lineNumber: 1, column: 1 };
                     setCursorPosition(position);
                 }
             }
@@ -1516,7 +2206,9 @@ function CodeEditor({
         const disposable = editorRef.current.onDidChangeModelContent((e) => {
             isInternalChange.current = true;
             const currentValue = editorRef.current.getValue();
-            if (currentFile && updateContent) {
+            
+            // 如果是格式化操作，不调用 updateContent 避免触发保存
+            if (currentFile && updateContent && !isFormattingRef.current) {
                 updateContent(currentValue);
             }
 
@@ -1558,11 +2250,11 @@ function CodeEditor({
         inlineAcceptRef.current = null;
 
         if (!aiSettings.enabled || !aiSettings.baseUrl || !aiSettings.apiKey || !aiSettings.model) {
-            editorRef.current.updateOptions({inlineSuggest: {enabled: true}});
+            editorRef.current.updateOptions({ inlineSuggest: { enabled: true } });
             return;
         }
 
-        editorRef.current.updateOptions({inlineSuggest: {enabled: true}});
+        editorRef.current.updateOptions({ inlineSuggest: { enabled: true } });
 
         // 为所有语言注册补全提供者
         const allLangs = monaco.languages.getLanguages().map(l => l.id);
@@ -1609,13 +2301,13 @@ function CodeEditor({
 
                         if (hasGhostTextAtCursor) {
                             isCompletionActiveRef.current = false;
-                            return {items: []};
+                            return { items: [] };
                         }
 
                         // 检查AI配置
                         if (!aiSettings.enabled || !aiSettings.baseUrl || !aiSettings.apiKey || !aiSettings.model) {
                             isCompletionActiveRef.current = false;
-                            return {items: []};
+                            return { items: [] };
                         }
 
                         // 请求频率限制
@@ -1631,7 +2323,7 @@ function CodeEditor({
 
                         if (apiRequestCountRef.current >= MAX_REQUESTS_PER_MINUTE) {
                             isCompletionActiveRef.current = false;
-                            return {items: []};
+                            return { items: [] };
                         }
 
                         apiRequestCountRef.current++;
@@ -1666,7 +2358,7 @@ function CodeEditor({
                         // 上下文不足时不请求补全
                         if (prefix.trim().length < 1 && beforeCursor.trim().length < 1) {
                             isCompletionActiveRef.current = false;
-                            return {items: []};
+                            return { items: [] };
                         }
 
                         // 判断行类型（注释/字符串/代码）
@@ -1774,7 +2466,7 @@ CRITICAL FILTERING RULES (MUST FOLLOW):
 
                         if (!res.ok) {
                             isCompletionActiveRef.current = false;
-                            return {items: []};
+                            return { items: [] };
                         }
 
                         const data = await res.json();
@@ -1788,7 +2480,7 @@ CRITICAL FILTERING RULES (MUST FOLLOW):
 
                         if (!insert || insert.length < 1) {
                             isCompletionActiveRef.current = false;
-                            return {items: []};
+                            return { items: [] };
                         }
 
                         const trimmedInsert = insert.trim();
@@ -1796,7 +2488,7 @@ CRITICAL FILTERING RULES (MUST FOLLOW):
 
                         if (!trimmedInsert || trimmedInsert.length < 1) {
                             isCompletionActiveRef.current = false;
-                            return {items: []};
+                            return { items: [] };
                         }
 
                         // 补全重试处理函数
@@ -1920,7 +2612,7 @@ Filter: ${filterName}
                                     const rejectionReason = `在注释行中添加了注释符号 (${commentSymbols.filter(s => trimmedInsert.includes(s)).join(', ')})，这会造成重复`;
                                     scheduleRetryWithReason(rejectionReason, 'Super Filter 1');
                                     isCompletionActiveRef.current = false;
-                                    return {items: []};
+                                    return { items: [] };
                                 }
                             }
                         }
@@ -1936,7 +2628,7 @@ Filter: ${filterName}
                                         const rejectionReason = `建议的单词 "${insertWord}" 与当前行的单词 "${lineWord}" 存在重复或包含关系`;
                                         scheduleRetryWithReason(rejectionReason, 'Super Filter 2b');
                                         isCompletionActiveRef.current = false;
-                                        return {items: []};
+                                        return { items: [] };
                                     }
                                 }
                             }
@@ -1957,7 +2649,7 @@ Filter: ${filterName}
                                         const rejectionReason = `建议的开头 "${overlap}" 与光标前的文本末尾重复，造成了显著的前缀重叠`;
                                         scheduleRetryWithReason(rejectionReason, 'Super Filter 3');
                                         isCompletionActiveRef.current = false;
-                                        return {items: []};
+                                        return { items: [] };
                                     }
                                 }
                             }
@@ -1970,7 +2662,7 @@ Filter: ${filterName}
                             const rejectionReason = `建议中的单词 [${afterCursorDuplicates.join(', ')}] 与光标后的内容重复`;
                             scheduleRetryWithReason(rejectionReason, 'Super Filter 4a');
                             isCompletionActiveRef.current = false;
-                            return {items: []};
+                            return { items: [] };
                         }
 
                         if (afterCursorText.trim().length > 0 && trimmedInsert.length > 0) {
@@ -1981,7 +2673,7 @@ Filter: ${filterName}
                                 const rejectionReason = `建议内容 "${insertTrimmed}" 与光标后的内容 "${afterCursorTrimmed}" 存在字符级重叠`;
                                 scheduleRetryWithReason(rejectionReason, 'Super Filter 4b');
                                 isCompletionActiveRef.current = false;
-                                return {items: []};
+                                return { items: [] };
                             }
                         }
 
@@ -1994,7 +2686,7 @@ Filter: ${filterName}
                                 const rejectionReason = `光标前的最后一个单词 "${lastWordBefore}" 与建议的第一个单词完全相同`;
                                 scheduleRetryWithReason(rejectionReason, 'Super Filter 5a');
                                 isCompletionActiveRef.current = false;
-                                return {items: []};
+                                return { items: [] };
                             }
 
                             if (lastWordBefore.length >= 2 && firstWordInsert.length >= 2) {
@@ -2002,7 +2694,7 @@ Filter: ${filterName}
                                     const rejectionReason = `单词边界存在包含关系: "${lastWordBefore}" 与 "${firstWordInsert}" 互相包含`;
                                     scheduleRetryWithReason(rejectionReason, 'Super Filter 5b');
                                     isCompletionActiveRef.current = false;
-                                    return {items: []};
+                                    return { items: [] };
                                 }
                             }
 
@@ -2011,7 +2703,7 @@ Filter: ${filterName}
                                     const rejectionReason = `字符级单词重叠: "${lastWordBefore.slice(-len)}" 在光标前后都出现`;
                                     scheduleRetryWithReason(rejectionReason, 'Super Filter 5c');
                                     isCompletionActiveRef.current = false;
-                                    return {items: []};
+                                    return { items: [] };
                                 }
                             }
                         }
@@ -2023,7 +2715,7 @@ Filter: ${filterName}
                                 const rejectionReason = `语义相似性过高 (${similarity.toFixed(2)})，建议内容与当前行过于相似`;
                                 scheduleRetryWithReason(rejectionReason, 'Super Filter 6');
                                 isCompletionActiveRef.current = false;
-                                return {items: []};
+                                return { items: [] };
                             }
 
                             const currentCommentWords = currentLine.replace(/\/\/|\/\*|\*\/|\*/g, '').trim().toLowerCase().split(/\s+/).filter(w => w.length > 2);
@@ -2034,7 +2726,7 @@ Filter: ${filterName}
                                 const rejectionReason = `注释关键词重叠: [${commonWords.join(', ')}] 在当前行和建议中都出现`;
                                 scheduleRetryWithReason(rejectionReason, 'Super Filter 6b');
                                 isCompletionActiveRef.current = false;
-                                return {items: []};
+                                return { items: [] };
                             }
                         }
 
@@ -2043,7 +2735,7 @@ Filter: ${filterName}
                             const rejectionReason = '建议内容为空，没有提供有效的补全内容';
                             scheduleRetryWithReason(rejectionReason, 'Super Filter 7b');
                             isCompletionActiveRef.current = false;
-                            return {items: []};
+                            return { items: [] };
                         }
 
                         const meaningfulContent = /[a-zA-Z\u4e00-\u9fa5\d]/.test(trimmedInsert);
@@ -2051,7 +2743,7 @@ Filter: ${filterName}
                             const rejectionReason = '建议内容缺乏有意义的字符，只包含空白字符或标点符号';
                             scheduleRetryWithReason(rejectionReason, 'Super Filter 7c');
                             isCompletionActiveRef.current = false;
-                            return {items: []};
+                            return { items: [] };
                         }
 
                         const uniqueChars = new Set(trimmedInsert.toLowerCase().replace(/\s/g, ''));
@@ -2059,7 +2751,7 @@ Filter: ${filterName}
                             const rejectionReason = `建议内容过于重复，只包含 ${uniqueChars.size} 种不同字符但长度为 ${trimmedInsert.length}`;
                             scheduleRetryWithReason(rejectionReason, 'Super Filter 7d');
                             isCompletionActiveRef.current = false;
-                            return {items: []};
+                            return { items: [] };
                         }
 
                         // 文本相似度计算函数
@@ -2110,10 +2802,10 @@ Filter: ${filterName}
                     } catch (error) {
                         if (error.name === 'AbortError') {
                             isCompletionActiveRef.current = false;
-                            return {items: []};
+                            return { items: [] };
                         }
                         isCompletionActiveRef.current = false;
-                        return {items: []};
+                        return { items: [] };
                     }
                 },
                 freeInlineCompletions: () => {
@@ -2242,7 +2934,7 @@ Filter: ${filterName}
 
     // 渲染编辑器组件
     return (
-        <div className="editor-container" style={{width: '100%', height: '100%', position: 'relative'}}>
+        <div className="editor-container" style={{ width: '100%', height: '100%', position: 'relative' }}>
             {!currentFile && (
                 <div className="editor-empty-overlay">
                     <Empty
@@ -2263,7 +2955,7 @@ Filter: ${filterName}
                     backgroundColor: 'transparent',
                     zIndex: 1000
                 }}>
-                    <MarkdownViewer
+                    <LazyMarkdownViewer
                         content={currentFile['content'] || ''}
                         onClose={handleCloseMarkdownPreview}
                         fileName={currentFile?.name}
@@ -2295,7 +2987,7 @@ Filter: ${filterName}
             {/* 返回顶部悬浮按钮 */}
             {showBackToTop && currentFile && !actualShowMarkdownPreview && (
                 <FloatButton
-                    icon={<VerticalAlignTopOutlined/>}
+                    icon={<VerticalAlignTopOutlined />}
                     onClick={() => {
                         if (editorRef.current) {
                             // 平滑滚动到顶部
@@ -2326,6 +3018,86 @@ Filter: ${filterName}
                         zIndex: 1000
                     }}
                 />
+            )}
+
+            {/* Ant Design 右键菜单 */}
+            {contextMenuVisible && (
+                <Dropdown
+                    open={contextMenuVisible}
+                    onOpenChange={(open) => {
+                        if (!open) {
+                            setContextMenuVisible(false);
+                        }
+                    }}
+                    menu={{
+                        items: [
+                            {
+                                key: 'selectAll',
+                                label: '全选',
+                                extra: 'Ctrl+A',
+                                onClick: () => {
+                                    handleSelectAll();
+                                    setContextMenuVisible(false);
+                                }
+                            },
+                            {
+                                type: 'divider'
+                            },
+                            {
+                                key: 'cut',
+                                label: '剪切',
+                                extra: 'Ctrl+X',
+                                onClick: () => {
+                                    handleCut();
+                                    setContextMenuVisible(false);
+                                }
+                            },
+                            {
+                                key: 'copy',
+                                label: '复制',
+                                extra: 'Ctrl+C',
+                                onClick: () => {
+                                    handleCopy();
+                                    setContextMenuVisible(false);
+                                }
+                            },
+                            {
+                                key: 'paste',
+                                label: '粘贴',
+                                extra: 'Ctrl+V',
+                                onClick: () => {
+                                    handlePaste();
+                                    setContextMenuVisible(false);
+                                }
+                            },
+                            {
+                                type: 'divider'
+                            },
+                            {
+                                key: 'format',
+                                label: '格式化文档',
+                                extra: 'Shift+Alt+F',
+                                onClick: () => {
+                                    handleFormatDocument();
+                                    setContextMenuVisible(false);
+                                }
+                            }
+                        ]
+                    }}
+                    trigger={[]}
+                >
+                    <div
+                        style={{
+                            position: 'fixed',
+                            left: contextMenuPosition.x,
+                            top: contextMenuPosition.y,
+                            zIndex: 9999,
+                            width: 1,
+                            height: 1,
+                            pointerEvents: 'none'
+                        }}
+                    />
+                </Dropdown>
             )}
         </div>
     );

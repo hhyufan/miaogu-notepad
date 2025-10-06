@@ -1313,6 +1313,28 @@ pub fn run() {
                 .get_webview_window("main")
                 .expect("failed to get main window");
 
+            // 禁用右键菜单
+            main_window.eval("
+                document.addEventListener('contextmenu', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                });
+                
+                // 确保在DOM加载后也生效
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', function() {
+                        document.addEventListener('contextmenu', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            return false;
+                        });
+                    });
+                }
+            ").unwrap_or_else(|e| {
+                eprintln!("Failed to inject context menu disable script: {}", e);
+            });
+
             // 将窗口句柄存储到应用状态中，供前端调用
             app.manage(main_window);
 

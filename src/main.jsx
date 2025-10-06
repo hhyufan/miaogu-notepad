@@ -14,6 +14,39 @@ import App from "./App";
 import LoadingComponent from './components/LoadingComponent';
 import './i18n'
 
+// 禁用默认右键菜单 - 多重保护
+// 立即执行，不等待DOMContentLoaded
+document.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+});
+
+// 确保在DOM加载后也生效
+document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+    });
+    
+    // 为body元素添加额外保护
+    document.body.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+    });
+});
+
+// 窗口加载完成后再次确保
+window.addEventListener('load', () => {
+    document.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+    });
+});
+
 /**
  * 渲染React应用到DOM
  * 使用React.StrictMode进行开发时的额外检查

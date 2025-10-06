@@ -5,10 +5,10 @@
  * @version 1.3.0
  */
 
-import React, {useEffect, useRef, useState} from 'react';
-import {Alert, Skeleton} from 'antd';
+import React, { useEffect, useRef, useState } from 'react';
+import { Alert, Skeleton } from 'antd';
 import mermaid from 'mermaid';
-import {useI18n} from '../hooks/useI18n';
+import { useI18n } from '../hooks/useI18n';
 import './MermaidRenderer.css';
 
 mermaid.initialize({
@@ -60,8 +60,8 @@ mermaid.initialize({
  * @param {boolean} props.isDarkMode - 是否为暗色主题，默认为false
  * @returns {JSX.Element} Mermaid图表渲染组件
  */
-const MermaidRenderer = ({code, isDarkMode = false}) => {
-    const {t} = useI18n();
+const MermaidRenderer = ({ code, isDarkMode = false }) => {
+    const { t } = useI18n();
     const elementRef = useRef(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -84,7 +84,7 @@ const MermaidRenderer = ({code, isDarkMode = false}) => {
 
                 const id = `mermaid-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 
-                const {svg} = await mermaid.render(id, code);
+                const { svg } = await mermaid.render(id, code);
                 setSvgContent(svg);
                 setLoading(false);
             } catch (err) {
@@ -102,10 +102,10 @@ const MermaidRenderer = ({code, isDarkMode = false}) => {
         return (
             <div
                 className={`mermaid-container ${isDarkMode ? 'dark' : 'light'}`}
-                style={{padding: '16px'}}
+                style={{ padding: '16px' }}
             >
                 <div className={`skeleton-wrapper ${isDarkMode ? 'dark' : 'light'}`}>
-                    <Skeleton active paragraph={{rows: 4}}/>
+                    <Skeleton active paragraph={{ rows: 4 }} />
                 </div>
             </div>
         );
@@ -133,7 +133,7 @@ const MermaidRenderer = ({code, isDarkMode = false}) => {
         <div
             className={`mermaid-container ${isDarkMode ? 'dark' : 'light'}`}
             ref={elementRef}
-            dangerouslySetInnerHTML={{__html: svgContent}}
+            dangerouslySetInnerHTML={{ __html: svgContent }}
             style={{
                 textAlign: 'center',
                 padding: '16px',
