@@ -3033,7 +3033,7 @@ Filter: ${filterName}
                         items: [
                             {
                                 key: 'selectAll',
-                                label: '全选',
+                                label: t('editor.contextMenu.selectAll'),
                                 extra: 'Ctrl+A',
                                 onClick: () => {
                                     handleSelectAll();
@@ -3045,7 +3045,7 @@ Filter: ${filterName}
                             },
                             {
                                 key: 'cut',
-                                label: '剪切',
+                                label: t('editor.contextMenu.cut'),
                                 extra: 'Ctrl+X',
                                 onClick: () => {
                                     handleCut();
@@ -3054,7 +3054,7 @@ Filter: ${filterName}
                             },
                             {
                                 key: 'copy',
-                                label: '复制',
+                                label: t('editor.contextMenu.copy'),
                                 extra: 'Ctrl+C',
                                 onClick: () => {
                                     handleCopy();
@@ -3063,7 +3063,7 @@ Filter: ${filterName}
                             },
                             {
                                 key: 'paste',
-                                label: '粘贴',
+                                label: t('editor.contextMenu.paste'),
                                 extra: 'Ctrl+V',
                                 onClick: () => {
                                     handlePaste();
@@ -3075,7 +3075,7 @@ Filter: ${filterName}
                             },
                             {
                                 key: 'format',
-                                label: '格式化文档',
+                                label: t('editor.contextMenu.format'),
                                 extra: 'Shift+Alt+F',
                                 onClick: () => {
                                     handleFormatDocument();

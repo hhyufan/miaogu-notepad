@@ -98,7 +98,14 @@
     "switchToPreviewMode": "切换到预览模式",
     "editorMode": "编辑器模式",
     "dragFiles": "拖拽文件到此处打开",
-    "dragSubtext": "松开鼠标以打开文件"
+    "dragSubtext": "松开鼠标以打开文件",
+    "contextMenu": {
+      "selectAll": "全选",
+      "cut": "剪切",
+      "copy": "复制",
+      "paste": "粘贴",
+      "format": "格式化文档"
+    }
   },
   "statusBar": {
     "line": "行",

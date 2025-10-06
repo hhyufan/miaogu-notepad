@@ -96,7 +96,14 @@
     "switchToPreviewMode": "Switch to Preview Mode",
     "editorMode": "Editor Mode",
     "dragFiles": "Drag files here to open",
-    "dragSubtext": "Release mouse to open files"
+    "dragSubtext": "Release mouse to open files",
+    "contextMenu": {
+      "selectAll": "Select All",
+      "cut": "Cut",
+      "copy": "Copy",
+      "paste": "Paste",
+      "format": "Format Document"
+    }
   },
   "statusBar": {
     "line": "Line",
