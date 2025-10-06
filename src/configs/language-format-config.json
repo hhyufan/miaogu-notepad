@@ -1,0 +1,190 @@
+{
+  "_comment": "语言格式化配置 - 定义各种编程语言的格式化选项和Prettier配置",
+  "_defaultConfig": {
+    "tabSize": 4,
+    "insertSpaces": true,
+    "prettier": {
+      "semi": true,
+      "singleQuote": false,
+      "trailingComma": "es5",
+      "bracketSpacing": true,
+      "arrowParens": "always",
+      "endOfLine": "lf",
+      "printWidth": 80
+    }
+  },
+  "languageConfigs": {
+    "javascript": {
+      "tabSize": 2,
+      "insertSpaces": true,
+      "prettier": {
+        "semi": true,
+        "singleQuote": true,
+        "trailingComma": "es5",
+        "bracketSpacing": true,
+        "arrowParens": "avoid"
+      }
+    },
+    "typescript": {
+      "tabSize": 2,
+      "insertSpaces": true,
+      "prettier": {
+        "semi": true,
+        "singleQuote": true,
+        "trailingComma": "all",
+        "bracketSpacing": true,
+        "arrowParens": "avoid"
+      }
+    },
+    "json": {
+      "tabSize": 2,
+      "insertSpaces": true,
+      "prettier": {
+        "trailingComma": "none",
+        "bracketSpacing": false
+      }
+    },
+    "yaml": {
+      "tabSize": 2,
+      "insertSpaces": true,
+      "prettier": {
+        "singleQuote": false,
+        "bracketSpacing": true
+      }
+    },
+    "markdown": {
+      "tabSize": 2,
+      "insertSpaces": true,
+      "prettier": {
+        "proseWrap": "preserve",
+        "printWidth": 100,
+        "singleQuote": false
+      }
+    },
+    "html": {
+      "tabSize": 2,
+      "insertSpaces": true,
+      "prettier": {
+        "htmlWhitespaceSensitivity": "css",
+        "bracketSameLine": false,
+        "singleAttributePerLine": false
+      }
+    },
+    "css": {
+      "tabSize": 2,
+      "insertSpaces": true,
+      "prettier": {
+        "singleQuote": false,
+        "trailingComma": "none"
+      }
+    },
+    "scss": {
+      "tabSize": 2,
+      "insertSpaces": true,
+      "prettier": {
+        "singleQuote": false,
+        "trailingComma": "none"
+      }
+    },
+    "python": {
+      "tabSize": 4,
+      "insertSpaces": true,
+      "prettier": {
+        "printWidth": 88,
+        "trailingComma": "es5"
+      }
+    },
+    "java": {
+      "tabSize": 4,
+      "insertSpaces": true,
+      "prettier": {
+        "printWidth": 120,
+        "tabWidth": 4
+      }
+    },
+    "c": {
+      "tabSize": 4,
+      "insertSpaces": true,
+      "prettier": {
+        "printWidth": 100,
+        "tabWidth": 4
+      }
+    },
+    "cpp": {
+      "tabSize": 4,
+      "insertSpaces": true,
+      "prettier": {
+        "printWidth": 100,
+        "tabWidth": 4
+      }
+    },
+    "csharp": {
+      "tabSize": 4,
+      "insertSpaces": true,
+      "prettier": {
+        "printWidth": 120,
+        "tabWidth": 4
+      }
+    },
+    "go": {
+      "tabSize": 4,
+      "insertSpaces": false,
+      "prettier": {
+        "useTabs": true,
+        "tabWidth": 4
+      }
+    },
+    "rust": {
+      "tabSize": 4,
+      "insertSpaces": true,
+      "prettier": {
+        "printWidth": 100,
+        "tabWidth": 4
+      }
+    },
+    "php": {
+      "tabSize": 4,
+      "insertSpaces": true,
+      "prettier": {
+        "printWidth": 120,
+        "tabWidth": 4
+      }
+    },
+    "ruby": {
+      "tabSize": 2,
+      "insertSpaces": true,
+      "prettier": {
+        "singleQuote": true,
+        "trailingComma": "none"
+      }
+    },
+    "vue": {
+      "tabSize": 2,
+      "insertSpaces": true,
+      "prettier": {
+        "singleQuote": true,
+        "semi": true,
+        "trailingComma": "es5"
+      }
+    },
+    "svelte": {
+      "tabSize": 2,
+      "insertSpaces": true,
+      "prettier": {
+        "singleQuote": true,
+        "semi": true,
+        "trailingComma": "es5"
+      }
+    },
+    "mgtree": {
+      "tabSize": 2,
+      "insertSpaces": true,
+      "prettier": {
+        "singleQuote": false,
+        "semi": false,
+        "trailingComma": "none",
+        "bracketSpacing": true
+      }
+    }
+  }
+}
