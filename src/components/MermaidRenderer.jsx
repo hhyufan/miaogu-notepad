@@ -2,7 +2,7 @@
  * @fileoverview Mermaid图表渲染组件 - 渲染Mermaid语法的图表和流程图
  * 支持流程图、时序图、甘特图等多种图表类型，提供主题切换和错误处理
  * @author hhyufan
- * @version 1.3.0
+ * @version 1.3.1
  */
 
 import React, { useEffect, useRef, useState } from 'react';

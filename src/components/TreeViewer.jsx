@@ -2,7 +2,7 @@
  * @fileoverview 树形视图组件 - 显示和管理树形结构数据
  * 支持解析树形文本、代码跳转、节点展开/折叠等功能
  * @author hhyufan
- * @version 1.3.0
+ * @version 1.3.1
  */
 
 import React, {useCallback, useEffect, useMemo, useState} from 'react';

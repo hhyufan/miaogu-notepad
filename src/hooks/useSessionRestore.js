@@ -2,7 +2,7 @@
  * @fileoverview 会话恢复Hook - 负责在应用启动时恢复上次的工作状态
  * 包括文件状态、编辑器配置、主题设置等的完整恢复
  * @author hhyufan
- * @version 1.3.0
+ * @version 1.3.1
  */
 
 import {useEffect, useState} from 'react';

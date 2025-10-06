@@ -2,7 +2,7 @@
  * @fileoverview 应用头部组件 - 包含菜单栏、窗口控制和文件操作功能
  * 提供文件新建、打开、保存等操作，以及窗口最小化、最大化、关闭等控制
  * @author hhyufan
- * @version 1.3.0
+ * @version 1.3.1
  */
 
 import {Button, Checkbox, Dropdown, Input, Layout, Modal, Typography} from 'antd';

@@ -2,7 +2,7 @@
  * @fileoverview 欢迎界面组件
  * 在没有文件打开时显示的欢迎页面，提供新建文件和打开文件的快捷操作
  * @author hhyufan
- * @version 1.3.0
+ * @version 1.3.1
  */
 
 import React from 'react';

@@ -2,7 +2,7 @@
  * @fileoverview Redux Hooks - 提供类型化的Redux hooks和状态管理功能
  * 封装Redux的useDispatch和useSelector，提供更便捷的状态管理接口
  * @author hhyufan
- * @version 1.3.0
+ * @version 1.3.1
  */
 
 import {useDispatch, useSelector} from 'react-redux';

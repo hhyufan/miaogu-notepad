@@ -2,7 +2,7 @@
  * @fileoverview 路径处理工具函数 - 提供跨平台的路径操作功能
  * 支持Windows和Unix/Linux路径格式的处理和转换
  * @author hhyufan
- * @version 1.3.0
+ * @version 1.3.1
  */
 
 /**

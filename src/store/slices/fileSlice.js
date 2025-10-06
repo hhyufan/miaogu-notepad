@@ -2,7 +2,7 @@
  * @fileoverview 文件状态切片 - 管理文件相关状态
  * 包含文件打开、保存、切换、内容更新等文件操作相关状态
  * @author hhyufan
- * @version 1.3.0
+ * @version 1.3.1
  */
 
 import {createSlice} from '@reduxjs/toolkit';

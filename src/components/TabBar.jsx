@@ -2,7 +2,7 @@
  * @fileoverview 标签页组件 - 管理多个打开文件的标签页显示和操作
  * 提供文件标签页的显示、切换、关闭等功能，支持右键菜单操作和重命名功能
  * @author hhyufan
- * @version 1.3.0
+ * @version 1.3.1
  */
 
 import './TabBar.scss';

@@ -2,7 +2,7 @@
  * @fileoverview 主题状态切片 - 管理应用主题相关状态
  * 包含主题模式、字体设置、背景图片等主题相关配置
  * @author hhyufan
- * @version 1.3.0
+ * @version 1.3.1
  */
 
 import {createSlice} from '@reduxjs/toolkit';

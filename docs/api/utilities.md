@@ -1461,4 +1461,4 @@ const safeFileApi = {
 
 ---
 
-*本文档基于 miaogu-notepad v1.3.0 版本编写*
+*本文档基于 miaogu-notepad v1.3.1 版本编写*

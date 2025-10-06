@@ -1531,4 +1531,4 @@ export default defineConfig({
 
 ---
 
-*本文档基于 miaogu-notepad v1.3.0 版本编写，涵盖了完整的 API 交互通讯架构*
+*本文档基于 miaogu-notepad v1.3.1 版本编写，涵盖了完整的 API 交互通讯架构*

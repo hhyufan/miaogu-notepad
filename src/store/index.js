@@ -2,7 +2,7 @@
  * @fileoverview Redux Store配置 - 应用的状态管理中心
  * 配置Redux store，包含持久化、中间件等功能
  * @author hhyufan
- * @version 1.3.0
+ * @version 1.3.1
  */
 
 import {combineReducers, configureStore} from '@reduxjs/toolkit';

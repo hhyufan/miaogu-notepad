@@ -2,7 +2,7 @@
  * @fileoverview Tauri API封装 - 提供文件操作、设置存储、窗口控制等功能
  * 统一封装Tauri的各种API，提供一致的接口给前端使用
  * @author hhyufan
- * @version 1.3.0
+ * @version 1.3.1
  */
 
 import {invoke} from '@tauri-apps/api/core';
@@ -415,13 +415,13 @@ export const settingsApi = {
                 console.warn(`Store 不可用，返回默认值: ${key} = ${defaultValue}`);
                 return defaultValue;
             }
-            
+
             // 添加额外的安全检查
             if (typeof currentStore.get !== 'function') {
                 console.warn(`Store.get 方法不可用，返回默认值: ${key} = ${defaultValue}`);
                 return defaultValue;
             }
-            
+
             const value = await currentStore.get(key);
             return value !== null && value !== undefined ? value : defaultValue;
         } catch (error) {

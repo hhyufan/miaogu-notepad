@@ -2,7 +2,7 @@
  * @fileoverview 编辑器状态栏组件 - 显示文件路径、编码信息、光标位置和字符统计
  * 提供文件路径面包屑导航、编码选择、实时光标位置和字符数统计功能
  * @author hhyufan
- * @version 1.3.0
+ * @version 1.3.1
  */
 
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react'

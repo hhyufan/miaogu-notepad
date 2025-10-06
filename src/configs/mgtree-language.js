@@ -2,7 +2,7 @@
  * @fileoverview mgtree语言定义 - Monaco编辑器自定义语言配置
  * 为mgtree文件格式提供语法高亮支持，包括层级结构、代码引用块和跳转节点
  * @author hhyufan
- * @version 1.3.0
+ * @version 1.3.1
  */
 
 /**

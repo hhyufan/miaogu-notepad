@@ -2,7 +2,7 @@
  * @fileoverview mgtree语言的TextMate语法定义
  * 用于Shiki集成，提供与Monaco Monarch相同的语法高亮功能
  * @author hhyufan
- * @version 1.3.0
+ * @version 1.3.1
  */
 
 /**

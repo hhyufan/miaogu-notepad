@@ -2,7 +2,7 @@
  * @fileoverview 设置弹窗组件 - 提供主题、编辑器、AI等各种设置选项
  * 包含主题切换、字体设置、背景图片、编辑器配置、AI助手配置等功能
  * @author hhyufan
- * @version 1.3.0
+ * @version 1.3.1
  */
 
 import {useCallback, useEffect, useState} from 'react';

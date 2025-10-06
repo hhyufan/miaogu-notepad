@@ -2,7 +2,7 @@
  * @fileoverview 应用程序主组件
  * 提供整体布局、主题管理、编辑器模式切换等核心功能
  * @author hhyufan
- * @version 1.3.0
+ * @version 1.3.1
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
