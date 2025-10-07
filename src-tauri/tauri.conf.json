@@ -52,17 +52,56 @@
         {
           "name": "execute-any",
           "cmd": "cmd",
-          "args": true
+          "args": true,
+          "sidecar": false
         },
         {
           "name": "powershell-any",
           "cmd": "powershell",
-          "args": true
+          "args": true,
+          "sidecar": false
         },
         {
-          "name": "open-terminal",
+          "name": "open-terminal-windows",
           "cmd": "wt",
-          "args": true
+          "args": true,
+          "sidecar": false
+        },
+        {
+          "name": "open-terminal-macos",
+          "cmd": "open",
+          "args": ["-a", "Terminal"],
+          "sidecar": false
+        },
+        {
+          "name": "open-terminal-linux",
+          "cmd": "gnome-terminal",
+          "args": true,
+          "sidecar": false
+        },
+        {
+          "name": "open-file-macos",
+          "cmd": "open",
+          "args": true,
+          "sidecar": false
+        },
+        {
+          "name": "open-file-linux",
+          "cmd": "xdg-open",
+          "args": true,
+          "sidecar": false
+        },
+        {
+          "name": "show-in-finder-macos",
+          "cmd": "open",
+          "args": ["-R"],
+          "sidecar": false
+        },
+        {
+          "name": "show-in-explorer-linux",
+          "cmd": "nautilus",
+          "args": true,
+          "sidecar": false
         }
       ]
     },

@@ -755,7 +755,25 @@ async fn execute_file(file_path: String) -> Result<String, String> {
                 Err(e) => Err(format!("打开文件失败: {}", e)),
             }
 
-            #[cfg(not(target_os = "windows"))]
+            #[cfg(target_os = "macos")]
+            match Command::new("open")
+                .arg(&file_path)
+                .spawn()
+            {
+                Ok(_) => Ok(format!("成功使用默认程序打开: {}", file_path)),
+                Err(e) => Err(format!("打开文件失败: {}", e)),
+            }
+
+            #[cfg(target_os = "linux")]
+            match Command::new("xdg-open")
+                .arg(&file_path)
+                .spawn()
+            {
+                Ok(_) => Ok(format!("成功使用默认程序打开: {}", file_path)),
+                Err(e) => Err(format!("打开文件失败: {}", e)),
+            }
+
+            #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
             {
                 Err("当前平台不支持此操作".to_string())
             }
@@ -779,36 +797,72 @@ async fn open_in_terminal(path: String) -> Result<String, String> {
         target_path
     };
 
-    // 尝试使用 Windows Terminal
-    if let Ok(_) = Command::new("wt")
-        .args(["-d", work_dir.to_str().unwrap_or(".")])
-        .spawn()
+    #[cfg(target_os = "windows")]
     {
-        return Ok(format!(
-            "成功在Windows Terminal中打开: {}",
-            work_dir.display()
-        ));
+        // 尝试使用 Windows Terminal
+        if let Ok(_) = Command::new("wt")
+            .args(["-d", work_dir.to_str().unwrap_or(".")])
+            .spawn()
+        {
+            return Ok(format!(
+                "成功在Windows Terminal中打开: {}",
+                work_dir.display()
+            ));
+        }
+
+        // 备用方案：使用 PowerShell
+        if let Ok(_) = Command::new("powershell")
+            .args([
+                "-NoExit",
+                "-Command",
+                &format!("cd '{}'", work_dir.display()),
+            ])
+            .spawn()
+        {
+            return Ok(format!("成功在PowerShell中打开: {}", work_dir.display()));
+        }
+
+        // 最后备用方案：使用 cmd
+        match Command::new("cmd")
+            .args(["/k", &format!("cd /d {}", work_dir.display())])
+            .spawn()
+        {
+            Ok(_) => Ok(format!("成功在命令提示符中打开: {}", work_dir.display())),
+            Err(e) => Err(format!("打开终端失败: {}", e)),
+        }
     }
 
-    // 备用方案：使用 PowerShell
-    if let Ok(_) = Command::new("powershell")
-        .args([
-            "-NoExit",
-            "-Command",
-            &format!("cd '{}'", work_dir.display()),
-        ])
-        .spawn()
+    #[cfg(target_os = "macos")]
     {
-        return Ok(format!("成功在PowerShell中打开: {}", work_dir.display()));
+        match Command::new("open")
+            .args(["-a", "Terminal", work_dir.to_str().unwrap_or(".")])
+            .spawn()
+        {
+            Ok(_) => Ok(format!("成功在Terminal中打开: {}", work_dir.display())),
+            Err(e) => Err(format!("打开终端失败: {}", e)),
+        }
     }
 
-    // 最后备用方案：使用 cmd
-    match Command::new("cmd")
-        .args(["/k", &format!("cd /d {}", work_dir.display())])
-        .spawn()
+    #[cfg(target_os = "linux")]
     {
-        Ok(_) => Ok(format!("成功在命令提示符中打开: {}", work_dir.display())),
-        Err(e) => Err(format!("打开终端失败: {}", e)),
+        // 尝试常见的终端应用
+        let terminals = ["gnome-terminal", "konsole", "xfce4-terminal", "xterm"];
+        
+        for terminal in &terminals {
+            if let Ok(_) = Command::new(terminal)
+                .args(["--working-directory", work_dir.to_str().unwrap_or(".")])
+                .spawn()
+            {
+                return Ok(format!("成功在{}中打开: {}", terminal, work_dir.display()));
+            }
+        }
+        
+        Err("未找到可用的终端应用".to_string())
+    }
+
+    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+    {
+        Err("当前平台不支持此操作".to_string())
     }
 }
 
@@ -821,15 +875,67 @@ async fn show_in_explorer(path: String) -> Result<String, String> {
         return Err("路径不存在".to_string());
     }
 
-    let args = if target_path.is_file() {
-        vec!["/select,".to_string(), path]
-    } else {
-        vec![path]
-    };
+    #[cfg(target_os = "windows")]
+    {
+        let args = if target_path.is_file() {
+            vec!["/select,".to_string(), path]
+        } else {
+            vec![path]
+        };
 
-    match Command::new("explorer").args(&args).spawn() {
-        Ok(_) => Ok("成功在资源管理器中显示".to_string()),
-        Err(e) => Err(format!("打开资源管理器失败: {}", e)),
+        match Command::new("explorer").args(&args).spawn() {
+            Ok(_) => Ok("成功在资源管理器中显示".to_string()),
+            Err(e) => Err(format!("打开资源管理器失败: {}", e)),
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        let args = if target_path.is_file() {
+            vec!["-R".to_string(), path]
+        } else {
+            vec![path]
+        };
+
+        match Command::new("open").args(&args).spawn() {
+            Ok(_) => Ok("成功在Finder中显示".to_string()),
+            Err(e) => Err(format!("打开Finder失败: {}", e)),
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        // 尝试常见的文件管理器
+        let file_managers = ["nautilus", "dolphin", "thunar", "pcmanfm"];
+        
+        for manager in &file_managers {
+            let args = if target_path.is_file() {
+                vec!["--select".to_string(), path.clone()]
+            } else {
+                vec![path.clone()]
+            };
+
+            if let Ok(_) = Command::new(manager).args(&args).spawn() {
+                return Ok(format!("成功在{}中显示".to_string(), manager));
+            }
+        }
+        
+        // 如果没有找到文件管理器，尝试用xdg-open打开目录
+        let dir_path = if target_path.is_file() {
+            target_path.parent().unwrap_or(target_path).to_string_lossy().to_string()
+        } else {
+            path
+        };
+
+        match Command::new("xdg-open").arg(&dir_path).spawn() {
+            Ok(_) => Ok("成功打开目录".to_string()),
+            Err(e) => Err(format!("打开文件管理器失败: {}", e)),
+        }
+    }
+
+    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+    {
+        Err("当前平台不支持此操作".to_string())
     }
 }
 
@@ -1074,18 +1180,20 @@ async fn open_url(url: String) -> Result<(), String> {
 #[tauri::command]
 async fn enable_prevent_sleep() -> Result<String, String> {
     #[cfg(windows)]
-    let result = unsafe {
-        SetThreadExecutionState(ES_CONTINUOUS | ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED)
-    };
+    {
+        let result = unsafe {
+            SetThreadExecutionState(ES_CONTINUOUS | ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED)
+        };
 
-    if result != 0 {
-        // 更新全局状态
-        if let Ok(mut enabled) = PREVENT_SLEEP_ENABLED.lock() {
-            *enabled = true;
+        if result != 0 {
+            // 更新全局状态
+            if let Ok(mut enabled) = PREVENT_SLEEP_ENABLED.lock() {
+                *enabled = true;
+            }
+            Ok("防休眠模式已启用".to_string())
+        } else {
+            Err("启用防休眠模式失败".to_string())
         }
-        Ok("防休眠模式已启用".to_string())
-    } else {
-        Err("启用防休眠模式失败".to_string())
     }
 
     #[cfg(not(windows))]
@@ -1100,16 +1208,18 @@ async fn enable_prevent_sleep() -> Result<String, String> {
 #[tauri::command]
 async fn disable_prevent_sleep() -> Result<String, String> {
     #[cfg(windows)]
-    let result = unsafe { SetThreadExecutionState(ES_CONTINUOUS) };
+    {
+        let result = unsafe { SetThreadExecutionState(ES_CONTINUOUS) };
 
-    if result != 0 {
-        // 更新全局状态
-        if let Ok(mut enabled) = PREVENT_SLEEP_ENABLED.lock() {
-            *enabled = false;
+        if result != 0 {
+            // 更新全局状态
+            if let Ok(mut enabled) = PREVENT_SLEEP_ENABLED.lock() {
+                *enabled = false;
+            }
+            Ok("防休眠模式已禁用".to_string())
+        } else {
+            Err("禁用防休眠模式失败".to_string())
         }
-        Ok("防休眠模式已禁用".to_string())
-    } else {
-        Err("禁用防休眠模式失败".to_string())
     }
 
     #[cfg(not(windows))]
