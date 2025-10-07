@@ -40,3 +40,7 @@ base64 = "0.22"
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.52", features = ["Win32_System_Power"] }
 
+[target.'cfg(unix)'.dependencies]
+# Unix系统特定依赖（Linux和macOS）
+libc = "0.2"
+
