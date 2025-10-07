@@ -916,7 +916,7 @@ async fn show_in_explorer(path: String) -> Result<String, String> {
             };
 
             if let Ok(_) = Command::new(manager).args(&args).spawn() {
-                return Ok(format!("成功在{}中显示".to_string(), manager));
+                return Ok(format!("成功在{}中显示", manager));
             }
         }
         
