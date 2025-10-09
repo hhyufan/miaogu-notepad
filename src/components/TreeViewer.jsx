@@ -425,13 +425,12 @@ const TreeViewer = ({
                         // 直接使用readTextFile读取文件内容
                         text = await readTextFile(localPath);
                     } catch (fetchError) {
-                        console.log(`绝对路径读取失败，尝试相对路径: ${localPath}`, fetchError);
+
                         try {
                             // 尝试使用相对于当前工作目录的路径
                             const relativePath = `trees/${treeFilePath}`;
                             text = await readTextFile(relativePath);
                         } catch (relativeError) {
-                            console.log(`相对路径读取也失败: ${relativePath}`, relativeError);
                             throw new Error(`文件读取失败: ${fetchError.message || fetchError}`);
                         }
                     }

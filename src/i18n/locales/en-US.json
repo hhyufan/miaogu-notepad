@@ -103,6 +103,9 @@
       "copy": "Copy",
       "paste": "Paste",
       "format": "Format Document"
+    },
+    "formatting": {
+      "unsupportedLanguage": "Code formatting for {{language}} language is not supported yet"
     }
   },
   "statusBar": {

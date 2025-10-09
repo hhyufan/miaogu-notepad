@@ -43,6 +43,7 @@ import * as prettierPluginEstree from 'prettier/plugins/estree';
 import * as prettierPluginTypescript from 'prettier/plugins/typescript';
 import * as prettierPluginHtml from 'prettier/plugins/html';
 import * as prettierPluginCss from 'prettier/plugins/postcss';
+import * as prettierPluginMarkdown from 'prettier/plugins/markdown';
 import './CodeEditor.scss';
 
 const { file: fileApi, settings: settingsApi } = tauriApi;
@@ -69,7 +70,7 @@ function CodeEditor({
     const [highlighterReady, setHighlighterReady] = useState(false);
     const [internalShowMarkdownPreview, setInternalShowMarkdownPreview] = useState(false);
     const [showBackToTop, setShowBackToTop] = useState(false);
-    
+
     // 右键菜单相关状态
     const [contextMenuVisible, setContextMenuVisible] = useState(false);
     const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
@@ -248,10 +249,10 @@ function CodeEditor({
                 const selection = editorRef.current.getSelection();
                 if (selection && !selection.isEmpty()) {
                     const selectedText = editorRef.current.getModel().getValueInRange(selection);
-                    
+
                     // 使用浏览器剪贴板API
                     await navigator.clipboard.writeText(selectedText);
-                    
+
                     // 删除选中的文本
                     editorRef.current.executeEdits('cut', [{
                         range: selection,
@@ -271,7 +272,7 @@ function CodeEditor({
                 const selection = editorRef.current.getSelection();
                 if (selection && !selection.isEmpty()) {
                     const selectedText = editorRef.current.getModel().getValueInRange(selection);
-                    
+
                     // 使用浏览器剪贴板API
                     await navigator.clipboard.writeText(selectedText);
                 }
@@ -287,7 +288,7 @@ function CodeEditor({
             try {
                 // 使用浏览器剪贴板API读取文本
                 const text = await navigator.clipboard.readText();
-                
+
                 if (text) {
                     const selection = editorRef.current.getSelection();
                     if (selection) {
@@ -312,7 +313,7 @@ function CodeEditor({
     const getLanguageFormatOptions = useCallback((language) => {
         // 从JSON配置文件中获取语言特定配置
         const config = languageFormatConfig.languageConfigs[language];
-        
+
         // 返回语言特定配置，如果没有则使用默认配置
         return config || languageFormatConfig._defaultConfig;
     }, []);
@@ -327,7 +328,7 @@ function CodeEditor({
             provideDocumentFormattingEdits: async (model, options, token) => {
                 const code = model.getValue();
                 const language = model.getLanguageId();
-                
+
                 try {
                     let formatted;
                     if (language === 'javascript' || language === 'typescript') {
@@ -348,11 +349,11 @@ function CodeEditor({
                         console.warn(`暂不支持 ${language} 语言的代码格式化功能`);
                         return [];
                     }
-                    
+
                     if (formatted === code) {
                         return [];
                     }
-                    
+
                     return [{
                         range: model.getFullModelRange(),
                         text: formatted
@@ -368,7 +369,7 @@ function CodeEditor({
         const htmlFormatter = {
             provideDocumentFormattingEdits: async (model, options, token) => {
                 const code = model.getValue();
-                
+
                 try {
                     const formatted = await prettier.format(code, {
                         parser: 'html',
@@ -378,11 +379,11 @@ function CodeEditor({
                         htmlWhitespaceSensitivity: 'css',
                         bracketSameLine: false
                     });
-                    
+
                     if (formatted === code) {
                         return [];
                     }
-                    
+
                     return [{
                         range: model.getFullModelRange(),
                         text: formatted
@@ -398,7 +399,7 @@ function CodeEditor({
         const cssFormatter = {
             provideDocumentFormattingEdits: async (model, options, token) => {
                 const code = model.getValue();
-                
+
                 try {
                     const formatted = await prettier.format(code, {
                         parser: 'css',
@@ -406,11 +407,11 @@ function CodeEditor({
                         tabWidth: options.tabSize || 4,
                         useTabs: !options.insertSpaces
                     });
-                    
+
                     if (formatted === code) {
                         return [];
                     }
-                    
+
                     return [{
                         range: model.getFullModelRange(),
                         text: formatted
@@ -426,7 +427,7 @@ function CodeEditor({
         const jsonFormatter = {
             provideDocumentFormattingEdits: async (model, options, token) => {
                 const code = model.getValue();
-                
+
                 try {
                     const formatted = await prettier.format(code, {
                         parser: 'json',
@@ -434,11 +435,11 @@ function CodeEditor({
                         tabWidth: options.tabSize || 4,
                         useTabs: !options.insertSpaces
                     });
-                    
+
                     if (formatted === code) {
                         return [];
                     }
-                    
+
                     return [{
                         range: model.getFullModelRange(),
                         text: formatted
@@ -454,18 +455,18 @@ function CodeEditor({
         const yamlFormatter = {
             provideDocumentFormattingEdits: async (model, options, token) => {
                 const code = model.getValue();
-                
+
                 try {
                     const formatted = await prettier.format(code, {
                         parser: 'yaml',
                         tabWidth: options.tabSize || 4,
                         useTabs: !options.insertSpaces
                     });
-                    
+
                     if (formatted === code) {
                         return [];
                     }
-                    
+
                     return [{
                         range: model.getFullModelRange(),
                         text: formatted
@@ -481,7 +482,7 @@ function CodeEditor({
         const markdownFormatter = {
             provideDocumentFormattingEdits: async (model, options, token) => {
                 const code = model.getValue();
-                
+
                 try {
                     const formatted = await prettier.format(code, {
                         parser: 'markdown',
@@ -489,11 +490,11 @@ function CodeEditor({
                         useTabs: !options.insertSpaces,
                         proseWrap: 'preserve'
                     });
-                    
+
                     if (formatted === code) {
                         return [];
                     }
-                    
+
                     return [{
                         range: model.getFullModelRange(),
                         text: formatted
@@ -502,17 +503,6 @@ function CodeEditor({
                     console.warn('Markdown格式化失败:', error);
                     return [];
                 }
-            }
-        };
-
-        // 不支持格式化的语言警告器
-        const unsupportedFormatter = {
-            provideDocumentFormattingEdits: (model, options, token) => {
-                const language = model.getLanguageId();
-                console.warn(`暂不支持 ${language} 语言的代码格式化功能`);
-                // 使用 Ant Design message 显示用户友好的提示
-                message.warning(`暂不支持 ${language} 语言的代码格式化功能`);
-                return [];
             }
         };
 
@@ -528,17 +518,35 @@ function CodeEditor({
             'markdown', 'md'
         ];
 
-        // 只为 Prettier 支持的语言注册格式化器
+        // 基于白名单动态生成格式化器映射
         const formatters = [
-            { languages: ['javascript', 'typescript', 'jsx', 'tsx'], formatter: jsFormatter },
-            { languages: ['html'], formatter: htmlFormatter },
-            { languages: ['css', 'scss', 'less'], formatter: cssFormatter },
-            { languages: ['json'], formatter: jsonFormatter },
-            { languages: ['yaml', 'yml'], formatter: yamlFormatter },
-            { languages: ['markdown', 'md'], formatter: markdownFormatter }
-        ];
+            {
+                languages: prettierSupportedLanguages.filter(lang => ['javascript', 'typescript', 'jsx', 'tsx'].includes(lang)),
+                formatter: jsFormatter
+            },
+            {
+                languages: prettierSupportedLanguages.filter(lang => ['html'].includes(lang)),
+                formatter: htmlFormatter
+            },
+            {
+                languages: prettierSupportedLanguages.filter(lang => ['css', 'scss', 'less'].includes(lang)),
+                formatter: cssFormatter
+            },
+            {
+                languages: prettierSupportedLanguages.filter(lang => ['json'].includes(lang)),
+                formatter: jsonFormatter
+            },
+            {
+                languages: prettierSupportedLanguages.filter(lang => ['yaml', 'yml'].includes(lang)),
+                formatter: yamlFormatter
+            },
+            {
+                languages: prettierSupportedLanguages.filter(lang => ['markdown', 'md'].includes(lang)),
+                formatter: markdownFormatter
+            }
+        ].filter(f => f.languages.length > 0); // 过滤掉空的格式化器
 
-        // 注册支持的格式化器
+        // 只注册支持的格式化器
         formatters.forEach(({ languages, formatter }) => {
             languages.forEach(lang => {
                 if (!formatterRegistry.current.has(lang)) {
@@ -546,17 +554,6 @@ function CodeEditor({
                     formatterRegistry.current.set(lang, disposable);
                 }
             });
-        });
-
-        // 为所有其他语言注册不支持的警告处理器
-        const allMonacoLanguages = monaco.languages.getLanguages().map(lang => lang.id);
-        const registeredLanguages = new Set(formatters.flatMap(f => f.languages));
-        
-        allMonacoLanguages.forEach(lang => {
-            if (!registeredLanguages.has(lang) && !formatterRegistry.current.has(lang)) {
-                const disposable = monaco.languages.registerDocumentFormattingEditProvider(lang, unsupportedFormatter);
-                formatterRegistry.current.set(lang, disposable);
-            }
         });
     }, []);
 
@@ -579,31 +576,31 @@ function CodeEditor({
         const lines = code.split('\n');
         const fixedLines = [];
         const indentStack = []; // 用于跟踪缩进层级
-        
+
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
-            
+
             // 跳过空行，保持原样
             if (line.trim() === '') {
                 fixedLines.push(line);
                 continue;
             }
-            
+
             // 计算当前行的缩进
             const match = line.match(/^(\s*)/);
             const indentStr = match ? match[1] : '';
             let indentLength = indentStr.length;
-            
+
             // 处理制表符转换为空格
             if (indentStr.includes('\t')) {
                 const tabCount = (indentStr.match(/\t/g) || []).length;
                 const spaceCount = indentStr.length - tabCount;
                 indentLength = spaceCount + (tabCount * 2);
             }
-            
+
             // 智能缩进修正逻辑
             let correctedIndent = 0;
-            
+
             if (indentLength === 0) {
                 // 顶级行，无缩进
                 correctedIndent = 0;
@@ -612,7 +609,7 @@ function CodeEditor({
             } else {
                 // 查找合适的缩进层级
                 let targetLevel = -1;
-                
+
                 // 首先检查是否与现有层级匹配（允许2的倍数）
                 for (let j = indentStack.length - 1; j >= 0; j--) {
                     const stackLevel = indentStack[j];
@@ -623,11 +620,11 @@ function CodeEditor({
                         break;
                     }
                 }
-                
+
                 // 如果没有找到匹配的层级，创建新层级
                 if (targetLevel === -1) {
                     const lastLevel = indentStack[indentStack.length - 1] || 0;
-                    
+
                     if (indentLength > lastLevel) {
                         // 增加缩进层级，标准化为2的倍数
                         correctedIndent = lastLevel + 2;
@@ -635,19 +632,19 @@ function CodeEditor({
                     } else {
                         // 减少缩进层级，找到合适的父级
                         const targetIndent = Math.floor(indentLength / 2) * 2;
-                        
+
                         // 清理缩进栈，保留小于等于目标缩进的层级
                         while (indentStack.length > 0 && indentStack[indentStack.length - 1] > targetIndent) {
                             indentStack.pop();
                         }
-                        
+
                         // 如果栈为空或目标缩进不在栈中，添加它
                         if (indentStack.length === 0 || indentStack[indentStack.length - 1] !== targetIndent) {
                             if (targetIndent > 0) {
                                 indentStack.push(targetIndent);
                             }
                         }
-                        
+
                         correctedIndent = targetIndent;
                     }
                 } else {
@@ -655,12 +652,12 @@ function CodeEditor({
                     indentStack.length = targetLevel + 1;
                 }
             }
-            
+
             // 应用修正后的缩进
             const newIndent = ' '.repeat(correctedIndent);
             fixedLines.push(newIndent + line.trim());
         }
-        
+
         return fixedLines.join('\n');
     }, []);
 
@@ -669,40 +666,57 @@ function CodeEditor({
     // 使用Prettier进行代码格式化
     const formatWithPrettier = useCallback(async (code, language) => {
         try {
-            console.log(`formatWithPrettier called with language: ${language}`);
-            
+
+
+            // 首先检查白名单
+            const prettierSupportedLanguages = [
+                'javascript', 'typescript', 'jsx', 'tsx',
+                'html', 'css', 'scss', 'less',
+                'json', 'yaml', 'yml',
+                'markdown', 'md'
+            ];
+
+            if (!prettierSupportedLanguages.includes(language)) {
+
+                return null;
+            }
+
             // 语言映射到Prettier支持的parser和所需插件
             const parserConfig = {
                 'javascript': { parser: 'babel', plugins: [prettierPluginBabel, prettierPluginEstree] },
                 'typescript': { parser: 'typescript', plugins: [prettierPluginTypescript, prettierPluginEstree] },
+                'jsx': { parser: 'babel', plugins: [prettierPluginBabel, prettierPluginEstree] },
+                'tsx': { parser: 'typescript', plugins: [prettierPluginTypescript, prettierPluginEstree] },
                 'json': { parser: 'json', plugins: [prettierPluginBabel, prettierPluginEstree] },
                 'html': { parser: 'html', plugins: [prettierPluginHtml] },
                 'css': { parser: 'css', plugins: [prettierPluginCss] },
                 'scss': { parser: 'scss', plugins: [prettierPluginCss] },
                 'less': { parser: 'less', plugins: [prettierPluginCss] },
-                'markdown': { parser: 'markdown', plugins: [prettierPluginBabel, prettierPluginEstree] },
-                'yaml': { parser: 'yaml', plugins: [prettierPluginBabel, prettierPluginEstree] }
+                'markdown': { parser: 'markdown', plugins: [prettierPluginMarkdown] },
+                'md': { parser: 'markdown', plugins: [prettierPluginMarkdown] },
+                'yaml': { parser: 'yaml', plugins: [prettierPluginBabel, prettierPluginEstree] },
+                'yml': { parser: 'yaml', plugins: [prettierPluginBabel, prettierPluginEstree] }
             };
 
             const config = parserConfig[language];
             if (!config) {
-                console.log(`No parser config found for language: ${language}`);
+
                 // 如果Prettier不支持该语言，回退到Monaco的格式化
                 return null;
             }
-            
-            console.log(`Using parser config:`, config);
+
+
 
             // 从TabBar获取真实的文件扩展名信息
             const tabBarLanguage = fileManager?.tabBarRef?.languageRef?.current;
-            
+
             // 获取格式化配置
             let formatOptions = getLanguageFormatOptions(tabBarLanguage === 'mgtree' ? 'mgtree' : language);
-            
+
             // 合并默认配置和语言特定配置
             const defaultPrettierConfig = languageFormatConfig._defaultConfig.prettier || {};
             const languagePrettierConfig = formatOptions.prettier || {};
-            
+
             // 转换为Prettier配置
             const prettierOptions = {
                 parser: config.parser,
@@ -717,7 +731,7 @@ function CodeEditor({
             if (tabBarLanguage === 'mgtree') {
                 prettierOptions.tabWidth = 2;
                 prettierOptions.useTabs = false;
-                
+
                 // 对mgtree文件进行严格的缩进检查和修正
                 const correctedCode = validateAndFixMgtreeIndentation(code);
                 const formatted = await prettier.format(correctedCode, prettierOptions);
@@ -738,60 +752,78 @@ function CodeEditor({
                 const model = editorRef.current.getModel();
                 const code = model.getValue();
                 let language = model.getLanguageId();
-                
+
                 // 从TabBar获取真实的文件扩展名信息
                 const tabBarLanguage = fileManager?.tabBarRef?.languageRef?.current;
-                
+
                 // 特殊处理：如果TabBar检测到是mgtree文件，使用mgtree配置
                 if (tabBarLanguage === 'mgtree') {
                     language = 'mgtree';
-                    
+
                     // 对于mgtree文件，直接进行缩进修正，不依赖Prettier
                     const correctedCode = validateAndFixMgtreeIndentation(code);
-                    
+
                     if (correctedCode !== code) {
                         const selection = editorRef.current.getSelection();
                         const range = model.getFullModelRange();
-                        
+
                         editorRef.current.executeEdits('mgtree-indent-fix', [{
                             range: range,
                             text: correctedCode
                         }]);
-                        
+
                         // 恢复选择
                         if (selection) {
                             editorRef.current.setSelection(selection);
                         }
-                        
+
                         return;
                     } else {
                         return;
                     }
                 }
 
+                // 定义 Prettier 支持的语言白名单
+                const prettierSupportedLanguages = [
+                    'javascript', 'typescript', 'jsx', 'tsx',
+                    'html', 'css', 'scss', 'less',
+                    'json', 'yaml', 'yml',
+                    'markdown', 'md'
+                ];
+
+                // 检查当前语言是否在白名单中
+                if (!prettierSupportedLanguages.includes(language)) {
+                    // 只对当前打开的文件显示不支持的警告
+                    const warningMessage = t('editor.formatting.unsupportedLanguage', { language });
+                    console.warn(warningMessage);
+                    message.warning(warningMessage);
+                    setContextMenuVisible(false);
+                    return;
+                }
+
                 // 尝试使用Prettier格式化
                 const formattedCode = await formatWithPrettier(code, language);
-                
+
                 if (formattedCode && formattedCode !== code) {
                     // 使用Prettier格式化成功
                     isFormattingRef.current = true; // 标记为格式化操作
-                    
+
                     // 保存当前文件的修改状态
                     const currentModifiedState = currentFile ? currentFile.isModified : false;
-                    
+
                     const selection = editorRef.current.getSelection();
                     const range = model.getFullModelRange();
-                    
+
                     editorRef.current.executeEdits('prettier-format', [{
                         range: range,
                         text: formattedCode
                     }]);
-                    
+
                     // 恢复选择
                     if (selection) {
                         editorRef.current.setSelection(selection);
                     }
-                    
+
                     // 如果格式化前文件未修改，格式化后也应保持未修改状态
                     if (!currentModifiedState && currentFile && updateContent) {
                         setTimeout(() => {
@@ -799,15 +831,11 @@ function CodeEditor({
                             updateContent(formattedCode, { preserveModifiedState: !currentModifiedState });
                         }, 10);
                     }
-                    
+
                     // 重置格式化标志
                     setTimeout(() => {
                         isFormattingRef.current = false;
                     }, 50);
-                } else {
-                    // 不支持的语言，显示警告
-                    console.warn(`暂不支持 ${language} 语言的代码格式化功能`);
-                    message.warning(`暂不支持 ${language} 语言的代码格式化功能`);
                 }
             } catch (error) {
                 console.warn('格式化操作失败:', error);
@@ -1987,39 +2015,30 @@ function CodeEditor({
                 editorRef.current.onContextMenu((e) => {
                     e.event.preventDefault();
                     e.event.stopPropagation();
-                    
+
                     // Monaco编辑器的事件对象结构不同，需要从原始事件中获取坐标
                     const originalEvent = e.event.browserEvent || e.event;
                     const mouseX = originalEvent.clientX || originalEvent.pageX || e.event.posx || 0;
                     const mouseY = originalEvent.clientY || originalEvent.pageY || e.event.posy || 0;
-                    
-                    console.log('右键菜单位置:', { 
-                        mouseX, 
-                        mouseY, 
-                        originalEvent,
-                        eventKeys: Object.keys(e.event),
-                        eventPosx: e.event.posx,
-                        eventPosy: e.event.posy
-                    });
-                    
+
                     // 确保菜单不会超出视口边界
                     const menuWidth = 120;
                     const menuHeight = 200;
                     const viewportWidth = window.innerWidth;
                     const viewportHeight = window.innerHeight;
-                    
+
                     let finalX = mouseX;
                     let finalY = mouseY;
-                    
+
                     // 边界检查
                     if (mouseX + menuWidth > viewportWidth) {
                         finalX = Math.max(0, viewportWidth - menuWidth - 10);
                     }
-                    
+
                     if (mouseY + menuHeight > viewportHeight) {
                         finalY = Math.max(0, viewportHeight - menuHeight - 10);
                     }
-                    
+
                     setContextMenuPosition({
                         x: finalX,
                         y: finalY
@@ -2206,7 +2225,7 @@ function CodeEditor({
         const disposable = editorRef.current.onDidChangeModelContent((e) => {
             isInternalChange.current = true;
             const currentValue = editorRef.current.getValue();
-            
+
             // 如果是格式化操作，不调用 updateContent 避免触发保存
             if (currentFile && updateContent && !isFormattingRef.current) {
                 updateContent(currentValue);

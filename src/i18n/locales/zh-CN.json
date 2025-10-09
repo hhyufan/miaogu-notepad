@@ -105,6 +105,9 @@
       "copy": "复制",
       "paste": "粘贴",
       "format": "格式化文档"
+    },
+    "formatting": {
+      "unsupportedLanguage": "暂不支持 {{language}} 语言的代码格式化功能"
     }
   },
   "statusBar": {

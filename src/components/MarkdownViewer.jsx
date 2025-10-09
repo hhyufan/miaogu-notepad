@@ -94,7 +94,7 @@ const AutoTreeH1 = ({titleText, isDarkMode, containerRef, children, currentFileN
                     }
                 } catch (error) {
                     // 静默处理错误，继续检查下一个路径
-                    console.log(`检查文件时出错: ${path}`, error);
+
                 }
             }
             // 没有找到有效文件，不显示任何内容
