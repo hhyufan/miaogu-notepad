@@ -11,18 +11,21 @@ use base64::Engine;
 use encoding_rs::{Encoding, UTF_8};
 use notify::{Event, EventKind, RecursiveMode, Watcher};
 use once_cell::sync::Lazy;
+use reqwest as external_reqwest;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
+use std::io::Write;
 use std::path::Path;
 use std::process::Command;
 use std::sync::{Arc, Mutex};
-use std::time::{SystemTime, UNIX_EPOCH, Duration};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_http::reqwest;
-use reqwest as external_reqwest;
-use std::io::Write;
-use tokio::time::{interval};
+use tokio::time::interval;
+
+pub mod errors;
+pub use errors::FileProcessingError;
 
 // Windows API相关导入
 #[cfg(windows)]
@@ -227,19 +230,21 @@ static FILE_WATCHER_STATE: Lazy<Arc<Mutex<FileWatcherState>>> = Lazy::new(|| {
 /// 获取应用程序路径信息
 #[tauri::command]
 async fn get_app_path_info() -> Result<AppPathInfo, String> {
-    let current_exe = std::env::current_exe()
-        .map_err(|e| format!("Failed to get current exe path: {}", e))?;
-    
-    let app_dir = current_exe.parent()
+    let current_exe =
+        std::env::current_exe().map_err(|e| format!("Failed to get current exe path: {}", e))?;
+
+    let app_dir = current_exe
+        .parent()
         .ok_or("Failed to get application directory")?
         .to_string_lossy()
         .to_string();
-    
-    let app_name = current_exe.file_name()
+
+    let app_name = current_exe
+        .file_name()
         .ok_or("Failed to get application name")?
         .to_string_lossy()
         .to_string();
-    
+
     Ok(AppPathInfo {
         current_exe_path: current_exe.to_string_lossy().to_string(),
         app_dir,
@@ -1040,7 +1045,7 @@ async fn get_cli_args() -> Result<Vec<String>, String> {
         .map(|arg| {
             // 输出到控制台，显示打开的路径
             // eprintln!("Miaogu Notepad - Opening file: {}", arg);
-            
+
             // 将相对路径转换为绝对路径
             let path = Path::new(&arg);
 
@@ -1499,14 +1504,14 @@ async fn show_main_window(app: AppHandle) -> Result<(), String> {
 /// 初始化并启动Tauri应用程序，配置插件和命令处理器
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    use tauri::Manager;
     use std::path::Path;
+    use tauri::Manager;
 
     let builder = tauri::Builder::default();
 
     // 在应用启动时处理命令行参数
     let args: Vec<String> = std::env::args().collect();
-    
+
     // 过滤掉Tauri开发模式的参数
     let _filtered_args: Vec<String> = args
         .into_iter()
@@ -1862,10 +1867,8 @@ async fn check_cli_installed() -> Result<bool, String> {
 // 开发者工具切换命令
 #[tauri::command]
 async fn toggle_devtools(app: AppHandle) -> Result<(), String> {
-    let _main_window = app
-        .get_webview_window("main")
-        .ok_or("无法获取主窗口")?;
-    
+    let _main_window = app.get_webview_window("main").ok_or("无法获取主窗口")?;
+
     // 切换开发者工具的显示状态
     #[cfg(debug_assertions)]
     if _main_window.is_devtools_open() {
@@ -1873,7 +1876,7 @@ async fn toggle_devtools(app: AppHandle) -> Result<(), String> {
     } else {
         _main_window.open_devtools();
     }
-    
+
     Ok(())
 }
 
@@ -1884,7 +1887,6 @@ async fn check_for_updates() -> Result<VersionInfo, String> {
     let current_version = env!("CARGO_PKG_VERSION");
     let repo_url = "https://api.github.com/repos/hhyufan/miaogu-notepad/releases/latest";
 
-    
     let client = reqwest::Client::new();
     let response = client
         .get(repo_url)
@@ -1892,27 +1894,30 @@ async fn check_for_updates() -> Result<VersionInfo, String> {
         .send()
         .await
         .map_err(|e| format!("Failed to fetch release info: {}", e))?;
-    
+
     if !response.status().is_success() {
         return Err(format!("GitHub API returned status: {}", response.status()));
     }
-    
-    let response_text = response.text().await
+
+    let response_text = response
+        .text()
+        .await
         .map_err(|e| format!("Failed to get response text: {}", e))?;
-    
+
     let release: GitHubRelease = serde_json::from_str(&response_text)
         .map_err(|e| format!("Failed to parse release info: {}", e))?;
-    
+
     // 移除版本号前的 'v' 前缀（如果存在）
     let latest_version = release.tag_name.trim_start_matches('v');
     let has_update = version_compare(current_version, latest_version);
 
     // 查找Windows exe文件
-    let download_url = release.assets
+    let download_url = release
+        .assets
         .iter()
         .find(|asset| asset.name.ends_with(".exe") && !asset.name.contains("setup"))
         .map(|asset| asset.browser_download_url.clone());
-    
+
     let version_info = VersionInfo {
         current_version: current_version.to_string(),
         latest_version: latest_version.to_string(),
@@ -1928,24 +1933,26 @@ async fn check_for_updates() -> Result<VersionInfo, String> {
 /// 启动定时更新检查任务
 #[tauri::command]
 async fn start_update_checker(app_handle: AppHandle) -> Result<String, String> {
-    let mut is_running = UPDATE_CHECK_RUNNING.lock().map_err(|e| format!("Failed to lock update checker state: {}", e))?;
-    
+    let mut is_running = UPDATE_CHECK_RUNNING
+        .lock()
+        .map_err(|e| format!("Failed to lock update checker state: {}", e))?;
+
     if *is_running {
         return Ok("Update checker is already running".to_string());
     }
-    
+
     *is_running = true;
     drop(is_running); // 释放锁
-    
+
     let app_handle_clone = app_handle.clone();
-    
+
     // 启动后台任务 - 使用 tauri::async_runtime 来避免 Tokio 运行时错误
     tauri::async_runtime::spawn(async move {
         let mut interval = interval(Duration::from_secs(3600)); // 每小时检查一次
-        
+
         loop {
             interval.tick().await;
-            
+
             // 检查是否应该继续运行
             {
                 let is_running = UPDATE_CHECK_RUNNING.lock().unwrap();
@@ -1953,14 +1960,17 @@ async fn start_update_checker(app_handle: AppHandle) -> Result<String, String> {
                     break;
                 }
             }
-            
+
             // 执行更新检查
             match check_for_updates().await {
                 Ok(version_info) => {
                     if version_info.has_update {
                         // 发送更新可用事件到前端
                         let _ = app_handle_clone.emit("update-available", &version_info);
-                        println!("Update available: {} -> {}", version_info.current_version, version_info.latest_version);
+                        println!(
+                            "Update available: {} -> {}",
+                            version_info.current_version, version_info.latest_version
+                        );
                     }
                 }
                 Err(e) => {
@@ -1968,17 +1978,19 @@ async fn start_update_checker(app_handle: AppHandle) -> Result<String, String> {
                 }
             }
         }
-        
+
         println!("Update checker stopped");
     });
-    
+
     Ok("Update checker started".to_string())
 }
 
 /// 停止定时更新检查任务
 #[tauri::command]
 async fn stop_update_checker() -> Result<String, String> {
-    let mut is_running = UPDATE_CHECK_RUNNING.lock().map_err(|e| format!("Failed to lock update checker state: {}", e))?;
+    let mut is_running = UPDATE_CHECK_RUNNING
+        .lock()
+        .map_err(|e| format!("Failed to lock update checker state: {}", e))?;
     *is_running = false;
     Ok("Update checker stopped".to_string())
 }
@@ -1986,48 +1998,42 @@ async fn stop_update_checker() -> Result<String, String> {
 /// 简单的版本比较函数
 /// 比较两个版本号，返回是否需要更新
 fn version_compare(current: &str, latest: &str) -> bool {
-    let current_parts: Vec<u32> = current
-        .split('.')
-        .filter_map(|s| s.parse().ok())
-        .collect();
-    let latest_parts: Vec<u32> = latest
-        .split('.')
-        .filter_map(|s| s.parse().ok())
-        .collect();
-    
+    let current_parts: Vec<u32> = current.split('.').filter_map(|s| s.parse().ok()).collect();
+    let latest_parts: Vec<u32> = latest.split('.').filter_map(|s| s.parse().ok()).collect();
+
     let max_len = current_parts.len().max(latest_parts.len());
-    
+
     for i in 0..max_len {
         let current_part = current_parts.get(i).unwrap_or(&0);
         let latest_part = latest_parts.get(i).unwrap_or(&0);
-        
+
         if latest_part > current_part {
             return true;
         } else if latest_part < current_part {
             return false;
         }
     }
-    
+
     false
 }
 
 /// 下载更新文件
 /// 从指定URL下载exe文件到临时位置
 #[tauri::command]
-async fn download_update(
-    app_handle: AppHandle,
-    download_url: String,
-) -> Result<String, String> {
+async fn download_update(app_handle: AppHandle, download_url: String) -> Result<String, String> {
     println!("Starting download from: {}", download_url);
-    
+
     // 发送下载开始事件
-    let _ = app_handle.emit("update-progress", UpdateProgress {
-        stage: "downloading".to_string(),
-        progress: 0.0,
-        message: "开始下载更新文件...".to_string(),
-        error: None,
-    });
-    
+    let _ = app_handle.emit(
+        "update-progress",
+        UpdateProgress {
+            stage: "downloading".to_string(),
+            progress: 0.0,
+            message: "开始下载更新文件...".to_string(),
+            error: None,
+        },
+    );
+
     let client = external_reqwest::Client::new();
     let response = client
         .get(&download_url)
@@ -2035,160 +2041,183 @@ async fn download_update(
         .send()
         .await
         .map_err(|e| format!("Failed to start download: {}", e))?;
-    
+
     if !response.status().is_success() {
-        return Err(format!("Download failed with status: {}", response.status()));
+        return Err(format!(
+            "Download failed with status: {}",
+            response.status()
+        ));
     }
-    
+
     let _total_size = response.content_length().unwrap_or(0);
-    
+
     // 获取当前exe文件路径
-    let current_exe = std::env::current_exe()
-        .map_err(|e| format!("Failed to get current exe path: {}", e))?;
-    
-    let current_dir = current_exe.parent()
+    let current_exe =
+        std::env::current_exe().map_err(|e| format!("Failed to get current exe path: {}", e))?;
+
+    let current_dir = current_exe
+        .parent()
         .ok_or("Failed to get current directory")?;
-    
+
     let temp_file_path = current_dir.join("miaogu-notepad.new.exe");
-    
+
     // 创建文件
     let mut file = std::fs::File::create(&temp_file_path)
         .map_err(|e| format!("Failed to create temp file: {}", e))?;
-    
+
     // 使用流式下载以支持进度更新
     use futures_util::StreamExt;
     let mut stream = response.bytes_stream();
     let mut downloaded: u64 = 0;
     let total_size = _total_size;
-    
+
     while let Some(chunk) = stream.next().await {
         let chunk = chunk.map_err(|e| format!("Failed to read chunk: {}", e))?;
-        
+
         file.write_all(&chunk)
             .map_err(|e| format!("Failed to write chunk: {}", e))?;
-        
+
         downloaded += chunk.len() as u64;
-        
+
         // 计算并发送进度更新
         let progress = if total_size > 0 {
             downloaded as f64 / total_size as f64
         } else {
             0.0
         };
-        
+
         // 每下载一定量数据就发送一次进度更新（避免过于频繁）
         if downloaded % (512 * 1024) == 0 || progress >= 1.0 {
-            let _ = app_handle.emit("update-progress", UpdateProgress {
-                stage: "downloading".to_string(),
-                progress,
-                message: format!("正在下载... {:.1}%", progress * 100.0),
-                error: None,
-            });
+            let _ = app_handle.emit(
+                "update-progress",
+                UpdateProgress {
+                    stage: "downloading".to_string(),
+                    progress,
+                    message: format!("正在下载... {:.1}%", progress * 100.0),
+                    error: None,
+                },
+            );
         }
     }
-    
+
     // 发送完成进度
-    let _ = app_handle.emit("update-progress", UpdateProgress {
-        stage: "downloading".to_string(),
-        progress: 1.0,
-        message: "下载完成".to_string(),
-        error: None,
-    });
-    
-    file.flush().map_err(|e| format!("Failed to flush file: {}", e))?;
-    
+    let _ = app_handle.emit(
+        "update-progress",
+        UpdateProgress {
+            stage: "downloading".to_string(),
+            progress: 1.0,
+            message: "下载完成".to_string(),
+            error: None,
+        },
+    );
+
+    file.flush()
+        .map_err(|e| format!("Failed to flush file: {}", e))?;
+
     println!("Download completed: {}", temp_file_path.display());
-    
+
     Ok(temp_file_path.to_string_lossy().to_string())
 }
 
 /// 安装更新
 /// 执行文件替换：当前exe -> .old，新exe -> 当前名称，删除.old
 #[tauri::command]
-async fn install_update(
-    app_handle: AppHandle,
-    new_file_path: String,
-) -> Result<String, String> {
+async fn install_update(app_handle: AppHandle, new_file_path: String) -> Result<String, String> {
     println!("Installing update from: {}", new_file_path);
-    
+
     // 发送安装开始事件
-    let _ = app_handle.emit("update-progress", UpdateProgress {
-        stage: "installing".to_string(),
-        progress: 0.0,
-        message: "开始安装更新...".to_string(),
-        error: None,
-    });
-    
+    let _ = app_handle.emit(
+        "update-progress",
+        UpdateProgress {
+            stage: "installing".to_string(),
+            progress: 0.0,
+            message: "开始安装更新...".to_string(),
+            error: None,
+        },
+    );
+
     let new_path = Path::new(&new_file_path);
     if !new_path.exists() {
         return Err("New file not found".to_string());
     }
-    
+
     // 获取当前exe路径
-    let current_exe = std::env::current_exe()
-        .map_err(|e| format!("Failed to get current exe path: {}", e))?;
-    
-    let current_dir = current_exe.parent()
+    let current_exe =
+        std::env::current_exe().map_err(|e| format!("Failed to get current exe path: {}", e))?;
+
+    let current_dir = current_exe
+        .parent()
         .ok_or("Failed to get current directory")?;
-    
+
     let old_exe_path = current_dir.join("miaogu-notepad.old.exe");
     let target_exe_path = current_dir.join("miaogu-notepad.exe");
-    
+
     // 步骤1: 如果存在旧的.old文件，先删除
     if old_exe_path.exists() {
         std::fs::remove_file(&old_exe_path)
             .map_err(|e| format!("Failed to remove old backup: {}", e))?;
     }
-    
-    let _ = app_handle.emit("update-progress", UpdateProgress {
-        stage: "installing".to_string(),
-        progress: 0.25,
-        message: "备份当前版本...".to_string(),
-        error: None,
-    });
-    
+
+    let _ = app_handle.emit(
+        "update-progress",
+        UpdateProgress {
+            stage: "installing".to_string(),
+            progress: 0.25,
+            message: "备份当前版本...".to_string(),
+            error: None,
+        },
+    );
+
     // 步骤2: 将当前exe重命名为.old
     std::fs::rename(&current_exe, &old_exe_path)
         .map_err(|e| format!("Failed to backup current exe: {}", e))?;
-    
-    let _ = app_handle.emit("update-progress", UpdateProgress {
-        stage: "installing".to_string(),
-        progress: 0.5,
-        message: "安装新版本...".to_string(),
-        error: None,
-    });
-    
+
+    let _ = app_handle.emit(
+        "update-progress",
+        UpdateProgress {
+            stage: "installing".to_string(),
+            progress: 0.5,
+            message: "安装新版本...".to_string(),
+            error: None,
+        },
+    );
+
     // 步骤3: 将.new文件重命名为目标exe名称
-    std::fs::rename(&new_path, &target_exe_path)
-        .map_err(|e| {
-            // 如果失败，尝试恢复
-            let _ = std::fs::rename(&old_exe_path, &current_exe);
-            format!("Failed to install new exe: {}", e)
-        })?;
-    
-    let _ = app_handle.emit("update-progress", UpdateProgress {
-        stage: "installing".to_string(),
-        progress: 0.75,
-        message: "准备重启应用...".to_string(),
-        error: None,
-    });
-    
-    let _ = app_handle.emit("update-progress", UpdateProgress {
-        stage: "completed".to_string(),
-        progress: 1.0,
-        message: "更新安装完成！正在重启应用程序...".to_string(),
-        error: None,
-    });
-    
+    std::fs::rename(&new_path, &target_exe_path).map_err(|e| {
+        // 如果失败，尝试恢复
+        let _ = std::fs::rename(&old_exe_path, &current_exe);
+        format!("Failed to install new exe: {}", e)
+    })?;
+
+    let _ = app_handle.emit(
+        "update-progress",
+        UpdateProgress {
+            stage: "installing".to_string(),
+            progress: 0.75,
+            message: "准备重启应用...".to_string(),
+            error: None,
+        },
+    );
+
+    let _ = app_handle.emit(
+        "update-progress",
+        UpdateProgress {
+            stage: "completed".to_string(),
+            progress: 1.0,
+            message: "更新安装完成！正在重启应用程序...".to_string(),
+            error: None,
+        },
+    );
+
     println!("Update installation completed successfully");
-    
+
     // 启动新应用程序
     let new_exe_path = target_exe_path.to_string_lossy().to_string();
-    
+
     #[cfg(windows)]
     {
         use std::process::Command;
-        
+
         // 创建一个批处理脚本来处理重启逻辑
         let batch_script = format!(
             r#"@echo off
@@ -2200,33 +2229,33 @@ start "" "{}"
             old_exe_path.to_string_lossy(),
             new_exe_path
         );
-        
+
         let script_path = current_dir.join("restart_update.bat");
         std::fs::write(&script_path, batch_script)
             .map_err(|e| format!("Failed to create restart script: {}", e))?;
-        
+
         // 启动批处理脚本
         Command::new("cmd")
             .args(&["/C", &script_path.to_string_lossy()])
             .spawn()
             .map_err(|e| format!("Failed to start restart script: {}", e))?;
     }
-    
+
     #[cfg(not(windows))]
     {
         use std::process::Command;
-        
+
         // 在非Windows系统上直接启动新应用
         Command::new(&new_exe_path)
             .spawn()
             .map_err(|e| format!("Failed to start new application: {}", e))?;
-        
+
         // 删除旧文件
         if old_exe_path.exists() {
             let _ = std::fs::remove_file(&old_exe_path);
         }
     }
-    
+
     // 退出当前应用程序
     std::process::exit(0);
 }
@@ -2235,79 +2264,97 @@ start "" "{}"
 #[tauri::command]
 async fn perform_auto_update(app_handle: AppHandle) -> Result<String, String> {
     println!("Starting auto update process");
-    
+
     // 步骤1: 检查更新
-    let _ = app_handle.emit("update-progress", UpdateProgress {
-        stage: "checking".to_string(),
-        progress: 0.0,
-        message: "检查更新中...".to_string(),
-        error: None,
-    });
-    
+    let _ = app_handle.emit(
+        "update-progress",
+        UpdateProgress {
+            stage: "checking".to_string(),
+            progress: 0.0,
+            message: "检查更新中...".to_string(),
+            error: None,
+        },
+    );
+
     let version_info = match check_for_updates().await {
         Ok(info) => info,
         Err(e) => {
             let error_msg = format!("检查更新失败: {}", e);
-            let _ = app_handle.emit("update-progress", UpdateProgress {
-                stage: "error".to_string(),
-                progress: 0.0,
-                message: "检查更新失败".to_string(),
-                error: Some(error_msg.clone()),
-            });
+            let _ = app_handle.emit(
+                "update-progress",
+                UpdateProgress {
+                    stage: "error".to_string(),
+                    progress: 0.0,
+                    message: "检查更新失败".to_string(),
+                    error: Some(error_msg.clone()),
+                },
+            );
             return Err(error_msg);
         }
     };
-    
+
     if !version_info.has_update {
-        let _ = app_handle.emit("update-progress", UpdateProgress {
-            stage: "completed".to_string(),
-            progress: 1.0,
-            message: "当前已是最新版本".to_string(),
-            error: None,
-        });
+        let _ = app_handle.emit(
+            "update-progress",
+            UpdateProgress {
+                stage: "completed".to_string(),
+                progress: 1.0,
+                message: "当前已是最新版本".to_string(),
+                error: None,
+            },
+        );
         return Ok("No update available".to_string());
     }
-    
+
     let download_url = match version_info.download_url {
         Some(url) => url,
         None => {
             let error_msg = "未找到下载链接".to_string();
-            let _ = app_handle.emit("update-progress", UpdateProgress {
-                stage: "error".to_string(),
-                progress: 0.0,
-                message: "获取下载链接失败".to_string(),
-                error: Some(error_msg.clone()),
-            });
+            let _ = app_handle.emit(
+                "update-progress",
+                UpdateProgress {
+                    stage: "error".to_string(),
+                    progress: 0.0,
+                    message: "获取下载链接失败".to_string(),
+                    error: Some(error_msg.clone()),
+                },
+            );
             return Err(error_msg);
         }
     };
-    
+
     // 步骤2: 下载更新
     let temp_file_path = match download_update(app_handle.clone(), download_url).await {
         Ok(path) => path,
         Err(e) => {
             let error_msg = format!("下载更新失败: {}", e);
-            let _ = app_handle.emit("update-progress", UpdateProgress {
-                stage: "error".to_string(),
-                progress: 0.0,
-                message: "下载更新失败".to_string(),
-                error: Some(error_msg.clone()),
-            });
+            let _ = app_handle.emit(
+                "update-progress",
+                UpdateProgress {
+                    stage: "error".to_string(),
+                    progress: 0.0,
+                    message: "下载更新失败".to_string(),
+                    error: Some(error_msg.clone()),
+                },
+            );
             return Err(error_msg);
         }
     };
-    
+
     // 步骤3: 安装更新
     match install_update(app_handle.clone(), temp_file_path).await {
         Ok(result) => Ok(result),
         Err(e) => {
             let error_msg = format!("安装更新失败: {}", e);
-            let _ = app_handle.emit("update-progress", UpdateProgress {
-                stage: "error".to_string(),
-                progress: 0.0,
-                message: "安装更新失败".to_string(),
-                error: Some(error_msg.clone()),
-            });
+            let _ = app_handle.emit(
+                "update-progress",
+                UpdateProgress {
+                    stage: "error".to_string(),
+                    progress: 0.0,
+                    message: "安装更新失败".to_string(),
+                    error: Some(error_msg.clone()),
+                },
+            );
             Err(error_msg)
         }
     }
