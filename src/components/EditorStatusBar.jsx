@@ -524,13 +524,13 @@ const EditorStatusBar = ({
             <div className="status-right">
                 {/* 行列信息和字符数 */}
                 <div className="status-item cursor-info">
-                    行 {cursorPosition?.lineNumber || 1},&nbsp;&nbsp;列 {cursorPosition?.column || 1}
+                    {t('statusBar.line')} {cursorPosition?.lineNumber || 1},&nbsp;&nbsp;{t('statusBar.column')} {cursorPosition?.column || 1}
                 </div>
 
                 <Divider type="vertical"/>
 
                 <div className="status-item character-count">
-                    {characterCount || 0}个字符
+                    {characterCount || 0} {t('statusBar.characters')}
                 </div>
 
                 <Divider type="vertical"/>
