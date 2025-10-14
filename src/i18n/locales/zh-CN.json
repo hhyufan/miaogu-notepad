@@ -161,6 +161,28 @@
       "model": "模型名称",
       "modelPlaceholder": "请输入模型名称，如：gpt-3.5-turbo"
     },
+    "system": {
+      "title": "系统",
+      "environment": {
+        "title": "环境变量",
+        "description": "配置系统环境变量以便在命令行中快速启动编辑器",
+        "addToPath": "添加到 PATH 环境变量",
+        "addToPathDescription": "将应用程序目录添加到系统 PATH 环境变量中",
+        "commandName": "命令名称",
+        "commandNamePlaceholder": "输入命令名称，如：mgnp",
+        "currentPath": "当前应用路径",
+        "installSuccess": "环境变量配置成功",
+        "toggleLabel": "添加到 PATH 开关",
+        "installFailed": "环境变量配置失败",
+        "uninstallSuccess": "环境变量移除成功",
+        "uninstallFailed": "环境变量移除失败",
+        "install": "安装",
+        "uninstall": "移除",
+        "status": "状态",
+        "installed": "已启用",
+        "notInstalled": "未启用"
+      }
+    },
     "language": {
       "title": "语言",
       "settings": "语言设置",

@@ -45,7 +45,7 @@ const initStore = async () => {
                     if (store && typeof store.get === 'function') {
                         useLocalStorage = false;
                         storeInitialized = true;
-                        console.log('Tauri Store 初始化成功');
+                        ('Tauri Store 初始化成功');
                     } else {
                         throw new Error('Store 对象初始化不完整');
                     }
@@ -556,13 +556,57 @@ export const appApi = {
         try {
             if (typeof window !== 'undefined' && window.__TAURI_INTERNALS__ !== undefined) {
                 await invoke('show_main_window');
-                console.log('主窗口显示命令已发送');
+                ('主窗口显示命令已发送');
             } else {
-                console.log('非Tauri环境，跳过窗口显示');
+                ('非Tauri环境，跳过窗口显示');
             }
         } catch (error) {
             console.error('显示主窗口失败:', error);
             throw error;
+        }
+    },
+
+    async installCli(commandName = 'mgnp') {
+        try {
+            if (typeof window !== 'undefined' && window.__TAURI_INTERNALS__ !== undefined) {
+                const res = await invoke('install_cli', {commandName});
+                return res;
+            } else {
+                ('非Tauri环境，跳过 CLI 安装');
+                return '非Tauri环境，跳过 CLI 安装';
+            }
+        } catch (error) {
+            console.error('安装 CLI 失败:', error);
+            throw error;
+        }
+    },
+
+    async uninstallCli() {
+        try {
+            if (typeof window !== 'undefined' && window.__TAURI_INTERNALS__ !== undefined) {
+                const res = await invoke('uninstall_cli');
+                return res;
+            } else {
+                ('非Tauri环境，跳过 CLI 卸载');
+                return '非Tauri环境，跳过 CLI 卸载';
+            }
+        } catch (error) {
+            console.error('卸载 CLI 失败:', error);
+            throw error;
+        }
+    },
+
+    async checkCliInstalled() {
+        try {
+            if (typeof window !== 'undefined' && window.__TAURI_INTERNALS__ !== undefined) {
+                const installed = await invoke('check_cli_installed');
+                return Boolean(installed);
+            } else {
+                return false;
+            }
+        } catch (error) {
+            console.warn('检查 CLI 安装状态失败:', error);
+            return false;
         }
     }
 };

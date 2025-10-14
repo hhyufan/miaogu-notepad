@@ -756,19 +756,13 @@ async fn execute_file(file_path: String) -> Result<String, String> {
             }
 
             #[cfg(target_os = "macos")]
-            match Command::new("open")
-                .arg(&file_path)
-                .spawn()
-            {
+            match Command::new("open").arg(&file_path).spawn() {
                 Ok(_) => Ok(format!("成功使用默认程序打开: {}", file_path)),
                 Err(e) => Err(format!("打开文件失败: {}", e)),
             }
 
             #[cfg(target_os = "linux")]
-            match Command::new("xdg-open")
-                .arg(&file_path)
-                .spawn()
-            {
+            match Command::new("xdg-open").arg(&file_path).spawn() {
                 Ok(_) => Ok(format!("成功使用默认程序打开: {}", file_path)),
                 Err(e) => Err(format!("打开文件失败: {}", e)),
             }
@@ -847,7 +841,7 @@ async fn open_in_terminal(path: String) -> Result<String, String> {
     {
         // 尝试常见的终端应用
         let terminals = ["gnome-terminal", "konsole", "xfce4-terminal", "xterm"];
-        
+
         for terminal in &terminals {
             if let Ok(_) = Command::new(terminal)
                 .args(["--working-directory", work_dir.to_str().unwrap_or(".")])
@@ -856,7 +850,7 @@ async fn open_in_terminal(path: String) -> Result<String, String> {
                 return Ok(format!("成功在{}中打开: {}", terminal, work_dir.display()));
             }
         }
-        
+
         Err("未找到可用的终端应用".to_string())
     }
 
@@ -907,7 +901,7 @@ async fn show_in_explorer(path: String) -> Result<String, String> {
     {
         // 尝试常见的文件管理器
         let file_managers = ["nautilus", "dolphin", "thunar", "pcmanfm"];
-        
+
         for manager in &file_managers {
             let args = if target_path.is_file() {
                 vec!["--select".to_string(), path.clone()]
@@ -919,10 +913,14 @@ async fn show_in_explorer(path: String) -> Result<String, String> {
                 return Ok(format!("成功在{}中显示", manager));
             }
         }
-        
+
         // 如果没有找到文件管理器，尝试用xdg-open打开目录
         let dir_path = if target_path.is_file() {
-            target_path.parent().unwrap_or(target_path).to_string_lossy().to_string()
+            target_path
+                .parent()
+                .unwrap_or(target_path)
+                .to_string_lossy()
+                .to_string()
         } else {
             path
         };
@@ -950,6 +948,9 @@ fn greet(name: &str) -> String {
 async fn get_cli_args() -> Result<Vec<String>, String> {
     let args: Vec<String> = std::env::args().collect();
 
+    // 输出启动信息到标准错误流，确保在当前终端显示
+    // eprintln!("Miaogu Notepad - Starting application...");
+
     // 过滤掉Tauri开发模式的参数
     let filtered_args: Vec<String> = args
         .into_iter()
@@ -962,6 +963,9 @@ async fn get_cli_args() -> Result<Vec<String>, String> {
                 && !arg.is_empty()
         })
         .map(|arg| {
+            // 输出到控制台，显示打开的路径
+            // eprintln!("Miaogu Notepad - Opening file: {}", arg);
+            
             // 将相对路径转换为绝对路径
             let path = Path::new(&arg);
 
@@ -971,16 +975,29 @@ async fn get_cli_args() -> Result<Vec<String>, String> {
                 match std::env::current_dir() {
                     Ok(current_dir) => {
                         let absolute_path = current_dir.join(path);
-                        absolute_path.to_string_lossy().to_string()
+                        let abs_path_str = absolute_path.to_string_lossy().to_string();
+                        // eprintln!("Miaogu Notepad - Resolved absolute path: {}", abs_path_str);
+                        abs_path_str
                     }
-                    Err(_) => arg, // 如果获取当前目录失败，返回原始参数
+                    Err(_) => {
+                        // eprintln!("Miaogu Notepad - Cannot get current directory, using original path: {}", arg);
+                        arg // 如果获取当前目录失败，返回原始参数
+                    }
                 }
             } else {
                 // 如果已经是绝对路径，直接返回
+                // eprintln!("Miaogu Notepad - Using absolute path: {}", arg);
                 arg
             }
         })
         .collect();
+
+    // 输出参数总数
+    if !filtered_args.is_empty() {
+        // eprintln!("Miaogu Notepad - Processed {} file argument(s)", filtered_args.len());
+    } else {
+        // eprintln!("Miaogu Notepad - No file arguments provided, starting with welcome screen");
+    }
 
     Ok(filtered_args)
 }
@@ -1396,7 +1413,7 @@ async fn show_main_window(app: AppHandle) -> Result<(), String> {
             window
                 .show()
                 .map_err(|e| format!("Failed to show window: {}", e))?;
-            println!("Main window displayed");
+            // println!("Main window displayed");
             Ok(())
         }
         None => Err("Main window not found".to_string()),
@@ -1408,8 +1425,49 @@ async fn show_main_window(app: AppHandle) -> Result<(), String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     use tauri::Manager;
+    use std::path::Path;
 
     let builder = tauri::Builder::default();
+
+    // 在应用启动时处理命令行参数
+    let args: Vec<String> = std::env::args().collect();
+    
+    // 过滤掉Tauri开发模式的参数
+    let _filtered_args: Vec<String> = args
+        .into_iter()
+        .skip(1) // 跳过程序路径
+        .filter(|arg| {
+            // 过滤掉Tauri开发模式的参数
+            !arg.starts_with("--no-default-features")
+                && !arg.starts_with("--color")
+                && arg != "--"
+                && !arg.is_empty()
+        })
+        .map(|arg| {
+            // 将相对路径转换为绝对路径
+            let path = Path::new(&arg);
+
+            // 检查是否为相对路径
+            if path.is_relative() {
+                // 获取当前工作目录
+                match std::env::current_dir() {
+                    Ok(current_dir) => {
+                        let absolute_path = current_dir.join(path);
+                        let abs_path_str = absolute_path.to_string_lossy().to_string();
+                        abs_path_str
+                    }
+                    Err(_) => {
+                        arg // 如果获取当前目录失败，返回原始参数
+                    }
+                }
+            } else {
+                // 如果已经是绝对路径，直接返回
+                arg
+            }
+        })
+        .collect();
+
+    // 移除控制台输出代码，因为现在在 main.rs 中处理
 
     builder
         .plugin(tauri_plugin_opener::init())
@@ -1418,17 +1476,40 @@ pub fn run() {
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_http::init())
         .setup(|app| {
+            // Windows 首次运行自动初始化 CLI 到 PATH
+            #[cfg(windows)]
+            {
+                // ensure_cli_installed_on_first_run();
+            }
+
             // 获取主窗口
             let main_window = app
                 .get_webview_window("main")
                 .expect("failed to get main window");
 
+            // 在 debug 模式下启用开发者工具（调试用）
+            #[cfg(debug_assertions)]
+            {
+                main_window.open_devtools();
+            }
+
             // 禁用右键菜单
-            main_window.eval("
+            main_window
+                .eval(
+                    "
                 document.addEventListener('contextmenu', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
                     return false;
+                });
+                
+                // 添加 F12 快捷键支持开发者工具
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'F12') {
+                        e.preventDefault();
+                        // 通过 Tauri API 切换开发者工具
+                        window.__TAURI__.invoke('toggle_devtools');
+                    }
                 });
                 
                 // 确保在DOM加载后也生效
@@ -1439,11 +1520,20 @@ pub fn run() {
                             e.stopPropagation();
                             return false;
                         });
+                        
+                        document.addEventListener('keydown', function(e) {
+                            if (e.key === 'F12') {
+                                e.preventDefault();
+                                window.__TAURI__.invoke('toggle_devtools');
+                            }
+                        });
                     });
                 }
-            ").unwrap_or_else(|e| {
-                eprintln!("Failed to inject context menu disable script: {}", e);
-            });
+            ",
+                )
+                .unwrap_or_else(|e| {
+                    eprintln!("Failed to inject context menu disable script: {}", e);
+                });
 
             // 将窗口句柄存储到应用状态中，供前端调用
             app.manage(main_window);
@@ -1475,8 +1565,209 @@ pub fn run() {
             show_main_window,
             load_image_with_proxy,
             get_system_proxy,
-            set_proxy_config
+            set_proxy_config,
+            // 注册 CLI 管理命令
+            install_cli,
+            uninstall_cli,
+            check_cli_installed,
+            // 开发者工具切换命令
+            toggle_devtools
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+// 在 Windows 平台提供 CLI 安装/卸载/检查命令
+#[tauri::command]
+#[cfg(windows)]
+async fn install_cli(command_name: Option<String>) -> Result<String, String> {
+    use std::fs;
+    use std::path::Path;
+    use std::process::Command;
+
+    let exe_path =
+        std::env::current_exe().map_err(|e| format!("无法获取当前可执行文件路径: {}", e))?;
+    let local_appdata =
+        std::env::var("LOCALAPPDATA").map_err(|e| format!("无法获取 LOCALAPPDATA: {}", e))?;
+
+    let bin_dir = Path::new(&local_appdata).join("miaogu-notepad").join("bin");
+    fs::create_dir_all(&bin_dir).map_err(|e| format!("创建 bin 目录失败: {}", e))?;
+
+    // 允许自定义命令名，默认 mgnp
+    let cmd_name = command_name.unwrap_or_else(|| "mgnp".to_string());
+    let shim_path = bin_dir.join(format!("{}.cmd", cmd_name));
+
+    // 写入 shim 脚本，启动当前 EXE
+    let exe_str = exe_path.to_string_lossy().to_string();
+    let sanitized_exe = exe_str.replace('"', "\"\"");
+    let shim_content = format!(
+        r#"@echo off
+set "EXE={exe}"
+if "%~1"=="" (
+  "%EXE%"
+) else (
+  "%EXE%" %*
+)
+"#,
+        exe = sanitized_exe
+    );
+    fs::write(&shim_path, shim_content).map_err(|e| format!("写入 CLI 启动脚本失败: {}", e))?;
+
+    // 将 bin 目录加入用户 PATH（若不存在）
+    let bin_str = bin_dir.to_string_lossy().replace("\\", "\\\\");
+    let ps_script = format!(
+        "${{bin}} = '{}'; $old = [Environment]::GetEnvironmentVariable('Path','User'); if ([string]::IsNullOrWhiteSpace($old)) {{ $new = $bin }} else {{ $parts = ($old -split ';') | ForEach-Object {{ $_.Trim() }} | Where-Object {{ $_ -ne '' }}; if ($parts | Where-Object {{ $_.ToLower() -eq $bin.ToLower() }}) {{ $new = $old }} else {{ $new = ($old.TrimEnd(';') + ';' + $bin) }} }}; [Environment]::SetEnvironmentVariable('Path',$new,'User')",
+        bin_str
+    );
+    Command::new("powershell")
+        .args([
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-Command",
+            &ps_script,
+        ])
+        .status()
+        .map_err(|e| format!("更新 PATH 失败: {}", e))?;
+
+    // 广播环境变量变更
+    use windows_sys::Win32::UI::WindowsAndMessaging::{
+        SendMessageTimeoutW, HWND_BROADCAST, SMTO_ABORTIFHUNG,
+    };
+    const WM_SETTINGCHANGE: u32 = 0x001A;
+    let env_wide: Vec<u16> = "Environment\0".encode_utf16().collect();
+    unsafe {
+        let mut _result: usize = 0;
+        let _ = SendMessageTimeoutW(
+            HWND_BROADCAST,
+            WM_SETTINGCHANGE,
+            0,
+            env_wide.as_ptr() as isize,
+            SMTO_ABORTIFHUNG,
+            5000,
+            &mut _result,
+        );
+    }
+
+    Ok(format!("已安装 CLI: {}", cmd_name))
+}
+
+#[tauri::command]
+#[cfg(windows)]
+async fn uninstall_cli() -> Result<String, String> {
+    use std::fs;
+    use std::path::Path;
+    use std::process::Command;
+
+    let local_appdata =
+        std::env::var("LOCALAPPDATA").map_err(|e| format!("无法获取 LOCALAPPDATA: {}", e))?;
+    let bin_dir = Path::new(&local_appdata).join("miaogu-notepad").join("bin");
+
+    // 删除 bin 目录（如果存在）
+    if bin_dir.exists() {
+        fs::remove_dir_all(&bin_dir).map_err(|e| format!("删除 bin 目录失败: {}", e))?;
+    }
+
+    // 从用户 PATH 中移除该目录
+    let bin_str = bin_dir.to_string_lossy().replace("\\", "\\\\");
+    let ps_script = format!(
+        "${{bin}} = '{}'; $old = [Environment]::GetEnvironmentVariable('Path','User'); $parts = ($old -split ';') | ForEach-Object {{ $_.Trim() }} | Where-Object {{ $_ -ne '' }}; $filtered = $parts | Where-Object {{ $_.ToLower() -ne $bin.ToLower() }}; $new = [string]::Join(';', $filtered); [Environment]::SetEnvironmentVariable('Path',$new,'User')",
+        bin_str
+    );
+    Command::new("powershell")
+        .args([
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-Command",
+            &ps_script,
+        ])
+        .status()
+        .map_err(|e| format!("更新 PATH 失败: {}", e))?;
+
+    // 广播环境变量变更
+    use windows_sys::Win32::UI::WindowsAndMessaging::{
+        SendMessageTimeoutW, HWND_BROADCAST, SMTO_ABORTIFHUNG,
+    };
+    const WM_SETTINGCHANGE: u32 = 0x001A;
+    let env_wide: Vec<u16> = "Environment\0".encode_utf16().collect();
+    unsafe {
+        let mut _result: usize = 0;
+        let _ = SendMessageTimeoutW(
+            HWND_BROADCAST,
+            WM_SETTINGCHANGE,
+            0,
+            env_wide.as_ptr() as isize,
+            SMTO_ABORTIFHUNG,
+            5000,
+            &mut _result,
+        );
+    }
+
+    Ok("已卸载 CLI".to_string())
+}
+
+#[tauri::command]
+#[cfg(windows)]
+async fn check_cli_installed() -> Result<bool, String> {
+    use std::fs;
+    use std::path::Path;
+
+    let local_appdata =
+        std::env::var("LOCALAPPDATA").map_err(|e| format!("无法获取 LOCALAPPDATA: {}", e))?;
+    let bin_dir = Path::new(&local_appdata).join("miaogu-notepad").join("bin");
+
+    // 目录存在且包含 .cmd 文件即认为已安装
+    if !bin_dir.exists() {
+        return Ok(false);
+    }
+
+    let has_cmd = fs::read_dir(&bin_dir)
+        .map_err(|e| format!("读取 bin 目录失败: {}", e))?
+        .filter_map(|e| e.ok())
+        .any(|entry| {
+            let p = entry.path();
+            p.extension()
+                .map(|ext| ext.to_string_lossy() == "cmd")
+                .unwrap_or(false)
+        });
+
+    Ok(has_cmd)
+}
+
+// 非 Windows 平台提供占位实现，避免编译错误
+#[tauri::command]
+#[cfg(not(windows))]
+async fn install_cli(_command_name: Option<String>) -> Result<String, String> {
+    Err("仅在 Windows 平台支持 CLI 安装".to_string())
+}
+
+#[tauri::command]
+#[cfg(not(windows))]
+async fn uninstall_cli() -> Result<String, String> {
+    Err("仅在 Windows 平台支持 CLI 卸载".to_string())
+}
+
+#[tauri::command]
+#[cfg(not(windows))]
+async fn check_cli_installed() -> Result<bool, String> {
+    Ok(false)
+}
+
+// 开发者工具切换命令
+#[tauri::command]
+async fn toggle_devtools(app: AppHandle) -> Result<(), String> {
+    let _main_window = app
+        .get_webview_window("main")
+        .ok_or("无法获取主窗口")?;
+    
+    // 切换开发者工具的显示状态
+    #[cfg(debug_assertions)]
+    if _main_window.is_devtools_open() {
+        _main_window.close_devtools();
+    } else {
+        _main_window.open_devtools();
+    }
+    
+    Ok(())
 }

@@ -6,14 +6,14 @@
  */
 
 import {useCallback, useEffect, useState} from 'react';
-import {App, Button, Card, Input, Menu, Modal, Select, Slider, Space, Switch, Typography} from 'antd';
+import {App, Badge, Button, Card, Input, Menu, Modal, Select, Slider, Space, Switch, Tag, Typography} from 'antd';
 import {DeleteOutlined, ReloadOutlined, UploadOutlined} from '@ant-design/icons';
 import {useTheme} from '../hooks/redux';
 import {useI18n} from '../hooks/useI18n';
 import tauriApi from '../utils/tauriApi';
 import './SettingsModal.scss';
 
-const {settings: settingsApi, file: fileApi} = tauriApi;
+const {settings: settingsApi, file: fileApi, app: appApi} = tauriApi;
 
 const {Title, Text} = Typography;
 const {Option} = Select;
@@ -81,7 +81,13 @@ const SettingsModal = ({visible, onClose}) => {
         aiBaseUrl: '',
         aiApiKey: '',
         aiModel: '',
+
+        // 环境变量设置
+        envCommandName: 'mgnp',
+        envInstalled: false,
     });
+
+    const [envBusy, setEnvBusy] = useState(false);
 
     /**
      * 当全局设置变化时更新本地设置
@@ -113,6 +119,11 @@ const SettingsModal = ({visible, onClose}) => {
                     settingsApi.get('ai.apiKey'),
                     settingsApi.get('ai.model'),
                 ]);
+                // 读取 CLI 安装状态与命令名
+                const [cliInstalled, cliName] = await Promise.all([
+                    appApi.checkCliInstalled(),
+                    settingsApi.get('system.env.commandName'),
+                ]);
                 if (!mounted) return;
                 setLocalSettings(prev => ({
                     ...prev,
@@ -120,9 +131,11 @@ const SettingsModal = ({visible, onClose}) => {
                     aiBaseUrl: String(baseUrl ?? prev.baseUrl ?? ''),
                     aiApiKey: String(apiKey ?? prev.aiApiKey ?? ''),
                     aiModel: String(model ?? prev.aiModel ?? ''),
+                    envInstalled: Boolean(cliInstalled ?? prev.envInstalled ?? false),
+                    envCommandName: String(cliName ?? prev.envCommandName ?? 'mgnp'),
                 }));
             } catch (e) {
-                console.warn('加载AI设置失败:', e);
+                console.warn('加载AI/系统设置失败:', e);
             }
         })();
         return () => {
@@ -229,7 +242,9 @@ const SettingsModal = ({visible, onClose}) => {
                 aiEnabled: localSettings.aiEnabled || false,
                 aiBaseUrl: localSettings.aiBaseUrl || '',
                 aiApiKey: localSettings.aiApiKey || '',
-                aiModel: localSettings.aiModel || ''
+                aiModel: localSettings.aiModel || '',
+                envInstalled: Boolean(localSettings.envInstalled),
+                envCommandName: String(localSettings.envCommandName || 'mgnp')
             };
 
             // 更新 Redux 状态
@@ -261,6 +276,10 @@ const SettingsModal = ({visible, onClose}) => {
             await settingsApi.set('ai.baseUrl', validatedSettings.aiBaseUrl);
             await settingsApi.set('ai.apiKey', validatedSettings.aiApiKey);
             await settingsApi.set('ai.model', validatedSettings.aiModel);
+
+            // 持久化系统设置
+            await settingsApi.set('system.env.installed', validatedSettings.envInstalled);
+            await settingsApi.set('system.env.commandName', validatedSettings.envCommandName);
 
             // 触发AI设置变更事件
             window.dispatchEvent(new Event('ai-settings-changed'));
@@ -404,6 +423,125 @@ const SettingsModal = ({visible, onClose}) => {
             </Space>
         </div>
     );
+
+    /**
+     * 渲染系统设置面板
+     * 包含环境变量配置等系统相关设置
+     * @returns {JSX.Element} 系统设置面板
+     */
+    const renderSystemSettings = () => (
+        <div className="settings-section">
+            <Title level={4}>{t('settings.system.title')}</Title>
+            <Space direction="vertical" size="large" style={{width: '100%'}}>
+                <Card 
+                    size="small" 
+                    title={
+                        <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
+                            {t('settings.system.environment.title')}
+                            <Tag 
+                                color={localSettings.envInstalled ? 'success' : 'warning'}
+                                style={{
+                                    margin: 0,
+                                    fontSize: '12px',
+                                    fontWeight: 500,
+                                    letterSpacing: '0.5px',
+                                    border: 'none',
+                                    marginLeft: 'auto',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px'
+                                }}
+                            >
+                                <Badge 
+                                    status={localSettings.envInstalled ? 'success' : 'warning'}
+                                    style={{margin: 0}}
+                                />
+                                {localSettings.envInstalled 
+                                    ? t('settings.system.environment.installed') 
+                                    : t('settings.system.environment.notInstalled')
+                                }
+                            </Tag>
+                        </div>
+                    }
+                >
+                    <Space direction="vertical" style={{width: '100%'}}>
+                        <div className="setting-item">
+                            <Text>{t('settings.system.environment.commandName')}</Text>
+                            <Input
+                                value={localSettings.envCommandName}
+                                onChange={(e) => updateLocalSetting('envCommandName', e.target.value)}
+                                placeholder="mgnp"
+                                style={{width: 200}}
+                            />
+                        </div>
+                        <div className="setting-item" style={{display: 'flex', alignItems: 'center', gap: 12}}>
+                            <Text>{t('settings.system.environment.toggleLabel')}</Text>
+                            <Switch
+                                checked={localSettings.envInstalled}
+                                loading={envBusy}
+                                onChange={async (checked) => {
+                                    setEnvBusy(true);
+                                    try {
+                                        if (checked) {
+                                            await handleInstallEnvironment();
+                                        } else {
+                                            await handleUninstallEnvironment();
+                                        }
+                                    } finally {
+                                        setEnvBusy(false);
+                                    }
+                                }}
+                            />
+                        </div>
+                    </Space>
+                </Card>
+            </Space>
+        </div>
+    );
+
+    /**
+     * 处理环境变量安装
+     */
+    const handleInstallEnvironment = async () => {
+        try {
+            const name = localSettings.envCommandName || 'mgnp';
+            const res = await appApi.installCli(name);
+            ('CLI 安装结果:', res);
+            const installed = await appApi.checkCliInstalled();
+            updateLocalSetting('envInstalled', installed);
+            await settingsApi.set('system.env.installed', installed);
+            await settingsApi.set('system.env.commandName', name);
+            if (installed) {
+                message.success(t('settings.system.environment.installSuccess'));
+            } else {
+                message.error(t('settings.system.environment.installFailed'));
+            }
+        } catch (error) {
+            console.error('Failed to install environment:', error);
+            message.error(t('settings.system.environment.installFailed'));
+        }
+    };
+
+    /**
+     * 处理环境变量卸载
+     */
+    const handleUninstallEnvironment = async () => {
+        try {
+            const res = await appApi.uninstallCli();
+            ('CLI 卸载结果:', res);
+            const installed = await appApi.checkCliInstalled();
+            updateLocalSetting('envInstalled', installed);
+            await settingsApi.set('system.env.installed', installed);
+            if (!installed) {
+                message.success(t('settings.system.environment.uninstallSuccess'));
+            } else {
+                message.error(t('settings.system.environment.uninstallFailed'));
+            }
+        } catch (error) {
+            console.error('Failed to uninstall environment:', error);
+            message.error(t('settings.system.environment.uninstallFailed'));
+        }
+    };
 
     /**
      * 渲染编辑器设置面板
@@ -590,6 +728,8 @@ const SettingsModal = ({visible, onClose}) => {
                 return renderAppearanceSettings();
             case 'ai':
                 return renderAISettings();
+            case 'system':
+                return renderSystemSettings();
             default:
                 return null;
         }
@@ -630,6 +770,7 @@ const SettingsModal = ({visible, onClose}) => {
                             {key: 'editor', label: t('settings.editor.title')},
                             {key: 'appearance', label: t('settings.appearance.title')},
                             {key: 'ai', label: t('settings.ai.title')},
+                            {key: 'system', label: t('settings.system.title')},
                         ]}
                         onClick={({key}) => setActiveKey(key)}
                         className="settings-menu-list"

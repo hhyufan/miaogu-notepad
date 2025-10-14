@@ -170,6 +170,30 @@
       "model": "Model Name",
       "modelPlaceholder": "Enter model name, e.g.: gpt-3.5-turbo"
     },
+    "system": {
+      "title": "System",
+      "environment": {
+        "title": "Environment Variables",
+        "description": "Configure system environment variables to quickly launch the editor from command line",
+        "addToPath": "Add to PATH environment variable",
+        "addToPathDescription": "Add application directory to system PATH environment variable",
+        "commandName": "Command Name",
+        "commandNamePlaceholder": "Enter command name, e.g.: mgnp",
+        "currentPath": "Current Application Path",
+        "installSuccess": "Environment variable configured successfully",
+        "installError": "Failed to configure environment variable",
+        "uninstallSuccess": "Environment variable removed successfully",
+        "uninstallError": "Failed to remove environment variable",
+        "install": "Install",
+        "uninstall": "Remove",
+        "status": "Status",
+        "installed": "Installed",
+        "notInstalled": "Not Installed",
+        "toggleLabel": "Add to PATH Toggle",
+        "installFailed": "Failed to configure environment variable",
+        "uninstallFailed": "Failed to remove environment variable"
+      }
+    },
     "language": {
       "title": "Language",
       "settings": "Language Settings",
