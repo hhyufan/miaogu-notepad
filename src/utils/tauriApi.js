@@ -524,89 +524,176 @@ export const appApi = {
         try {
             return await invoke('greet', {name});
         } catch (error) {
+            console.error('Greet调用失败:', error);
             throw error;
         }
     },
 
     async getCliArgs() {
         try {
-            if (typeof window !== 'undefined' && window.__TAURI_INTERNALS__ !== undefined) {
-                const args = await invoke('get_cli_args');
-                return args;
-            } else {
-                const urlParams = new URLSearchParams(window.location.search);
-                const fileParam = urlParams.get('file');
-
-                const debugFilePath = localStorage.getItem('miaogu-notepad-debug-file');
-
-                if (fileParam) {
-                    return [fileParam];
-                } else if (debugFilePath) {
-                    return [debugFilePath];
-                } else {
-                    return [];
-                }
+            // 检查是否在 Tauri 环境中
+            if (typeof window === 'undefined' || !window.__TAURI_INTERNALS__ || !invoke) {
+                return [];
             }
-        } catch (error) {
+            const args = await invoke('get_cli_args');
+            if (args && args.length > 0) {
+                // 过滤掉可执行文件路径，只返回实际参数
+                return args.slice(1);
+            }
             return [];
+        } catch (error) {
+            console.error('获取CLI参数失败:', error);
+            // 在非Tauri环境中，返回空数组而不是抛出错误
+            if (error.message && error.message.includes('not found')) {
+                return [];
+            }
+            throw error;
         }
     },
 
     async showMainWindow() {
         try {
-            if (typeof window !== 'undefined' && window.__TAURI_INTERNALS__ !== undefined) {
-                await invoke('show_main_window');
-                ('主窗口显示命令已发送');
-            } else {
-                ('非Tauri环境，跳过窗口显示');
-            }
+            return await invoke('show_main_window');
         } catch (error) {
             console.error('显示主窗口失败:', error);
+            // 在非Tauri环境中，忽略此错误
+            if (error.message && error.message.includes('not found')) {
+                return;
+            }
             throw error;
         }
     },
 
     async installCli(commandName = 'mgnp') {
         try {
-            if (typeof window !== 'undefined' && window.__TAURI_INTERNALS__ !== undefined) {
-                const res = await invoke('install_cli', {commandName});
-                return res;
-            } else {
-                ('非Tauri环境，跳过 CLI 安装');
-                return '非Tauri环境，跳过 CLI 安装';
-            }
+            return await invoke('install_cli', {commandName});
         } catch (error) {
-            console.error('安装 CLI 失败:', error);
+            console.error('安装CLI失败:', error);
             throw error;
         }
     },
 
     async uninstallCli() {
         try {
-            if (typeof window !== 'undefined' && window.__TAURI_INTERNALS__ !== undefined) {
-                const res = await invoke('uninstall_cli');
-                return res;
-            } else {
-                ('非Tauri环境，跳过 CLI 卸载');
-                return '非Tauri环境，跳过 CLI 卸载';
-            }
+            return await invoke('uninstall_cli');
         } catch (error) {
-            console.error('卸载 CLI 失败:', error);
+            console.error('卸载CLI失败:', error);
             throw error;
         }
     },
 
     async checkCliInstalled() {
         try {
-            if (typeof window !== 'undefined' && window.__TAURI_INTERNALS__ !== undefined) {
-                const installed = await invoke('check_cli_installed');
-                return Boolean(installed);
-            } else {
+            // 检查是否在 Tauri 环境中
+            if (typeof window === 'undefined' || !window.__TAURI_INTERNALS__ || !invoke) {
                 return false;
             }
+            return await invoke('check_cli_installed');
         } catch (error) {
-            console.warn('检查 CLI 安装状态失败:', error);
-            return false;
+            console.error('检查CLI安装状态失败:', error);
+            // 在非Tauri环境中，返回false而不是抛出错误
+            if (error.message && error.message.includes('not found')) {
+                return false;
+            }
+            throw error;
+        }
+    },
+
+    // 更新功能相关API
+    async checkForUpdates() {
+        try {
+            // 检查是否在 Tauri 环境中
+            if (typeof window === 'undefined' || !window.__TAURI_INTERNALS__ || !invoke) {
+                throw new Error('Tauri environment not available');
+            }
+            return await invoke('check_for_updates');
+        } catch (error) {
+            console.error('检查更新失败:', error);
+            throw error;
+        }
+    },
+
+    async downloadUpdate(downloadUrl, onProgress) {
+        try {
+            // 如果提供了进度回调，设置事件监听
+            if (onProgress && typeof onProgress === 'function') {
+                // 监听更新进度事件
+                const { listen } = await import('@tauri-apps/api/event');
+                const unlisten = await listen('update-progress', (event) => {
+                    const progress = event.payload;
+                    if (progress.stage === 'downloading') {
+                        onProgress(progress);
+                    }
+                });
+                
+                // 执行下载
+                const result = await invoke('download_update', {
+                    downloadUrl: downloadUrl
+                });
+                
+                // 清理监听器
+                unlisten();
+                return result;
+            } else {
+                return await invoke('download_update', {
+                    downloadUrl: downloadUrl
+                });
+            }
+        } catch (error) {
+            console.error('下载更新失败:', error);
+            throw error;
+        }
+    },
+
+    async installUpdate(tempFilePath, onProgress) {
+        try {
+            // 如果提供了进度回调，设置事件监听
+            if (onProgress && typeof onProgress === 'function') {
+                const { listen } = await import('@tauri-apps/api/event');
+                const unlisten = await listen('update-progress', (event) => {
+                    const progress = event.payload;
+                    if (progress.stage === 'installing') {
+                        onProgress(progress);
+                    }
+                });
+                
+                const result = await invoke('install_update', {
+                    appHandle: null,
+                    tempFilePath
+                });
+                
+                unlisten();
+                return result;
+            } else {
+                return await invoke('install_update', { tempFilePath });
+            }
+        } catch (error) {
+            console.error('安装更新失败:', error);
+            throw error;
+        }
+    },
+
+    async performAutoUpdate(onProgress) {
+        try {
+            // 如果提供了进度回调，设置事件监听
+            if (onProgress && typeof onProgress === 'function') {
+                const { listen } = await import('@tauri-apps/api/event');
+                const unlisten = await listen('update-progress', (event) => {
+                    onProgress(event.payload);
+                });
+                
+                const result = await invoke('perform_auto_update', {
+                    appHandle: null
+                });
+                
+                unlisten();
+                return result;
+            } else {
+                return await invoke('perform_auto_update');
+            }
+        } catch (error) {
+            console.error('自动更新失败:', error);
+            throw error;
         }
     }
 };

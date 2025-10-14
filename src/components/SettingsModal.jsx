@@ -6,10 +6,18 @@
  */
 
 import {useCallback, useEffect, useState} from 'react';
-import {App, Badge, Button, Card, Input, Menu, Modal, Select, Slider, Space, Switch, Tag, Typography} from 'antd';
-import {DeleteOutlined, ReloadOutlined, UploadOutlined} from '@ant-design/icons';
+import {App, Badge, Button, Card, Input, Menu, Modal, Progress, Select, Slider, Space, Switch, Tag, Typography} from 'antd';
+import {DeleteOutlined, DownloadOutlined, ReloadOutlined, SyncOutlined, UploadOutlined} from '@ant-design/icons';
 import {useTheme} from '../hooks/redux';
 import {useI18n} from '../hooks/useI18n';
+import {
+    useCurrentFile,
+    useEditorSettings,
+    useRecentFiles,
+    useUpdateState,
+    useAppDispatch
+} from '../store/hooks';
+import {checkUpdateComplete} from '../store/slices/updateSlice';
 import tauriApi from '../utils/tauriApi';
 import './SettingsModal.scss';
 
@@ -64,7 +72,10 @@ const SettingsModal = ({visible, onClose}) => {
         resetTheme,
     } = useTheme();
 
+    const dispatch = useAppDispatch();
     const {t, changeLanguage, currentLanguage, supportedLanguages} = useI18n();
+    const updateState = useUpdateState();
+    const updateInfo = updateState?.updateInfo;
 
     /** 当前激活的设置标签页 */
     const [activeKey, setActiveKey] = useState('general');
@@ -89,6 +100,12 @@ const SettingsModal = ({visible, onClose}) => {
 
     const [envBusy, setEnvBusy] = useState(false);
 
+    // 更新功能相关状态
+    const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+    const [isDownloading, setIsDownloading] = useState(false);
+    const [downloadProgress, setDownloadProgress] = useState(0);
+    const [isInstalling, setIsInstalling] = useState(false);
+
     /**
      * 当全局设置变化时更新本地设置
      * 确保本地设置与全局状态同步
@@ -106,8 +123,8 @@ const SettingsModal = ({visible, onClose}) => {
     }, [fontSize, fontFamily, lineHeight, backgroundImage, backgroundEnabled, backgroundTransparency]);
 
     /**
-     * 初始化AI设置
-     * 从存储中加载AI相关配置
+     * 初始化AI设置和获取当前版本
+     * 从存储中加载AI相关配置，并获取应用当前版本
      */
     useEffect(() => {
         let mounted = true;
@@ -124,6 +141,18 @@ const SettingsModal = ({visible, onClose}) => {
                     appApi.checkCliInstalled(),
                     settingsApi.get('system.env.commandName'),
                 ]);
+                
+                // 注释掉本地版本获取，使用 Redux store 中的版本信息
+                // try {
+                //     const versionInfo = await appApi.checkForUpdates();
+                //     if (versionInfo && versionInfo.current_version) {
+                //         setCurrentVersion(versionInfo.current_version);
+                //     }
+                // } catch (error) {
+                //     console.warn('获取应用版本失败:', error);
+                //     // 保持默认版本
+                // }
+                
                 if (!mounted) return;
                 setLocalSettings(prev => ({
                     ...prev,
@@ -142,6 +171,37 @@ const SettingsModal = ({visible, onClose}) => {
             mounted = false;
         };
     }, []);
+
+    // 移除本地更新信息监听，直接使用 Redux store 中的数据
+    // useEffect(() => {
+    //     // 检查localStorage中是否有更新信息
+    //     const checkStoredUpdateInfo = () => {
+    //         try {
+    //             const storedUpdateInfo = localStorage.getItem('updateInfo');
+    //             if (storedUpdateInfo) {
+    //                 const parsedUpdateInfo = JSON.parse(storedUpdateInfo);
+    //                 setUpdateInfo(parsedUpdateInfo);
+    //             }
+    //         } catch (error) {
+    //             console.error('解析存储的更新信息失败:', error);
+    //         }
+    //     };
+    //
+    //     // 监听自动更新事件
+    //     const handleUpdateAvailable = (event) => {
+    //         setUpdateInfo(event.detail);
+    //     };
+    //
+    //     // 初始检查
+    //     checkStoredUpdateInfo();
+    //
+    //     // 添加事件监听器
+    //     window.addEventListener('updateAvailable', handleUpdateAvailable);
+    //
+    //     return () => {
+    //         window.removeEventListener('updateAvailable', handleUpdateAvailable);
+    //     };
+    // }, []);
 
     /**
      * 根据当前主题和背景设置更新CSS变量
@@ -495,6 +555,75 @@ const SettingsModal = ({visible, onClose}) => {
                         </div>
                     </Space>
                 </Card>
+
+                {/* 更新功能 */}
+                <Card 
+                    size="small" 
+                    title={
+                        <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
+                            <DownloadOutlined />
+                            {t('settings.system.update.title')}
+                            {updateState?.hasUpdate ? (
+                                <Tag color="success" style={{margin: 0, marginLeft: 'auto'}}>
+                                    {t('settings.system.update.newVersionAvailable')}
+                                </Tag>
+                            ) : (
+                                <Tag color="green" style={{margin: 0, marginLeft: 'auto'}}>
+                                    {t('settings.system.update.upToDate')}
+                                </Tag>
+                            )}
+                        </div>
+                    }
+                >
+                    <Space direction="vertical" style={{width: '100%'}}>
+                        {/* 当前版本信息 */}
+                        <div className="setting-item">
+                            <Text>{t('settings.system.update.currentVersion')}</Text>
+                            <Text strong>{updateState?.updateInfo?.current_version || '1.3.1'}</Text>
+                        </div>
+
+                        {/* 最新版本信息 - 只在有更新时显示 */}
+                        {updateState?.hasUpdate && (
+                            <div className="setting-item">
+                                <Text>{t('settings.system.update.latestVersion')}</Text>
+                                <Text strong style={{color: '#52c41a'}}>{updateState?.updateInfo?.latest_version}</Text>
+                            </div>
+                        )}
+
+                        {/* 更新状态显示 */}
+                        {updateState?.hasUpdate && (
+                            <div className="setting-item">
+                                <Space direction="vertical" style={{width: '100%'}}>
+                                    {/* 下载进度 */}
+                                    {isDownloading && (
+                                        <div>
+                                            <Text>{t('settings.system.update.downloading')}</Text>
+                                            <Progress 
+                                                percent={downloadProgress} 
+                                                size="small"
+                                                status="active"
+                                            />
+                                        </div>
+                                    )}
+
+                                    {/* 一键更新按钮 */}
+                                    <Button
+                                        type="primary"
+                                        size="large"
+                                        icon={<SyncOutlined />}
+                                        loading={isDownloading || isInstalling}
+                                        onClick={handleAutoUpdate}
+                                        style={{width: '100%'}}
+                                    >
+                                        {isDownloading ? t('settings.system.update.downloading') : 
+                                         isInstalling ? t('settings.system.update.installing') :
+                                         t('settings.system.update.updateNow')}
+                                    </Button>
+                                </Space>
+                            </div>
+                        )}
+                    </Space>
+                </Card>
             </Space>
         </div>
     );
@@ -506,7 +635,7 @@ const SettingsModal = ({visible, onClose}) => {
         try {
             const name = localSettings.envCommandName || 'mgnp';
             const res = await appApi.installCli(name);
-            ('CLI 安装结果:', res);
+            console.log('CLI 安装结果:', res);
             const installed = await appApi.checkCliInstalled();
             updateLocalSetting('envInstalled', installed);
             await settingsApi.set('system.env.installed', installed);
@@ -528,7 +657,7 @@ const SettingsModal = ({visible, onClose}) => {
     const handleUninstallEnvironment = async () => {
         try {
             const res = await appApi.uninstallCli();
-            ('CLI 卸载结果:', res);
+            console.log('CLI 卸载结果:', res);
             const installed = await appApi.checkCliInstalled();
             updateLocalSetting('envInstalled', installed);
             await settingsApi.set('system.env.installed', installed);
@@ -540,6 +669,169 @@ const SettingsModal = ({visible, onClose}) => {
         } catch (error) {
             console.error('Failed to uninstall environment:', error);
             message.error(t('settings.system.environment.uninstallFailed'));
+        }
+    };
+
+    /**
+     * 检查更新
+     */
+    const handleCheckForUpdates = async () => {
+        setIsCheckingUpdate(true);
+        try {
+            console.log('=== 前端调试信息 ===');
+            console.log('开始调用 appApi.checkForUpdates()');
+            
+            const newUpdateInfo = await appApi.checkForUpdates();
+            
+            console.log('API返回的原始数据:', newUpdateInfo);
+            console.log('newUpdateInfo.has_update:', newUpdateInfo.has_update);
+            console.log('newUpdateInfo.current_version:', newUpdateInfo.current_version);
+            console.log('newUpdateInfo.latest_version:', newUpdateInfo.latest_version);
+            console.log('=== 前端调试信息结束 ===');
+            
+            // 这里应该更新 Redux store，而不是本地状态
+            dispatch(checkUpdateComplete({
+                hasUpdate: newUpdateInfo.has_update,
+                updateInfo: newUpdateInfo
+            }));
+            
+            if (newUpdateInfo.has_update) {
+                message.success(t('settings.system.update.updateAvailable', { version: newUpdateInfo.latest_version }));
+            } else {
+                message.info(t('settings.system.update.noUpdateAvailable'));
+            }
+        } catch (error) {
+            console.error('检查更新失败:', error);
+            message.error(t('settings.system.update.checkFailed'));
+        } finally {
+            setIsCheckingUpdate(false);
+        }
+    };
+
+    /**
+     * 下载更新
+     */
+    const handleDownloadUpdate = async () => {
+        if (!updateState?.updateInfo || !updateState.updateInfo.download_url) {
+            message.error(t('settings.system.update.noDownloadUrl'));
+            return;
+        }
+
+        setIsDownloading(true);
+        setDownloadProgress(0);
+        
+        try {
+            // 监听更新进度事件
+            const { listen } = await import('@tauri-apps/api/event');
+            const unlisten = await listen('update-progress', (event) => {
+                const progress = event.payload;
+                if (progress.stage === 'downloading') {
+                    setDownloadProgress(Math.round(progress.progress * 100));
+                }
+            });
+            
+            // 执行下载
+            const tempFilePath = await appApi.downloadUpdate(updateState.updateInfo.download_url);
+            
+            // 清理监听器
+            unlisten();
+            
+            message.success(t('settings.system.update.downloadComplete'));
+            // 下载完成后，应该更新 Redux store 而不是本地状态
+            // setUpdateInfo(prev => ({ 
+            //     ...prev, 
+            //     downloaded: true,
+            //     tempFilePath: tempFilePath
+            // }));
+            console.log('下载完成，临时文件路径:', tempFilePath);
+        } catch (error) {
+            console.error('下载更新失败:', error);
+            message.error(t('settings.system.update.downloadFailed') + ': ' + error.message);
+        } finally {
+            setIsDownloading(false);
+        }
+    };
+
+    /**
+     * 安装更新
+     */
+    const handleInstallUpdate = async () => {
+        if (!updateInfo || !updateInfo.downloaded) {
+            message.error(t('settings.system.update.downloadFirst'));
+            return;
+        }
+
+        setIsInstalling(true);
+        
+        try {
+            await appApi.installUpdate(updateInfo.tempFilePath, (progress) => {
+                if (progress.stage === 'installing') {
+                    // 可以在这里显示安装进度
+                    console.log('安装进度:', progress);
+                }
+            });
+            
+            message.success(t('settings.system.update.installComplete'));
+            // 安装完成后，应用会重启，这里可能不会执行到
+        } catch (error) {
+            console.error('安装更新失败:', error);
+            message.error(t('settings.system.update.installFailed') + ': ' + error.message);
+        } finally {
+            setIsInstalling(false);
+        }
+    };
+
+    /**
+     * 执行自动更新
+     */
+    const handleAutoUpdate = async () => {
+        setIsCheckingUpdate(true);
+        setIsDownloading(false);
+        setIsInstalling(false);
+        setDownloadProgress(0);
+        
+        try {
+            await appApi.performAutoUpdate((progress) => {
+                console.log('更新进度:', progress);
+                
+                switch (progress.stage) {
+                    case 'checking':
+                        setIsCheckingUpdate(true);
+                        break;
+                    case 'downloading':
+                        setIsCheckingUpdate(false);
+                        setIsDownloading(true);
+                        setDownloadProgress(Math.round(progress.progress * 100));
+                        break;
+                    case 'installing':
+                        setIsDownloading(false);
+                        setIsInstalling(true);
+                        break;
+                    case 'completed':
+                        setIsCheckingUpdate(false);
+                        setIsDownloading(false);
+                        setIsInstalling(false);
+                        message.success(progress.message || t('settings.system.update.autoUpdateComplete'));
+                        break;
+                    case 'error':
+                        setIsCheckingUpdate(false);
+                        setIsDownloading(false);
+                        setIsInstalling(false);
+                        const errorMessage = progress.error || t('settings.system.update.autoUpdateFailed');
+                        message.error(errorMessage);
+                        break;
+                }
+            });
+        } catch (error) {
+            console.error('自动更新失败:', error);
+            const errorMessage = error.message ? 
+                `${t('settings.system.update.autoUpdateFailed')}: ${error.message}` : 
+                t('settings.system.update.autoUpdateFailed');
+            message.error(errorMessage);
+        } finally {
+            setIsCheckingUpdate(false);
+            setIsDownloading(false);
+            setIsInstalling(false);
         }
     };
 

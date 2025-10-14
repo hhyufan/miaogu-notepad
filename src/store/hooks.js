@@ -18,3 +18,13 @@ export const useUnsavedContent = () => useAppSelector(state => state.editor.unsa
 
 export const useEditorSettings = () => useAppSelector(state => state.editor.editorSettings);
 export const useRecentFiles = () => useAppSelector(state => state.editor.recentFiles);
+
+// 更新相关hooks
+export const useUpdateState = () => useAppSelector(state => state.update);
+export const useHasUpdate = () => useAppSelector(state => state.update.hasUpdate);
+export const useShowUpdatePrompt = () => useAppSelector(state => state.update.showUpdatePrompt);
+export const useUpdateProgress = () => useAppSelector(state => ({
+    isDownloading: state.update.isDownloading,
+    downloadProgress: state.update.downloadProgress,
+    isInstalling: state.update.isInstalling,
+}));

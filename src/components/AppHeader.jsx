@@ -5,7 +5,7 @@
  * @version 1.3.1
  */
 
-import {Button, Checkbox, Dropdown, Input, Layout, Modal, Typography} from 'antd';
+import {Button, Checkbox, Dropdown, Input, Layout, Modal, Typography, message} from 'antd';
 import {
     BorderOutlined,
     CloseOutlined,
@@ -17,12 +17,15 @@ import {
     PlusSquareOutlined,
     SaveFilled,
     SaveOutlined,
-    SettingOutlined
+    SettingOutlined,
+    DownloadOutlined
 } from '@ant-design/icons';
 import './AppHeader.scss';
 import {useEffect, useRef, useState} from 'react';
 import {useI18n} from '../hooks/useI18n';
 import SettingsModal from './SettingsModal';
+import {useUpdateState, useHasUpdate, useShowUpdatePrompt} from '../store/hooks';
+import {invoke} from '@tauri-apps/api/core';
 
 /**
  * 内联SVG图标组件 - 支持CSS颜色继承的置顶图标
@@ -83,6 +86,11 @@ const AppHeader = ({fileManager, hasOpenFiles}) => {
     const [selectedFiles, setSelectedFiles] = useState([]);
     const selectedFilesRef = useRef([]);
     const fileNameInputRef = useRef(null);
+
+    // 更新相关状态
+    const updateState = useUpdateState();
+    const hasUpdate = useHasUpdate();
+    const showUpdatePrompt = useShowUpdatePrompt();
 
     // 创建文件管理器引用，供其他组件使用
     const appHeaderRef = useRef({
@@ -266,6 +274,42 @@ const AppHeader = ({fileManager, hasOpenFiles}) => {
             } else {
             }
         } catch (error) {
+        }
+    };
+
+    /**
+     * 处理更新和重启操作
+     * @async
+     * @returns {Promise<void>}
+     */
+    const handleUpdateAndRestart = async () => {
+        if (!isTauriEnvironment()) {
+            message.info(t('update.notSupported'));
+            return;
+        }
+
+        try {
+            message.loading(t('update.starting'), 0);
+            
+            // 调用后端的自动更新函数
+            const result = await invoke('perform_auto_update');
+            
+            message.destroy();
+            message.success(t('update.success'));
+            
+            console.log('Update completed:', result);
+        } catch (error) {
+            message.destroy();
+            console.error('Update failed:', error);
+            
+            let errorMessage = t('update.failed');
+            if (error && typeof error === 'string') {
+                errorMessage = `${t('update.failed')}: ${error}`;
+            } else if (error && error.message) {
+                errorMessage = `${t('update.failed')}: ${error.message}`;
+            }
+            
+            message.error(errorMessage);
         }
     };
 
@@ -455,6 +499,40 @@ const AppHeader = ({fileManager, hasOpenFiles}) => {
                 </div>
 
                 <div className="window-controls">
+                    {/* 更新提示图标 - 当有新版本时显示 */}
+                    {showUpdatePrompt && hasUpdate && (
+                        <div style={{ position: 'relative', display: 'inline-block' }}>
+                            <Button
+                                type="text"
+                                icon={<DownloadOutlined/>}
+                                onClick={handleUpdateAndRestart}
+                                className="window-control-btn update-btn"
+                                title={t('update.updateAndRestart')}
+                                style={{
+                                    color: '#52c41a',
+                                    animation: 'pulse 2s infinite'
+                                }}
+                            />
+                            <div style={{
+                                position: 'absolute',
+                                top: '-8px',
+                                right: '-8px',
+                                backgroundColor: '#52c41a',
+                                color: 'white',
+                                fontSize: '10px',
+                                padding: '2px 6px',
+                                borderRadius: '10px',
+                                whiteSpace: 'nowrap',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '2px'
+                            }}>
+                                <DownloadOutlined style={{ fontSize: '8px' }} />
+                                点击重启更新
+                            </div>
+                        </div>
+                    )}
                     <Button
                         type="text"
                         icon={<PinIcon className={`pin-icon ${isPinned ? '' : 'pinned'}`}/>}

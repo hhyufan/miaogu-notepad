@@ -37,8 +37,9 @@ import {
   setTabSize,
   setWordWrap,
 } from '../store/slices/editorSlice';
+import {checkUpdateComplete} from '../store/slices/updateSlice';
 
-const {file: fileApi} = tauriApi;
+const {file: fileApi, app: appApi} = tauriApi;
 
 /**
  * 会话恢复Hook - 负责在应用启动时恢复上次的工作状态
@@ -65,6 +66,9 @@ export const useSessionRestore = () => {
                 await restoreEditorSettings();
                 await restoreFileState();
 
+                // 在会话恢复完成后自动检测更新
+                await checkForUpdatesOnStartup();
+
             } catch (error) {
                 setRestoreError(error.message);
             } finally {
@@ -74,6 +78,44 @@ export const useSessionRestore = () => {
 
         restoreSession().catch();
     }, [dispatch]);
+
+    /**
+     * 应用启动时自动检测更新
+     */
+    const checkForUpdatesOnStartup = async () => {
+        try {
+            console.log('🔄 [useSessionRestore] 开始自动检测更新...');
+            const updateInfo = await appApi.checkForUpdates();
+            
+            if (updateInfo && updateInfo.has_update) {
+                console.log('🔄 [useSessionRestore] 检测到新版本:', updateInfo.latest_version);
+                
+                // 更新Redux状态
+                dispatch(checkUpdateComplete({
+                    hasUpdate: true,
+                    updateInfo: updateInfo
+                }));
+                
+                // 将更新信息存储到localStorage中，供SettingsModal使用
+                localStorage.setItem('updateInfo', JSON.stringify(updateInfo));
+                
+                // 触发自定义事件通知其他组件有更新可用
+                window.dispatchEvent(new CustomEvent('updateAvailable', { 
+                    detail: updateInfo 
+                }));
+            } else {
+                console.log('🔄 [useSessionRestore] 当前已是最新版本');
+                
+                // 更新Redux状态 - 没有更新
+                dispatch(checkUpdateComplete({
+                    hasUpdate: false,
+                    updateInfo: updateInfo
+                }));
+            }
+        } catch (error) {
+            console.error('🔄 [useSessionRestore] 自动检测更新失败:', error);
+        }
+    };
 
     /**
      * 恢复主题设置

@@ -11,12 +11,13 @@ import storage from 'redux-persist/lib/storage';
 import themeReducer from './slices/themeSlice';
 import editorReducer from './slices/editorSlice';
 import fileReducer from './slices/fileSlice';
+import updateReducer from './slices/updateSlice';
 import persistenceMiddleware from './middleware/persistenceMiddleware';
 
 const persistConfig = {
     key: 'miaogu-ide',
     storage,
-    whitelist: ['theme', 'editor', 'file'],
+    whitelist: ['theme', 'editor', 'file', 'update'],
     blacklist: ['ui'],
     transforms: [
         // 排除 backgroundImage 字段，避免存储大量 base64 数据
@@ -52,6 +53,7 @@ const rootReducer = combineReducers({
     theme: themeReducer,
     editor: editorReducer,
     file: fileReducer,
+    update: updateReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

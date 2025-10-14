@@ -117,6 +117,13 @@
     "characters": "个字符",
     "zoom": "缩放"
   },
+  "update": {
+    "updateAndRestart": "更新并重启",
+    "starting": "正在启动更新...",
+    "success": "更新成功，应用将重启",
+    "failed": "更新失败",
+    "notSupported": "当前环境不支持自动更新"
+  },
   "settings": {
     "title": "设置",
     "general": {
@@ -181,6 +188,38 @@
         "status": "状态",
         "installed": "已启用",
         "notInstalled": "未启用"
+      },
+      "update": {
+        "title": "应用更新",
+        "currentVersion": "当前版本",
+        "latestVersion": "最新版本",
+        "checkForUpdates": "检查更新",
+        "checking": "检查中...",
+        "downloading": "下载中...",
+        "installing": "安装中...",
+        "updateAvailable": "发现新版本",
+        "noUpdateAvailable": "最新版本",
+        "downloadUpdate": "下载更新",
+        "installUpdate": "安装更新",
+        "downloadProgress": "下载进度",
+        "updateSuccess": "更新成功",
+        "updateFailed": "更新失败",
+        "autoUpdateFailed": "自动更新失败",
+        "downloadComplete": "下载完成",
+        "downloadFailed": "下载失败",
+        "upToDate": "最新版本",
+        "updateNow": "立即更新",
+        "newVersionAvailable": "有新版本可用",
+        "restartRequired": "更新完成，请重启应用",
+        "autoUpdate": "自动检查更新",
+        "releaseNotes": "版本说明",
+        "noDownloadUrl": "没有可用的下载链接",
+        "downloadFirst": "请先下载更新文件",
+        "updateAndRestart": "更新并重启",
+        "starting": "正在启动更新...",
+        "success": "更新成功，应用将重启",
+        "failed": "更新失败",
+        "notSupported": "当前环境不支持自动更新"
       }
     },
     "language": {
