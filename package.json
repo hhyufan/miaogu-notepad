@@ -1,7 +1,7 @@
 {
   "name": "miaogu-notepad",
   "private": true,
-  "version": "1.3.1",
+  "version": "1.3.0",
   "description": "A simple and beautiful notepad based on Tauri.",
   "author": "hhyufan",
   "type": "module",

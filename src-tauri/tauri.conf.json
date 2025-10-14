@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "miaogu-notepad",
-  "version": "1.3.1",
+  "version": "1.3.0",
   "identifier": "com.hhyufan.miaogu-notepad",
   "build": {
     "beforeDevCommand": "npm run dev -- --port 1421",
@@ -70,7 +70,10 @@
         {
           "name": "open-terminal-macos",
           "cmd": "open",
-          "args": ["-a", "Terminal"],
+          "args": [
+            "-a",
+            "Terminal"
+          ],
           "sidecar": false
         },
         {
@@ -94,7 +97,9 @@
         {
           "name": "show-in-finder-macos",
           "cmd": "open",
-          "args": ["-R"],
+          "args": [
+            "-R"
+          ],
           "sidecar": false
         },
         {

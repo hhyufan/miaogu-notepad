@@ -635,7 +635,7 @@ const SettingsModal = ({visible, onClose}) => {
         try {
             const name = localSettings.envCommandName || 'mgnp';
             const res = await appApi.installCli(name);
-            console.log('CLI 安装结果:', res);
+
             const installed = await appApi.checkCliInstalled();
             updateLocalSetting('envInstalled', installed);
             await settingsApi.set('system.env.installed', installed);
@@ -657,7 +657,7 @@ const SettingsModal = ({visible, onClose}) => {
     const handleUninstallEnvironment = async () => {
         try {
             const res = await appApi.uninstallCli();
-            console.log('CLI 卸载结果:', res);
+
             const installed = await appApi.checkCliInstalled();
             updateLocalSetting('envInstalled', installed);
             await settingsApi.set('system.env.installed', installed);
@@ -678,16 +678,16 @@ const SettingsModal = ({visible, onClose}) => {
     const handleCheckForUpdates = async () => {
         setIsCheckingUpdate(true);
         try {
-            console.log('=== 前端调试信息 ===');
-            console.log('开始调用 appApi.checkForUpdates()');
+
+
             
             const newUpdateInfo = await appApi.checkForUpdates();
             
-            console.log('API返回的原始数据:', newUpdateInfo);
-            console.log('newUpdateInfo.has_update:', newUpdateInfo.has_update);
-            console.log('newUpdateInfo.current_version:', newUpdateInfo.current_version);
-            console.log('newUpdateInfo.latest_version:', newUpdateInfo.latest_version);
-            console.log('=== 前端调试信息结束 ===');
+
+
+
+
+
             
             // 这里应该更新 Redux store，而不是本地状态
             dispatch(checkUpdateComplete({
@@ -743,7 +743,7 @@ const SettingsModal = ({visible, onClose}) => {
             //     downloaded: true,
             //     tempFilePath: tempFilePath
             // }));
-            console.log('下载完成，临时文件路径:', tempFilePath);
+
         } catch (error) {
             console.error('下载更新失败:', error);
             message.error(t('settings.system.update.downloadFailed') + ': ' + error.message);
@@ -767,7 +767,7 @@ const SettingsModal = ({visible, onClose}) => {
             await appApi.installUpdate(updateInfo.tempFilePath, (progress) => {
                 if (progress.stage === 'installing') {
                     // 可以在这里显示安装进度
-                    console.log('安装进度:', progress);
+
                 }
             });
             
@@ -785,6 +785,11 @@ const SettingsModal = ({visible, onClose}) => {
      * 执行自动更新
      */
     const handleAutoUpdate = async () => {
+        // 防抖：如果正在更新中（检查、下载或安装），直接返回
+        if (isCheckingUpdate || isDownloading || isInstalling) {
+            return;
+        }
+
         setIsCheckingUpdate(true);
         setIsDownloading(false);
         setIsInstalling(false);
@@ -792,7 +797,7 @@ const SettingsModal = ({visible, onClose}) => {
         
         try {
             await appApi.performAutoUpdate((progress) => {
-                console.log('更新进度:', progress);
+
                 
                 switch (progress.stage) {
                     case 'checking':

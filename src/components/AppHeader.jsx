@@ -5,7 +5,7 @@
  * @version 1.3.1
  */
 
-import {Button, Checkbox, Dropdown, Input, Layout, Modal, Typography, message} from 'antd';
+import {Button, Checkbox, Dropdown, Input, Layout, Modal, Typography, message, Tooltip, Tag} from 'antd';
 import {
     BorderOutlined,
     CloseOutlined,
@@ -18,7 +18,8 @@ import {
     SaveFilled,
     SaveOutlined,
     SettingOutlined,
-    DownloadOutlined
+    CloudDownloadOutlined,
+    LoadingOutlined
 } from '@ant-design/icons';
 import './AppHeader.scss';
 import {useEffect, useRef, useState} from 'react';
@@ -84,6 +85,7 @@ const AppHeader = ({fileManager, hasOpenFiles}) => {
     const [isPinned, setIsPinned] = useState(false);
     const [unsavedModalVisible, setUnsavedModalVisible] = useState(false);
     const [selectedFiles, setSelectedFiles] = useState([]);
+    const [isUpdating, setIsUpdating] = useState(false); // 添加更新状态防抖
     const selectedFilesRef = useRef([]);
     const fileNameInputRef = useRef(null);
 
@@ -283,33 +285,27 @@ const AppHeader = ({fileManager, hasOpenFiles}) => {
      * @returns {Promise<void>}
      */
     const handleUpdateAndRestart = async () => {
+        // 防抖：如果正在更新中，直接返回
+        if (isUpdating) {
+            return;
+        }
+
         if (!isTauriEnvironment()) {
             message.info(t('update.notSupported'));
             return;
         }
 
         try {
-            message.loading(t('update.starting'), 0);
+            setIsUpdating(true); // 设置更新状态
             
             // 调用后端的自动更新函数
             const result = await invoke('perform_auto_update');
             
-            message.destroy();
-            message.success(t('update.success'));
-            
-            console.log('Update completed:', result);
+
         } catch (error) {
-            message.destroy();
             console.error('Update failed:', error);
-            
-            let errorMessage = t('update.failed');
-            if (error && typeof error === 'string') {
-                errorMessage = `${t('update.failed')}: ${error}`;
-            } else if (error && error.message) {
-                errorMessage = `${t('update.failed')}: ${error.message}`;
-            }
-            
-            message.error(errorMessage);
+        } finally {
+            setIsUpdating(false); // 重置更新状态
         }
     };
 
@@ -499,39 +495,26 @@ const AppHeader = ({fileManager, hasOpenFiles}) => {
                 </div>
 
                 <div className="window-controls">
-                    {/* 更新提示图标 - 当有新版本时显示 */}
+                    {/* 更新提示标签 - 当有新版本时显示在窗口控制按钮左边 */}
                     {showUpdatePrompt && hasUpdate && (
-                        <div style={{ position: 'relative', display: 'inline-block' }}>
-                            <Button
-                                type="text"
-                                icon={<DownloadOutlined/>}
-                                onClick={handleUpdateAndRestart}
-                                className="window-control-btn update-btn"
-                                title={t('update.updateAndRestart')}
-                                style={{
-                                    color: '#52c41a',
-                                    animation: 'pulse 2s infinite'
-                                }}
-                            />
-                            <div style={{
-                                position: 'absolute',
-                                top: '-8px',
-                                right: '-8px',
-                                backgroundColor: '#52c41a',
-                                color: 'white',
-                                fontSize: '10px',
-                                padding: '2px 6px',
-                                borderRadius: '10px',
-                                whiteSpace: 'nowrap',
-                                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                                display: 'flex',
+                        <Tag 
+                            color={isUpdating ? "blue" : "success"}
+                            icon={isUpdating ? <LoadingOutlined /> : <CloudDownloadOutlined />}
+                            style={{ 
+                                cursor: isUpdating ? 'not-allowed' : 'pointer',
+                                marginRight: '8px',
+                                fontSize: '12px',
+                                height: '22px',
+                                lineHeight: '20px',
+                                display: 'inline-flex',
                                 alignItems: 'center',
-                                gap: '2px'
-                            }}>
-                                <DownloadOutlined style={{ fontSize: '8px' }} />
-                                点击重启更新
-                            </div>
-                        </div>
+                                color: isUpdating ? '#1890ff' : undefined,
+                                fontWeight: isUpdating ? 'bold' : 'normal'
+                            }}
+                            onClick={handleUpdateAndRestart}
+                        >
+                            {isUpdating ? '更新中...' : '点击更新以重启'}
+                        </Tag>
                     )}
                     <Button
                         type="text"

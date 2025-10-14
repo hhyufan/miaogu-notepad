@@ -249,7 +249,7 @@ const renderTreeNode = (node, onJumpToCode, isDarkMode, expandedKeys, onToggleEx
  *   treeFilePath="example.tree"
  *   currentFileName="example.txt"
  *   currentFolder="/documents"
- *   onJumpToCode={(lang, index) => console.log(`Jump to ${lang}[${index}]`)}
+ *   onJumpToCode={(lang, index) =>
  * />
  */
 const TreeViewer = ({

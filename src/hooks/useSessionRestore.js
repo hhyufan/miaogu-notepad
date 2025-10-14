@@ -84,11 +84,11 @@ export const useSessionRestore = () => {
      */
     const checkForUpdatesOnStartup = async () => {
         try {
-            console.log('🔄 [useSessionRestore] 开始自动检测更新...');
+
             const updateInfo = await appApi.checkForUpdates();
             
             if (updateInfo && updateInfo.has_update) {
-                console.log('🔄 [useSessionRestore] 检测到新版本:', updateInfo.latest_version);
+
                 
                 // 更新Redux状态
                 dispatch(checkUpdateComplete({
@@ -104,7 +104,7 @@ export const useSessionRestore = () => {
                     detail: updateInfo 
                 }));
             } else {
-                console.log('🔄 [useSessionRestore] 当前已是最新版本');
+
                 
                 // 更新Redux状态 - 没有更新
                 dispatch(checkUpdateComplete({

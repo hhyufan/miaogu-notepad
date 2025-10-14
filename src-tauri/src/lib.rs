@@ -22,7 +22,7 @@ use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_http::reqwest;
 use reqwest as external_reqwest;
 use std::io::Write;
-use tokio::time::{sleep, interval};
+use tokio::time::{interval};
 
 // Windows API相关导入
 #[cfg(windows)]
@@ -1883,10 +1883,7 @@ async fn toggle_devtools(app: AppHandle) -> Result<(), String> {
 async fn check_for_updates() -> Result<VersionInfo, String> {
     let current_version = env!("CARGO_PKG_VERSION");
     let repo_url = "https://api.github.com/repos/hhyufan/miaogu-notepad/releases/latest";
-    
-    println!("=== 后端调试信息 ===");
-    println!("当前版本 (CARGO_PKG_VERSION): {}", current_version);
-    println!("检查更新URL: {}", repo_url);
+
     
     let client = reqwest::Client::new();
     let response = client
@@ -1909,10 +1906,7 @@ async fn check_for_updates() -> Result<VersionInfo, String> {
     // 移除版本号前的 'v' 前缀（如果存在）
     let latest_version = release.tag_name.trim_start_matches('v');
     let has_update = version_compare(current_version, latest_version);
-    
-    println!("GitHub最新版本: {}", latest_version);
-    println!("版本比较结果 (需要更新): {}", has_update);
-    
+
     // 查找Windows exe文件
     let download_url = release.assets
         .iter()
@@ -1927,10 +1921,7 @@ async fn check_for_updates() -> Result<VersionInfo, String> {
         release_notes: release.body,
         published_at: Some(release.published_at),
     };
-    
-    println!("返回的VersionInfo: {:?}", version_info);
-    println!("=== 后端调试信息结束 ===");
-    
+
     Ok(version_info)
 }
 
@@ -2025,9 +2016,9 @@ fn version_compare(current: &str, latest: &str) -> bool {
 #[tauri::command]
 async fn download_update(
     app_handle: AppHandle,
-    downloadUrl: String,
+    download_url: String,
 ) -> Result<String, String> {
-    println!("Starting download from: {}", downloadUrl);
+    println!("Starting download from: {}", download_url);
     
     // 发送下载开始事件
     let _ = app_handle.emit("update-progress", UpdateProgress {
@@ -2039,7 +2030,7 @@ async fn download_update(
     
     let client = external_reqwest::Client::new();
     let response = client
-        .get(&downloadUrl)
+        .get(&download_url)
         .header("User-Agent", "miaogu-notepad")
         .send()
         .await
