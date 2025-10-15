@@ -1027,58 +1027,35 @@ fn greet(name: &str) -> String {
 #[tauri::command]
 async fn get_cli_args() -> Result<Vec<String>, String> {
     let args: Vec<String> = std::env::args().collect();
+    // eprintln!("CLI Arguments: {:?}", args);
 
-    // 输出启动信息到标准错误流，确保在当前终端显示
-    // eprintln!("Miaogu Notepad - Starting application...");
+    let mut args_iter = args.into_iter().peekable();
+    let mut filtered_args = Vec::new();
 
-    // 过滤掉Tauri开发模式的参数
-    let filtered_args: Vec<String> = args
-        .into_iter()
-        .skip(1) // 跳过程序路径
-        .filter(|arg| {
-            // 过滤掉Tauri开发模式的参数
-            !arg.starts_with("--no-default-features")
-                && !arg.starts_with("--color")
-                && arg != "--"
-                && !arg.is_empty()
-        })
-        .map(|arg| {
-            // 输出到控制台，显示打开的路径
-            // eprintln!("Miaogu Notepad - Opening file: {}", arg);
+    while let Some(arg) = args_iter.next() {
+        if arg.starts_with("--no-default-features") || arg == "--" || arg.is_empty() {
+            continue;
+        } else if arg.starts_with("--color") {
+            // 跳过 --color 的下一个参数
+            args_iter.next(); // 跳过颜色值
+            continue;
+        }
 
-            // 将相对路径转换为绝对路径
-            let path = Path::new(&arg);
-
-            // 检查是否为相对路径
-            if path.is_relative() {
-                // 获取当前工作目录
-                match std::env::current_dir() {
-                    Ok(current_dir) => {
-                        let absolute_path = current_dir.join(path);
-                        let abs_path_str = absolute_path.to_string_lossy().to_string();
-                        // eprintln!("Miaogu Notepad - Resolved absolute path: {}", abs_path_str);
-                        abs_path_str
-                    }
-                    Err(_) => {
-                        // eprintln!("Miaogu Notepad - Cannot get current directory, using original path: {}", arg);
-                        arg // 如果获取当前目录失败，返回原始参数
-                    }
-                }
-            } else {
-                // 如果已经是绝对路径，直接返回
-                // eprintln!("Miaogu Notepad - Using absolute path: {}", arg);
-                arg
+        // 路径转换
+        let path = Path::new(&arg);
+        let processed_arg = if path.is_relative() {
+            match std::env::current_dir() {
+                Ok(current_dir) => current_dir.join(path).to_string_lossy().to_string(),
+                Err(_) => arg,
             }
-        })
-        .collect();
+        } else {
+            arg
+        };
 
-    // 输出参数总数
-    if !filtered_args.is_empty() {
-        // eprintln!("Miaogu Notepad - Processed {} file argument(s)", filtered_args.len());
-    } else {
-        // eprintln!("Miaogu Notepad - No file arguments provided, starting with welcome screen");
+        filtered_args.push(processed_arg);
     }
 
+    // eprintln!("Filtered CLI Arguments: {:?}", filtered_args);
     Ok(filtered_args)
 }
 
