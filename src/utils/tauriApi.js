@@ -2,12 +2,34 @@
  * @fileoverview Tauri API封装 - 提供文件操作、设置存储、窗口控制等功能
  * 统一封装Tauri的各种API，提供一致的接口给前端使用
  * @author hhyufan
- * @version 1.3.1
+ * @version 1.4.0
  */
 
 import {invoke} from '@tauri-apps/api/core';
 import {open, save} from '@tauri-apps/plugin-dialog';
 import {exists, readFile, readTextFile, writeTextFile} from '@tauri-apps/plugin-fs';
+
+// 版本号比较函数
+// 返回 true 表示需要更新（latest > current），false 表示不需要更新
+const compareVersions = (current, latest) => {
+    const currentParts = current.split('.').map(part => parseInt(part, 10) || 0);
+    const latestParts = latest.split('.').map(part => parseInt(part, 10) || 0);
+    
+    const maxLength = Math.max(currentParts.length, latestParts.length);
+    
+    for (let i = 0; i < maxLength; i++) {
+        const currentPart = currentParts[i] || 0;
+        const latestPart = latestParts[i] || 0;
+        
+        if (latestPart > currentPart) {
+            return true; // 需要更新
+        } else if (latestPart < currentPart) {
+            return false; // 不需要更新
+        }
+    }
+    
+    return false; // 版本相同，不需要更新
+};
 // 导入 Tauri Store
 let Store, load;
 try {
@@ -602,13 +624,58 @@ export const appApi = {
     // 更新功能相关API
     async checkForUpdates() {
         try {
-            // 检查是否在 Tauri 环境中
-            if (typeof window === 'undefined' || !window.__TAURI_INTERNALS__ || !invoke) {
-                throw new Error('Tauri environment not available');
+            // 使用 miaogu.top API 获取版本信息
+            const response = await fetch('https://api.miaogu.top/');
+            if (!response.ok) {
+                throw new Error(`API请求失败: ${response.status}`);
             }
-            return await invoke('check_for_updates');
+            
+            const data = await response.json();
+            
+            // 从API响应中提取版本信息
+            const latestRelease = data.latest_release;
+            if (!latestRelease) {
+                throw new Error('无法获取最新版本信息');
+            }
+            
+            // 获取当前版本（从Tauri后端获取）
+            let currentVersion = '1.4.0'; // 默认版本
+            try {
+                if (typeof window !== 'undefined' && window.__TAURI_INTERNALS__ && invoke) {
+                    const tauriVersionInfo = await invoke('check_for_updates');
+                    currentVersion = tauriVersionInfo.current_version || currentVersion;
+                }
+            } catch (tauriError) {
+                console.warn('无法从Tauri获取当前版本，使用默认版本:', currentVersion);
+            }
+            
+            // 移除版本号前的 'v' 前缀进行比较
+            const latestVersionClean = latestRelease.version.replace(/^v/, '');
+            const currentVersionClean = currentVersion.replace(/^v/, '');
+            
+            // 正确的版本比较逻辑
+            const hasUpdate = compareVersions(currentVersionClean, latestVersionClean);
+            
+            // 构造与原始API兼容的响应格式
+            return {
+                current_version: currentVersion,
+                latest_version: latestVersionClean,
+                has_update: hasUpdate,
+                download_url: data.download_links?.gridfs_cdn || data.download_links?.api_proxy || data.download_links?.github_direct,
+                release_notes: latestRelease.body || '',
+                published_at: latestRelease.published_at,
+                release_name: latestRelease.name
+            };
         } catch (error) {
             console.error('检查更新失败:', error);
+            // 如果网络请求失败，尝试使用Tauri后端API作为备用方案
+            try {
+                if (typeof window !== 'undefined' && window.__TAURI_INTERNALS__ && invoke) {
+                    return await invoke('check_for_updates');
+                }
+            } catch (tauriError) {
+                console.error('Tauri备用API也失败:', tauriError);
+            }
             throw error;
         }
     },

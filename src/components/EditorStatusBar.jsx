@@ -15,7 +15,7 @@ import tauriApi from '../utils/tauriApi'
 import {buildFullPath, splitPath} from '../utils/pathUtils'
 import './EditorStatusBar.scss'
 
-const {file: fileApi, settings: settingsApi} = tauriApi
+const {file: fileApi} = tauriApi
 
 /**
  * 标准化编码名称
@@ -123,14 +123,14 @@ const EditorStatusBar = ({
      * 当当前文件路径变化时更新路径分段
      */
     useEffect(() => {
-        if (currentFile && currentFile['path'] && !currentFile['isTemporary']) {
+        if (currentFile && currentFile['path'] && !currentFile['isTemporary'] && !currentFile['isUpdateLog']) {
             const segments = splitPath(currentFile['path'])
             setPathSegments(segments)
             setDirectoryContents({})
         } else {
             setPathSegments([])
         }
-    }, [currentFile?.path, currentFile?.isTemporary])
+    }, [currentFile?.path, currentFile?.isTemporary, currentFile?.isUpdateLog])
 
     /**
      * 监听面包屑更新事件

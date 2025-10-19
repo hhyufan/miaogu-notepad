@@ -2,7 +2,7 @@
  * @fileoverview 设置弹窗组件 - 提供主题、编辑器、AI等各种设置选项
  * 包含主题切换、字体设置、背景图片、编辑器配置、AI助手配置等功能
  * @author hhyufan
- * @version 1.3.1
+ * @version 1.4.0
  */
 
 import {useCallback, useEffect, useState} from 'react';
@@ -17,7 +17,8 @@ import {
     useUpdateState,
     useAppDispatch
 } from '../store/hooks';
-import {checkUpdateComplete} from '../store/slices/updateSlice';
+import {useFileManager} from '../hooks/useFileManager';
+import {checkUpdateComplete, setIsUpdating} from '../store/slices/updateSlice';
 import tauriApi from '../utils/tauriApi';
 import './SettingsModal.scss';
 
@@ -53,7 +54,7 @@ const fontFamilyOptions = [
  *   onClose={() => setShowSettings(false)}
  * />
  */
-const SettingsModal = ({visible, onClose}) => {
+const SettingsModal = ({visible, onClose, openUpdateLog}) => {
     const {message} = App.useApp();
     const {
         theme,
@@ -76,6 +77,10 @@ const SettingsModal = ({visible, onClose}) => {
     const {t, changeLanguage, currentLanguage, supportedLanguages} = useI18n();
     const updateState = useUpdateState();
     const updateInfo = updateState?.updateInfo;
+    const fileManager = useFileManager();
+    
+    // 使用Redux中的全局更新状态
+    const isGlobalUpdating = updateState?.isUpdating || false;
 
     /** 当前激活的设置标签页 */
     const [activeKey, setActiveKey] = useState('general');
@@ -104,6 +109,7 @@ const SettingsModal = ({visible, onClose}) => {
     const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
     const [downloadProgress, setDownloadProgress] = useState(0);
+    const [downloadInfo, setDownloadInfo] = useState({ downloaded: 0, total: 0, message: '' });
     const [isInstalling, setIsInstalling] = useState(false);
 
     /**
@@ -579,7 +585,7 @@ const SettingsModal = ({visible, onClose}) => {
                         {/* 当前版本信息 */}
                         <div className="setting-item">
                             <Text>{t('settings.system.update.currentVersion')}</Text>
-                            <Text strong>{updateState?.updateInfo?.current_version || '1.3.1'}</Text>
+                            <Text strong>{updateState?.updateInfo?.current_version || '1.4.0'}</Text>
                         </div>
 
                         {/* 最新版本信息 - 只在有更新时显示 */}
@@ -590,6 +596,57 @@ const SettingsModal = ({visible, onClose}) => {
                             </div>
                         )}
 
+                        {/* 文件大小信息 - 只在有更新且有文件大小信息时显示 */}
+                        {updateState?.hasUpdate && updateState?.updateInfo?.file_size_formatted && (
+                            <div className="setting-item">
+                                <Text>{t('settings.system.update.fileSize', '文件大小')}</Text>
+                                <Text strong>{updateState.updateInfo.file_size_formatted}</Text>
+                            </div>
+                        )}
+
+                        {/* 查看更新日志按钮 */}
+                        <div className="setting-item">
+                            <Button
+                                type="default"
+                                icon={<DownloadOutlined />}
+                                onClick={async () => {
+                                    try {
+                                        const currentVersion = updateState?.updateInfo?.latest_version || '1.4.0';
+                                        
+                                        // 使用传入的openUpdateLog方法
+                                        if (openUpdateLog) {
+                                            await openUpdateLog(currentVersion);
+                                        } else {
+                                            console.error('❌ [SettingsModal] openUpdateLog方法不存在');
+                                            throw new Error('openUpdateLog方法不可用');
+                                        }
+
+                                        message.success(t('settings.system.update.updateLogOpened'));
+                                    } catch (error) {
+                                        console.error('❌ [SettingsModal] 打开更新日志失败:', error);
+                                        console.error('❌ [SettingsModal] 错误堆栈:', error.stack);
+                                        message.error(t('settings.system.update.openUpdateLogFailed', { error: error.message }));
+                                    }
+                                }}
+                                style={{width: '100%'}}
+                            >
+                                {t('settings.system.update.viewUpdateLog')}
+                            </Button>
+                        </div>
+
+                        {/* 检查更新按钮 - 在更新中状态时隐藏 */}
+                        {!isGlobalUpdating && !isDownloading && !isInstalling && (
+                            <Button
+                                type="default"
+                                icon={<SyncOutlined />}
+                                loading={isCheckingUpdate}
+                                onClick={handleCheckForUpdates}
+                                style={{width: '100%'}}
+                            >
+                                {isCheckingUpdate ? t('settings.system.update.checking') : t('settings.system.update.checkForUpdates')}
+                            </Button>
+                        )}
+
                         {/* 更新状态显示 */}
                         {updateState?.hasUpdate && (
                             <div className="setting-item">
@@ -597,28 +654,44 @@ const SettingsModal = ({visible, onClose}) => {
                                     {/* 下载进度 */}
                                     {isDownloading && (
                                         <div>
-                                            <Text>{t('settings.system.update.downloading')}</Text>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                                                <Text>{t('settings.system.update.downloading')}</Text>
+                                                {downloadInfo.message && (
+                                                    <Text type="secondary" style={{ fontSize: '12px' }}>
+                                                        {downloadInfo.message}
+                                                    </Text>
+                                                )}
+                                            </div>
                                             <Progress 
                                                 percent={downloadProgress} 
                                                 size="small"
                                                 status="active"
+                                                format={(percent) => `${percent}%`}
                                             />
+                                            {downloadInfo.total > 0 && (
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+                                                    <Text type="secondary" style={{ fontSize: '12px' }}>
+                                                        {(downloadInfo.downloaded / 1024 / 1024).toFixed(1)} MB / {(downloadInfo.total / 1024 / 1024).toFixed(1)} MB
+                                                    </Text>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
 
                                     {/* 一键更新按钮 */}
-                                    <Button
-                                        type="primary"
-                                        size="large"
-                                        icon={<SyncOutlined />}
-                                        loading={isDownloading || isInstalling}
-                                        onClick={handleAutoUpdate}
-                                        style={{width: '100%'}}
-                                    >
-                                        {isDownloading ? t('settings.system.update.downloading') : 
-                                         isInstalling ? t('settings.system.update.installing') :
-                                         t('settings.system.update.updateNow')}
-                                    </Button>
+                                    {!isDownloading && !isInstalling && (
+                                        <Button
+                                            type="primary"
+                                            size="large"
+                                            icon={<SyncOutlined />}
+                                            loading={isGlobalUpdating}
+                                            disabled={isGlobalUpdating}
+                                            onClick={handleAutoUpdate}
+                                            style={{width: '100%'}}
+                                        >
+                                            {isGlobalUpdating ? '更新中...' : t('settings.system.update.updateNow')}
+                                        </Button>
+                                    )}
                                 </Space>
                             </div>
                         )}
@@ -719,6 +792,7 @@ const SettingsModal = ({visible, onClose}) => {
 
         setIsDownloading(true);
         setDownloadProgress(0);
+        setDownloadInfo({ downloaded: 0, total: 0, message: '' });
         
         try {
             // 监听更新进度事件
@@ -727,6 +801,11 @@ const SettingsModal = ({visible, onClose}) => {
                 const progress = event.payload;
                 if (progress.stage === 'downloading') {
                     setDownloadProgress(Math.round(progress.progress * 100));
+                    setDownloadInfo({
+                        downloaded: progress.bytes_downloaded || 0,
+                        total: progress.total_bytes || 0,
+                        message: progress.message || ''
+                    });
                 }
             });
             
@@ -786,14 +865,16 @@ const SettingsModal = ({visible, onClose}) => {
      */
     const handleAutoUpdate = async () => {
         // 防抖：如果正在更新中（检查、下载或安装），直接返回
-        if (isCheckingUpdate || isDownloading || isInstalling) {
+        if (isCheckingUpdate || isDownloading || isInstalling || isGlobalUpdating) {
             return;
         }
 
+        dispatch(setIsUpdating(true)); // 设置全局更新状态
         setIsCheckingUpdate(true);
         setIsDownloading(false);
         setIsInstalling(false);
         setDownloadProgress(0);
+        setDownloadInfo({ downloaded: 0, total: 0, message: '' });
         
         try {
             await appApi.performAutoUpdate((progress) => {
@@ -807,6 +888,11 @@ const SettingsModal = ({visible, onClose}) => {
                         setIsCheckingUpdate(false);
                         setIsDownloading(true);
                         setDownloadProgress(Math.round(progress.progress * 100));
+                        setDownloadInfo({
+                            downloaded: progress.bytes_downloaded || 0,
+                            total: progress.total_bytes || 0,
+                            message: progress.message || ''
+                        });
                         break;
                     case 'installing':
                         setIsDownloading(false);
@@ -837,6 +923,7 @@ const SettingsModal = ({visible, onClose}) => {
             setIsCheckingUpdate(false);
             setIsDownloading(false);
             setIsInstalling(false);
+            dispatch(setIsUpdating(false)); // 重置全局更新状态
         }
     };
 

@@ -2,7 +2,7 @@
  * @fileoverview Redux Store Hooks - 提供类型化的Redux hooks
  * 封装常用的状态选择器，提供更便捷的状态访问
  * @author hhyufan
- * @version 1.3.1
+ * @version 1.4.0
  */
 
 import {useDispatch, useSelector} from 'react-redux';

@@ -2,7 +2,7 @@
  * @fileoverview 链接处理工具函数 - 处理超链接的跳转逻辑
  * 支持本地文件路径和外部链接的识别与处理
  * @author hhyufan
- * @version 1.3.1
+ * @version 1.4.0
  */
 
 import {invoke} from '@tauri-apps/api/core';

@@ -2,7 +2,7 @@
  * @fileoverview 应用程序主入口文件
  * 负责初始化React应用，配置Redux状态管理和持久化存储
  * @author hhyufan
- * @version 1.3.1
+ * @version 1.4.0
  */
 
 import React from "react";

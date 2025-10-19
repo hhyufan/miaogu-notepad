@@ -2,7 +2,7 @@
  * @fileoverview Redux Store配置 - 应用的状态管理中心
  * 配置Redux store，包含持久化、中间件等功能
  * @author hhyufan
- * @version 1.3.1
+ * @version 1.4.0
  */
 
 import {combineReducers, configureStore} from '@reduxjs/toolkit';
@@ -46,7 +46,25 @@ const persistConfig = {
         }
     ],
     // 确保主题设置能够正确持久化
-    debug: process.env.NODE_ENV === 'development'
+    debug: process.env.NODE_ENV === 'development',
+    // 添加状态迁移配置，确保新字段能正确初始化
+    migrate: (state) => {
+        // 创建状态的深拷贝以避免直接修改原状态
+        const migratedState = JSON.parse(JSON.stringify(state || {}));
+        
+        if (migratedState.update) {
+            // 确保autoShowUpdateLog有默认值
+            if (migratedState.update.autoShowUpdateLog === undefined) {
+                migratedState.update.autoShowUpdateLog = true;
+            }
+            // 重置updateLogShown状态，允许重新自动打开
+            migratedState.update.updateLogShown = false;
+            migratedState.update.lastShownVersion = null;
+        }
+        
+        // Redux persist的migrate函数必须返回Promise
+        return Promise.resolve(migratedState);
+    }
 };
 
 const rootReducer = combineReducers({

@@ -219,7 +219,11 @@
         "starting": "正在启动更新...",
         "success": "更新成功，应用将重启",
         "failed": "更新失败",
-        "notSupported": "当前环境不支持自动更新"
+        "notSupported": "当前环境不支持自动更新",
+        "viewUpdateLog": "查看更新日志",
+        "updateLogOpened": "更新日志已在编辑器中打开",
+        "openUpdateLog": "打开更新日志",
+        "openUpdateLogFailed": "打开更新日志失败: {{error}}"
       }
     },
     "language": {

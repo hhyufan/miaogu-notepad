@@ -2,7 +2,7 @@
  * @fileoverview 国际化Hook - 提供翻译功能和语言切换功能
  * 封装react-i18next，提供更便捷的国际化操作接口
  * @author hhyufan
- * @version 1.3.1
+ * @version 1.4.0
  */
 
 import {useTranslation} from 'react-i18next';

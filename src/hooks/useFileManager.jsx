@@ -2,7 +2,7 @@
  * @fileoverview 文件管理Hook - 提供文件操作、标签页管理、会话恢复等功能
  * 包含文件打开、保存、关闭、重命名等核心功能，以及标签页管理和会话恢复
  * @author hhyufan
- * @version 1.3.1
+ * @version 1.4.0
  */
 
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react'
@@ -1404,6 +1404,86 @@ export const useFileManager = () => {
         }
     }, [])
 
+    // 打开更新日志文件的特殊方法
+    const openUpdateLog = useCallback(async (updateLogFile) => {
+        try {
+            
+            const fileName = updateLogFile.name;
+            const filePath = updateLogFile.path;
+            
+            // 检查是否已经打开了任何更新日志文件（不限制版本）
+            const existingUpdateLogIndex = openedFiles.findIndex(f => f.isUpdateLog);
+            
+            if (existingUpdateLogIndex !== -1) {
+                // 如果已经有更新日志打开，替换它而不是新增
+                const existingFile = openedFiles[existingUpdateLogIndex];
+                
+                // 如果是相同版本的更新日志，直接切换到它
+                if (existingFile.version === updateLogFile.version) {
+                    setCurrentFilePath(existingFile.path);
+                    throttledEditorUpdate(existingFile.content);
+                    return;
+                }
+                
+                // 如果是不同版本的更新日志，替换现有的
+                const updatedFile = {
+                    ...existingFile,
+                    path: filePath,
+                    name: fileName,
+                    content: updateLogFile.content,
+                    originalContent: updateLogFile.content,
+                    encoding: updateLogFile.encoding || 'UTF-8',
+                    lineEnding: updateLogFile.lineEnding || 'LF',
+                    version: updateLogFile.version // 保存版本信息
+                };
+                
+                setOpenedFiles((prev) => {
+                    const newFiles = [...prev];
+                    newFiles[existingUpdateLogIndex] = updatedFile;
+                    return newFiles;
+                });
+                
+                setCurrentFilePath(filePath);
+                throttledEditorUpdate(updateLogFile.content);
+                return;
+            }
+            
+            // 如果没有打开任何更新日志，创建新的
+            // 关闭空的临时文件
+            closeEmptyCurrentTempFile();
+
+            // 创建更新日志文件对象
+            const newFile = {
+                path: filePath,
+                name: fileName,
+                isTemporary: false,
+                isModified: false,
+                isReadOnly: true,
+                isUpdateLog: true, // 标记为更新日志文件
+                content: updateLogFile.content,
+                originalContent: updateLogFile.content,
+                encoding: updateLogFile.encoding || 'UTF-8',
+                lineEnding: updateLogFile.lineEnding || 'LF',
+                version: updateLogFile.version // 保存版本信息
+            };
+
+            // 添加到文件列表
+            setOpenedFiles((prev) => {
+                return [...prev, newFile];
+            });
+
+            setCurrentFilePath(filePath);
+
+            throttledEditorUpdate(updateLogFile.content);
+
+
+        } catch (error) {
+            console.error('❌ [useFileManager] 打开更新日志失败:', error);
+            console.error('❌ [useFileManager] 错误堆栈:', error.stack);
+            handleError('openUpdateLogFailed', error);
+        }
+    }, [openedFiles, closeEmptyCurrentTempFile, throttledEditorUpdate, handleError]);
+
     // 监听语言变化，更新默认文件名
     useEffect(() => {
         updateDefaultFileName(t('common.untitled'))
@@ -1434,6 +1514,7 @@ export const useFileManager = () => {
         updateFileLineEnding,
         setOpenFile,
         updateFileContent,
+        openUpdateLog, // 添加更新日志打开方法
 
         // AppHeader的ref引用，用于CodeEditor获取语言设置
         appHeaderRef: null,

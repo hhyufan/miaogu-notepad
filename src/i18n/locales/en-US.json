@@ -223,7 +223,10 @@
         "starting": "Starting update...",
         "success": "Update successful, application will restart",
         "failed": "Update failed",
-        "notSupported": "Auto update not supported in current environment"
+        "notSupported": "Auto update not supported in current environment",
+        "viewUpdateLog": "View Update Log",
+        "updateLogOpened": "Update log opened in editor",
+        "openUpdateLogFailed": "Failed to open update log: {{error}}"
       }
     },
     "language": {

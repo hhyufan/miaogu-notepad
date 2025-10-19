@@ -2,13 +2,13 @@
  * @fileoverview 标签页组件 - 管理多个打开文件的标签页显示和操作
  * 提供文件标签页的显示、切换、关闭等功能，支持右键菜单操作和重命名功能
  * @author hhyufan
- * @version 1.3.1
+ * @version 1.4.0
  */
 
 import './TabBar.scss';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useSelector} from 'react-redux';
-import {EditOutlined, FileAddOutlined} from '@ant-design/icons';
+import {EditOutlined, FileAddOutlined, FileTextOutlined} from '@ant-design/icons';
 import {Dropdown, Tabs} from 'antd';
 import {useI18n} from '../hooks/useI18n';
 import extensionToLanguage from '../configs/file-extensions.json';
@@ -485,7 +485,11 @@ const TabBar = ({fileManager}) => {
                     ) : (
                         <span style={{display: 'inline-flex', alignItems: 'center'}}>
                             {file.name}
-                            {file.isTemporary ? (
+                            {file.isUpdateLog ? (
+                                <FileTextOutlined
+                                    style={{marginLeft: '5px', fontSize: '12px', color: '#52c41a'}}
+                                />
+                            ) : file.isTemporary ? (
                                 <FileAddOutlined
                                     style={{marginLeft: '5px', fontSize: '12px', color: '#1890ff'}}
                                 />

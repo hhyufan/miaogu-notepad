@@ -2,7 +2,7 @@
  * @fileoverview 加载组件 - 显示应用加载状态
  * 用于在应用初始化或数据加载时显示加载提示
  * @author hhyufan
- * @version 1.3.1
+ * @version 1.4.0
  */
 
 import React from 'react';

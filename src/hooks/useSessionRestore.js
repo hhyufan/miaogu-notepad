@@ -2,7 +2,7 @@
  * @fileoverview 会话恢复Hook - 负责在应用启动时恢复上次的工作状态
  * 包括文件状态、编辑器配置、主题设置等的完整恢复
  * @author hhyufan
- * @version 1.3.1
+ * @version 1.4.0
  */
 
 import {useEffect, useState} from 'react';
@@ -37,7 +37,7 @@ import {
   setTabSize,
   setWordWrap,
 } from '../store/slices/editorSlice';
-import {checkUpdateComplete} from '../store/slices/updateSlice';
+import {checkUpdateComplete, setIsUpdating} from '../store/slices/updateSlice';
 
 const {file: fileApi, app: appApi} = tauriApi;
 
@@ -60,6 +60,9 @@ export const useSessionRestore = () => {
             try {
                 setIsRestoring(true);
                 setRestoreError(null);
+
+                // 重置更新状态，确保应用启动时更新状态为false
+                dispatch(setIsUpdating(false));
 
                 await persistenceManager.initialize();
                 await restoreThemeSettings();
@@ -84,12 +87,9 @@ export const useSessionRestore = () => {
      */
     const checkForUpdatesOnStartup = async () => {
         try {
-
             const updateInfo = await appApi.checkForUpdates();
             
             if (updateInfo && updateInfo.has_update) {
-
-                
                 // 更新Redux状态
                 dispatch(checkUpdateComplete({
                     hasUpdate: true,
@@ -98,14 +98,12 @@ export const useSessionRestore = () => {
                 
                 // 将更新信息存储到localStorage中，供SettingsModal使用
                 localStorage.setItem('updateInfo', JSON.stringify(updateInfo));
-                
+
                 // 触发自定义事件通知其他组件有更新可用
                 window.dispatchEvent(new CustomEvent('updateAvailable', { 
                     detail: updateInfo 
                 }));
             } else {
-
-                
                 // 更新Redux状态 - 没有更新
                 dispatch(checkUpdateComplete({
                     hasUpdate: false,

@@ -2,7 +2,7 @@
  * @fileoverview View Transition API 工具函数
  * 提供流畅的UI过渡效果，支持主题切换、编辑器模式切换等场景
  * @author hhyufan
- * @version 1.3.1
+ * @version 1.4.0
  */
 
 /**

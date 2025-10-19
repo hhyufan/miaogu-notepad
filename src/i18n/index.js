@@ -4,7 +4,7 @@
  * 支持中文和英文两种语言，自动检测用户语言偏好
  *
  * @author hhyufan
- * @version 1.3.1
+ * @version 1.4.0
  */
 
 import i18n from 'i18next';

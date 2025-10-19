@@ -21,6 +21,7 @@ use std::process::Command;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Emitter, Manager};
+use serde_json;
 use tauri_plugin_http::reqwest;
 use tokio::time::interval;
 
@@ -60,15 +61,68 @@ pub struct VersionInfo {
     pub download_url: Option<String>,
     pub release_notes: Option<String>,
     pub published_at: Option<String>,
+    // 新增文件大小相关字段
+    pub file_size: Option<u64>,           // 文件大小（字节）
+    pub file_size_formatted: Option<String>, // 格式化的文件大小（如 "23.52 MB"）
+    pub original_size: Option<u64>,       // 原始文件大小
+    pub original_size_formatted: Option<String>, // 格式化的原始文件大小
+    pub md5: Option<String>,              // 文件MD5校验值
+}
+
+/// 版本信息缓存结构
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct CachedVersionInfo {
+    version_info: VersionInfo,
+    cached_at: u64,
+    expires_at: u64,
+}
+
+/// 回退数据源特征
+#[async_trait::async_trait]
+trait FallbackSource {
+    fn name(&self) -> &str;
+    async fn fetch_version_info(&self, current_version: &str) -> Result<VersionInfo, String>;
+}
+
+/// GitHub Releases 数据源
+struct GitHubReleasesSource;
+
+#[async_trait::async_trait]
+impl FallbackSource for GitHubReleasesSource {
+    fn name(&self) -> &str {
+        "GitHub Releases API"
+    }
+    
+    async fn fetch_version_info(&self, current_version: &str) -> Result<VersionInfo, String> {
+        check_updates_from_github_api(current_version).await
+    }
+}
+
+/// 静态版本信息源（从本地文件读取）
+struct StaticVersionSource;
+
+#[async_trait::async_trait]
+impl FallbackSource for StaticVersionSource {
+    fn name(&self) -> &str {
+        "Static Version Info"
+    }
+    
+    async fn fetch_version_info(&self, current_version: &str) -> Result<VersionInfo, String> {
+        // 从本地配置文件或内置数据获取版本信息
+        get_static_version_info(current_version).await
+    }
 }
 
 /// 更新进度结构体
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)
+]
 pub struct UpdateProgress {
     pub stage: String, // "checking", "downloading", "installing", "completed", "error"
     pub progress: f64, // 0.0 - 1.0
     pub message: String,
     pub error: Option<String>,
+    pub bytes_downloaded: Option<u64>,
+    pub total_bytes: Option<u64>,
 }
 
 /// 应用程序路径信息结构体
@@ -1858,10 +1912,166 @@ async fn toggle_devtools(app: AppHandle) -> Result<(), String> {
 }
 
 /// 检查更新
-/// 从GitHub Releases API获取最新版本信息并与当前版本比较
+/// 智能回退机制：缓存、频率控制、多数据源
 #[tauri::command]
 async fn check_for_updates() -> Result<VersionInfo, String> {
     let current_version = env!("CARGO_PKG_VERSION");
+    
+    // 首先检查本地缓存
+    if let Ok(cached_info) = get_cached_version_info(current_version).await {
+        println!("📦 Using cached version info (valid for 1 hour)");
+        return Ok(cached_info);
+    }
+    
+    // 尝试主 API（带超时控制）
+    match check_updates_from_miaogu_api_with_timeout(current_version).await {
+        Ok(version_info) => {
+            println!("✅ Successfully fetched update info from miaogu API");
+            // 缓存成功的结果
+            let _ = cache_version_info(&version_info).await;
+            return Ok(version_info);
+        },
+        Err(e) => {
+            println!("⚠️ Primary miaogu API failed: {}, trying fallback sources", e);
+        }
+    }
+    
+    // 智能回退策略：根据API使用情况选择最佳方案
+    let fallback_sources = get_available_fallback_sources().await;
+    
+    for (index, source) in fallback_sources.iter().enumerate() {
+         println!("🔄 Trying fallback source {} of {}: {}", index + 1, fallback_sources.len(), source.name());
+         
+         match source.fetch_version_info(current_version).await {
+             Ok(version_info) => {
+                 println!("✅ Successfully fetched from {}", source.name());
+                 // 缓存成功的结果
+                 let _ = cache_version_info(&version_info).await;
+                 return Ok(version_info);
+             },
+             Err(e) => {
+                 println!("❌ {} failed: {}", source.name(), e);
+                 continue;
+             }
+         }
+     }
+    
+    // 最后尝试从本地缓存获取过期数据（总比没有好）
+    if let Ok(stale_info) = get_stale_cached_version_info(current_version).await {
+        println!("⚠️ All sources failed, using stale cached data");
+        return Ok(stale_info);
+    }
+    
+    Err("All update sources are unavailable and no cached data found. Please check your network connection or try again later.".to_string())
+}
+
+/// 从 api.miaogu.top 获取版本信息（带超时控制）
+async fn check_updates_from_miaogu_api_with_timeout(current_version: &str) -> Result<VersionInfo, String> {
+    use tokio::time::{timeout, Duration};
+    
+    // 设置10秒超时
+    let timeout_duration = Duration::from_secs(10);
+    
+    match timeout(timeout_duration, check_updates_from_miaogu_api(current_version)).await {
+        Ok(result) => result,
+        Err(_) => Err("Miaogu API request timed out after 10 seconds".to_string()),
+    }
+}
+
+/// 从 api.miaogu.top 获取版本信息
+async fn check_updates_from_miaogu_api(current_version: &str) -> Result<VersionInfo, String> {
+    let api_url = "https://api.miaogu.top/";
+    
+    let client = reqwest::Client::new();
+    let response = client
+        .get(api_url)
+        .header("User-Agent", "miaogu-notepad")
+        .send()
+        .await
+        .map_err(|e| format!("Failed to fetch from miaogu API: {}", e))?;
+
+    if !response.status().is_success() {
+        return Err(format!("Miaogu API returned status: {}", response.status()));
+    }
+
+    let response_text = response
+        .text()
+        .await
+        .map_err(|e| format!("Failed to get response text: {}", e))?;
+
+    let api_response: serde_json::Value = serde_json::from_str(&response_text)
+        .map_err(|e| format!("Failed to parse miaogu API response: {}", e))?;
+
+    // 从 API 响应中提取版本信息
+    let latest_release = api_response
+        .get("latest_release")
+        .ok_or("Missing latest_release in API response")?;
+    
+    let latest_version = latest_release
+        .get("version")
+        .and_then(|v| v.as_str())
+        .ok_or("Missing version in latest_release")?
+        .trim_start_matches('v');
+    
+    let has_update = version_compare(current_version, latest_version);
+    
+    // 构建下载链接
+    let download_links = api_response
+        .get("download_links")
+        .ok_or("Missing download_links in API response")?;
+    
+    let gridfs_cdn = download_links
+        .get("gridfs_cdn")
+        .and_then(|v| v.as_str())
+        .ok_or("Missing gridfs_cdn in download_links")?;
+    
+    let download_url = Some(gridfs_cdn.to_string());
+    
+    // 获取发布说明
+    let release_notes = latest_release
+        .get("body")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    
+    // 获取发布时间
+    let published_at = latest_release
+        .get("published_at")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+
+    // 获取文件信息
+    let file_info = api_response.get("file_info");
+    let (file_size, file_size_formatted, original_size, original_size_formatted, md5) = 
+        if let Some(file_info) = file_info {
+            let file_size = file_info.get("size").and_then(|v| v.as_u64());
+            let file_size_formatted = file_info.get("sizeFormatted").and_then(|v| v.as_str()).map(|s| s.to_string());
+            let original_size = file_info.get("originalSize").and_then(|v| v.as_u64());
+            let original_size_formatted = file_info.get("originalSizeFormatted").and_then(|v| v.as_str()).map(|s| s.to_string());
+            let md5 = file_info.get("md5").and_then(|v| v.as_str()).map(|s| s.to_string());
+            (file_size, file_size_formatted, original_size, original_size_formatted, md5)
+        } else {
+            (None, None, None, None, None)
+        };
+
+    let version_info = VersionInfo {
+        current_version: current_version.to_string(),
+        latest_version: latest_version.to_string(),
+        has_update,
+        download_url,
+        release_notes,
+        published_at,
+        file_size,
+        file_size_formatted,
+        original_size,
+        original_size_formatted,
+        md5,
+    };
+
+    Ok(version_info)
+}
+
+/// 从 GitHub API 获取版本信息（备用方案）
+async fn check_updates_from_github_api(current_version: &str) -> Result<VersionInfo, String> {
     let repo_url = "https://api.github.com/repos/hhyufan/miaogu-notepad/releases/latest";
 
     let client = reqwest::Client::new();
@@ -1902,9 +2112,131 @@ async fn check_for_updates() -> Result<VersionInfo, String> {
         download_url,
         release_notes: release.body,
         published_at: Some(release.published_at),
+        // GitHub API 不提供文件大小信息，设为 None
+        file_size: None,
+        file_size_formatted: None,
+        original_size: None,
+        original_size_formatted: None,
+        md5: None,
     };
 
     Ok(version_info)
+}
+
+
+/// 获取缓存的版本信息（1小时内有效）
+async fn get_cached_version_info(_current_version: &str) -> Result<VersionInfo, String> {
+    let cache_file = get_cache_file_path()?;
+    
+    if !cache_file.exists() {
+        return Err("No cache file found".to_string());
+    }
+    
+    let cache_content = fs::read_to_string(&cache_file)
+        .map_err(|e| format!("Failed to read cache file: {}", e))?;
+    
+    let cached_info: CachedVersionInfo = serde_json::from_str(&cache_content)
+        .map_err(|e| format!("Failed to parse cache file: {}", e))?;
+    
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    
+    if now > cached_info.expires_at {
+        return Err("Cache expired".to_string());
+    }
+    
+    Ok(cached_info.version_info)
+}
+
+/// 获取过期的缓存版本信息（作为最后的备用方案）
+async fn get_stale_cached_version_info(_current_version: &str) -> Result<VersionInfo, String> {
+    let cache_file = get_cache_file_path()?;
+    
+    if !cache_file.exists() {
+        return Err("No cache file found".to_string());
+    }
+    
+    let cache_content = fs::read_to_string(&cache_file)
+        .map_err(|e| format!("Failed to read cache file: {}", e))?;
+    
+    let cached_info: CachedVersionInfo = serde_json::from_str(&cache_content)
+        .map_err(|e| format!("Failed to parse cache file: {}", e))?;
+    
+    Ok(cached_info.version_info)
+}
+
+/// 缓存版本信息
+async fn cache_version_info(version_info: &VersionInfo) -> Result<(), String> {
+    let cache_file = get_cache_file_path()?;
+    
+    // 确保缓存目录存在
+    if let Some(parent) = cache_file.parent() {
+        fs::create_dir_all(parent)
+            .map_err(|e| format!("Failed to create cache directory: {}", e))?;
+    }
+    
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    
+    let cached_info = CachedVersionInfo {
+        version_info: version_info.clone(),
+        cached_at: now,
+        expires_at: now + 3600, // 1小时后过期
+    };
+    
+    let cache_content = serde_json::to_string_pretty(&cached_info)
+        .map_err(|e| format!("Failed to serialize cache data: {}", e))?;
+    
+    fs::write(&cache_file, cache_content)
+        .map_err(|e| format!("Failed to write cache file: {}", e))?;
+    
+    Ok(())
+}
+
+/// 获取缓存文件路径
+fn get_cache_file_path() -> Result<std::path::PathBuf, String> {
+    let app_data_dir = dirs::data_dir()
+        .ok_or("Failed to get app data directory")?;
+    
+    Ok(app_data_dir.join("miaogu-notepad").join("version_cache.json"))
+}
+
+/// 获取可用的回退数据源
+async fn get_available_fallback_sources() -> Vec<Box<dyn FallbackSource + Send + Sync>> {
+    let mut sources: Vec<Box<dyn FallbackSource + Send + Sync>> = Vec::new();
+    
+    // 添加GitHub Releases API（限制较少的使用方式）
+    sources.push(Box::new(GitHubReleasesSource));
+    
+    // 添加静态版本信息源
+    sources.push(Box::new(StaticVersionSource));
+    
+    sources
+}
+
+/// 从静态配置获取版本信息
+async fn get_static_version_info(current_version: &str) -> Result<VersionInfo, String> {
+    // 作为备用方案，提供基本的版本检查功能
+    let static_version_info = VersionInfo {
+        current_version: current_version.to_string(),
+        latest_version: "1.4.0".to_string(), // 可以从本地配置文件读取
+        has_update: version_compare(current_version, "1.4.0"),
+        download_url: Some("https://github.com/hhyufan/miaogu-notepad/releases/latest".to_string()),
+        release_notes: Some("Please visit GitHub releases page for the latest version information.".to_string()),
+        published_at: None,
+        // 静态版本信息不包含文件大小
+        file_size: None,
+        file_size_formatted: None,
+        original_size: None,
+        original_size_formatted: None,
+        md5: None,
+    };
+    
+    Ok(static_version_info)
 }
 
 /// 启动定时更新检查任务
@@ -2008,6 +2340,8 @@ async fn download_update(app_handle: AppHandle, download_url: String) -> Result<
             progress: 0.0,
             message: "开始下载更新文件...".to_string(),
             error: None,
+            bytes_downloaded: Some(0),
+            total_bytes: None,
         },
     );
 
@@ -2046,7 +2380,34 @@ async fn download_update(app_handle: AppHandle, download_url: String) -> Result<
     use futures_util::StreamExt;
     let mut stream = response.bytes_stream();
     let mut downloaded: u64 = 0;
-    let total_size = _total_size;
+    let mut total_size = _total_size;
+
+    // 回退到 API 返回的原始文件大小（original_size 或 size），用于更平滑的进度条
+    if total_size == 0 {
+        if let Ok(info) = check_for_updates().await {
+            if let Some(sz) = info.original_size.or(info.file_size) {
+                total_size = sz;
+                println!("Using API file size: {} bytes", total_size);
+            }
+        }
+    }
+
+    // 发送文件大小信息
+    let _ = app_handle.emit(
+        "update-progress",
+        UpdateProgress {
+            stage: "downloading".to_string(),
+            progress: 0.0,
+            message: if total_size > 0 {
+                format!("准备下载文件 ({:.2} MB)...", total_size as f64 / 1024.0 / 1024.0)
+            } else {
+                "准备下载文件...".to_string()
+            },
+            error: None,
+            bytes_downloaded: Some(0),
+            total_bytes: if total_size > 0 { Some(total_size) } else { None },
+        },
+    );
 
     while let Some(chunk) = stream.next().await {
         let chunk = chunk.map_err(|e| format!("Failed to read chunk: {}", e))?;
@@ -2063,28 +2424,45 @@ async fn download_update(app_handle: AppHandle, download_url: String) -> Result<
             0.0
         };
 
-        // 每下载一定量数据就发送一次进度更新（避免过于频繁）
-        if downloaded % (512 * 1024) == 0 || progress >= 1.0 {
+        // 每下载256KB或每500ms发送一次进度更新（避免过于频繁）
+        if downloaded % (256 * 1024) == 0 
+            || progress >= 1.0 {
+            
+            let downloaded_mb = downloaded as f64 / 1024.0 / 1024.0;
+            let total_mb = total_size as f64 / 1024.0 / 1024.0;
+            
+            let message = if total_size > 0 {
+                format!("正在下载... {:.1}% ({:.2}/{:.2} MB)", 
+                    progress * 100.0, downloaded_mb, total_mb)
+            } else {
+                format!("正在下载... {:.2} MB", downloaded_mb)
+            };
+
             let _ = app_handle.emit(
                 "update-progress",
                 UpdateProgress {
                     stage: "downloading".to_string(),
                     progress,
-                    message: format!("正在下载... {:.1}%", progress * 100.0),
+                    message,
                     error: None,
+                    bytes_downloaded: Some(downloaded),
+                    total_bytes: if total_size > 0 { Some(total_size) } else { None },
                 },
             );
         }
     }
 
     // 发送完成进度
+    let downloaded_mb = downloaded as f64 / 1024.0 / 1024.0;
     let _ = app_handle.emit(
         "update-progress",
         UpdateProgress {
             stage: "downloading".to_string(),
             progress: 1.0,
-            message: "下载完成".to_string(),
+            message: format!("下载完成 ({:.2} MB)", downloaded_mb),
             error: None,
+            bytes_downloaded: Some(downloaded),
+            total_bytes: if total_size > 0 { Some(total_size) } else { None },
         },
     );
 
@@ -2110,6 +2488,8 @@ async fn install_update(app_handle: AppHandle, new_file_path: String) -> Result<
             progress: 0.0,
             message: "开始安装更新...".to_string(),
             error: None,
+            bytes_downloaded: None,
+            total_bytes: None,
         },
     );
 
@@ -2142,6 +2522,8 @@ async fn install_update(app_handle: AppHandle, new_file_path: String) -> Result<
             progress: 0.25,
             message: "备份当前版本...".to_string(),
             error: None,
+            bytes_downloaded: None,
+            total_bytes: None,
         },
     );
 
@@ -2156,6 +2538,8 @@ async fn install_update(app_handle: AppHandle, new_file_path: String) -> Result<
             progress: 0.5,
             message: "安装新版本...".to_string(),
             error: None,
+            bytes_downloaded: None,
+            total_bytes: None,
         },
     );
 
@@ -2173,6 +2557,8 @@ async fn install_update(app_handle: AppHandle, new_file_path: String) -> Result<
             progress: 0.75,
             message: "准备重启应用...".to_string(),
             error: None,
+            bytes_downloaded: None,
+            total_bytes: None,
         },
     );
 
@@ -2183,6 +2569,8 @@ async fn install_update(app_handle: AppHandle, new_file_path: String) -> Result<
             progress: 1.0,
             message: "更新安装完成！正在重启应用程序...".to_string(),
             error: None,
+            bytes_downloaded: None,
+            total_bytes: None,
         },
     );
 
@@ -2250,6 +2638,8 @@ async fn perform_auto_update(app_handle: AppHandle) -> Result<String, String> {
             progress: 0.0,
             message: "检查更新中...".to_string(),
             error: None,
+            bytes_downloaded: None,
+            total_bytes: None,
         },
     );
 
@@ -2264,6 +2654,8 @@ async fn perform_auto_update(app_handle: AppHandle) -> Result<String, String> {
                     progress: 0.0,
                     message: "检查更新失败".to_string(),
                     error: Some(error_msg.clone()),
+                    bytes_downloaded: None,
+                    total_bytes: None,
                 },
             );
             return Err(error_msg);
@@ -2278,6 +2670,8 @@ async fn perform_auto_update(app_handle: AppHandle) -> Result<String, String> {
                 progress: 1.0,
                 message: "当前已是最新版本".to_string(),
                 error: None,
+                bytes_downloaded: None,
+                total_bytes: None,
             },
         );
         return Ok("No update available".to_string());
@@ -2294,6 +2688,8 @@ async fn perform_auto_update(app_handle: AppHandle) -> Result<String, String> {
                     progress: 0.0,
                     message: "获取下载链接失败".to_string(),
                     error: Some(error_msg.clone()),
+                    bytes_downloaded: None,
+                    total_bytes: None,
                 },
             );
             return Err(error_msg);
@@ -2312,6 +2708,8 @@ async fn perform_auto_update(app_handle: AppHandle) -> Result<String, String> {
                     progress: 0.0,
                     message: "下载更新失败".to_string(),
                     error: Some(error_msg.clone()),
+                    bytes_downloaded: None,
+                    total_bytes: None,
                 },
             );
             return Err(error_msg);
@@ -2330,6 +2728,8 @@ async fn perform_auto_update(app_handle: AppHandle) -> Result<String, String> {
                     progress: 0.0,
                     message: "安装更新失败".to_string(),
                     error: Some(error_msg.clone()),
+                    bytes_downloaded: None,
+                    total_bytes: None,
                 },
             );
             Err(error_msg)

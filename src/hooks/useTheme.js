@@ -2,7 +2,7 @@
  * @fileoverview 主题Hook - 管理应用的明暗主题状态
  * 提供主题切换功能，基于Redux状态管理，确保状态一致性
  * @author hhyufan
- * @version 1.3.1
+ * @version 1.4.0
  */
 
 import {useEffect} from 'react';

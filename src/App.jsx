@@ -2,13 +2,13 @@
  * @fileoverview 应用程序主组件
  * 提供整体布局、主题管理、编辑器模式切换等核心功能
  * @author hhyufan
- * @version 1.3.1
+ * @version 1.4.0
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { App as AntdApp, Button, ConfigProvider, Layout, theme } from 'antd';
 import { CodeOutlined, EyeOutlined, InboxOutlined, MoonFilled, PartitionOutlined, SunOutlined } from '@ant-design/icons';
-import { Provider, useSelector } from 'react-redux';
+import { Provider, useSelector, useDispatch } from 'react-redux';
 import { invoke } from '@tauri-apps/api/core';
 import { store } from './store';
 import { useTheme } from './hooks/redux';
@@ -17,6 +17,7 @@ import { useI18n } from './hooks/useI18n';
 import { initImageProxyLoader } from './utils/imageProxy';
 import tauriApi, { fileApi } from './utils/tauriApi';
 import { useSessionRestore } from './hooks/useSessionRestore';
+import { markUpdateLogShown } from './store/slices/updateSlice';
 import AppHeader from './components/AppHeader';
 import TabBar from './components/TabBar';
 import LazyCodeEditor from './components/LazyCodeEditor';
@@ -58,6 +59,11 @@ const AppContent = ({ isDarkMode, toggleTheme, fileManager, isHeaderVisible, set
     const [isTreeMode, setIsTreeMode] = useState(false);
     const [editorMode, setEditorMode] = useState(EDITOR_MODES.MONACO);
     const { currentFile, openedFiles, newFile, openFile } = fileManager;
+    
+    // Redux状态和dispatch
+    const dispatch = useDispatch();
+    const updateState = useSelector(state => state.update);
+    const { hasUpdate, updateInfo } = updateState;
 
     const isMgtreeFile = currentFile && currentFile['name'] && currentFile['name'].endsWith('.mgtree');
     const isMarkdownFile = currentFile && currentFile['name'] &&
@@ -150,9 +156,57 @@ const AppContent = ({ isDarkMode, toggleTheme, fileManager, isHeaderVisible, set
      * 当文件类型或当前文件变化时，重置编辑器模式
      */
     useEffect(() => {
-        setEditorMode(EDITOR_MODES.MONACO);
-        setIsTreeMode(false);
-    }, [isMgtreeFile, isMarkdownFile, fileManager.currentFile?.path]);
+        // 如果是更新日志文件且是Markdown文件，默认切换到Markdown预览模式
+        if (currentFile && currentFile.isUpdateLog && isMarkdownFile) {
+            setEditorMode(EDITOR_MODES.MARKDOWN);
+            setIsTreeMode(false);
+        } else {
+            setEditorMode(EDITOR_MODES.MONACO);
+            setIsTreeMode(false);
+        }
+    }, [isMgtreeFile, isMarkdownFile, fileManager.currentFile?.path, currentFile]);
+
+    // 使用ref来跟踪是否已经自动打开过更新日志
+    const autoOpenedVersionRef = useRef(null);
+
+    /**
+     * 监听更新状态变化，自动打开更新日志
+     * 只在初始化检测到新版本更新时自动打开一次
+     */
+    useEffect(() => {
+
+
+
+        
+        // 确保autoShowUpdateLog有默认值
+        const shouldAutoShow = updateState.autoShowUpdateLog !== false; // 默认为true
+        
+        if (hasUpdate && updateInfo && updateInfo.latest_version && shouldAutoShow) {
+            const currentVersion = updateInfo.latest_version;
+
+
+            
+            // 检查是否已经为这个版本自动打开过更新日志
+            if (autoOpenedVersionRef.current !== currentVersion && !updateState.updateLogShown) {
+                // 标记已经为这个版本自动打开过
+                autoOpenedVersionRef.current = currentVersion;
+                
+                // 延迟打开更新日志，确保应用完全加载
+                const timer = setTimeout(async () => {
+                    try {
+
+                        await openUpdateLog(currentVersion);
+                        // 标记更新日志已显示
+                        dispatch({type: 'update/markUpdateLogShown', payload: currentVersion});
+                    } catch (error) {
+                        console.error('❌ [App.jsx] 自动打开更新日志失败:', error);
+                    }
+                }, 1000); // 延迟1秒
+                
+                return () => clearTimeout(timer);
+            }
+        }
+    }, [hasUpdate, updateInfo?.latest_version, updateState.autoShowUpdateLog, updateState.updateLogShown]); // 添加更多依赖
 
     return (
         <>
@@ -607,6 +661,191 @@ const MainApp = () => {
     const cliArgsProcessedRef = useRef(false);
 
     /**
+     * 检查并处理更新日志显示
+     * 在应用更新后首次启动时自动打开更新日志
+     */
+    const checkAndShowUpdateLog = async () => {
+        try {
+            // 获取当前应用版本 - 使用 checkForUpdates 方法获取版本信息
+            const versionInfo = await appApi.checkForUpdates();
+            const currentVersion = versionInfo?.current_version;
+            if (!currentVersion) return;
+
+            // 获取上次记录的版本
+            const lastVersion = await settingsApi.get('app.lastVersion', '');
+            
+            // 如果版本不同，说明应用已更新
+            if (lastVersion && lastVersion !== currentVersion) {
+                
+                // 保存新版本号
+                await settingsApi.set('app.lastVersion', currentVersion);
+                
+                // 打开更新日志
+                await openUpdateLog(currentVersion);
+            } else if (!lastVersion) {
+                // 首次安装，记录当前版本
+                await settingsApi.set('app.lastVersion', currentVersion);
+            }
+        } catch (error) {
+            console.error('检查更新日志失败:', error);
+        }
+    };
+
+    /**
+     * 打开更新日志文件
+     * @param {string} version - 版本号
+     */
+    const openUpdateLog = async (version) => {
+        try {
+            
+            // 构造更新日志内容
+            const updateLogContent = await getUpdateLogContent(version);
+            
+            // 创建特殊的更新日志文件对象
+            // 使用固定的路径以避免React key重复警告
+            const updateLogFile = {
+                name: `更新日志 v${version}.md`,
+                path: `update-log.md`, // 使用固定路径，避免key冲突
+                content: updateLogContent,
+                isTemporary: false,
+                isReadOnly: true,
+                isUpdateLog: true, // 标记为更新日志文件
+                encoding: 'UTF-8',
+                lineEnding: 'LF',
+                version: version // 添加版本信息用于显示
+            };
+
+
+            // 使用文件管理器打开更新日志
+            await fileManager.openUpdateLog(updateLogFile);
+        } catch (error) {
+            console.error('❌ [App.jsx] 打开更新日志失败:', error);
+            console.error('❌ [App.jsx] 错误堆栈:', error.stack);
+        }
+    };
+
+    /**
+     * 获取更新日志内容
+     * @param {string} version - 版本号
+     * @returns {Promise<string>} 更新日志内容
+     */
+    const getUpdateLogContent = async (version) => {
+        
+        try {
+            // 从API获取最新版本信息
+            const versionInfo = await appApi.checkForUpdates();
+            
+            if (versionInfo && versionInfo.release_notes) {
+                // 直接使用API返回的release_notes
+                return formatReleaseNotes(version, versionInfo.release_notes, versionInfo.release_name);
+            }
+        } catch (error) {
+            console.warn('⚠️ [App.jsx] 从API获取更新日志失败:', error);
+        }
+
+        try {
+        // 尝试从本地读取对应版本的更新日志文件
+            const releaseFilePath = `docs/releases/RELEASE_v${version}.md`;
+            
+            // 检查文件是否存在
+            const exists = await fileApi.fileExists(releaseFilePath);
+            
+            if (exists) {
+                const result = await fileApi.readFileContent(releaseFilePath);
+                return result.content || getDefaultUpdateLogContent(version);
+            }
+        } catch (error) {
+            console.warn('⚠️ [App.jsx] 读取更新日志文件失败:', error);
+        }
+
+        // 如果无法读取文件，返回默认内容
+        return getDefaultUpdateLogContent(version);
+    };
+
+    /**
+     * 格式化API返回的发布说明
+     * @param {string} version - 版本号
+     * @param {string} releaseNotes - 发布说明
+     * @param {string} releaseName - 发布名称
+     * @returns {string} 格式化后的更新日志内容
+     */
+    const formatReleaseNotes = (version, releaseNotes, releaseName) => {
+        // 构建标准的标题
+        const standardTitle = releaseName || `🚀 Miaogu NotePad v${version} 更新日志`;
+        
+        // 如果发布说明已经是Markdown格式
+        if (releaseNotes.includes('#') || releaseNotes.includes('##')) {
+            // 检查是否已经有标题，如果有则替换第一个标题，如果没有则添加标题
+            const lines = releaseNotes.split('\n');
+            let hasTitle = false;
+            let processedLines = [];
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                // 如果是第一个一级标题，替换它
+                if (!hasTitle && line.startsWith('# ')) {
+                    processedLines.push(`# ${standardTitle}`);
+                    hasTitle = true;
+                } else {
+                    processedLines.push(lines[i]);
+                }
+            }
+            
+            // 如果没有找到一级标题，在开头添加
+            if (!hasTitle) {
+                processedLines.unshift(`# ${standardTitle}`, '');
+            }
+            
+            return processedLines.join('\n');
+        }
+        
+        // 否则，包装成标准的更新日志格式
+        return `# ${standardTitle}
+
+${releaseNotes}
+
+---
+
+**🌟 如果您喜欢这个项目，请给我们一个 Star！**
+
+*喵咕记事本 - 让编程更智能，让创作更高效，让知识更有序* ✨`;
+    };
+
+    /**
+     * 获取默认更新日志内容
+     * @param {string} version - 版本号
+     * @returns {string} 默认更新日志内容
+     */
+    const getDefaultUpdateLogContent = (version) => {
+        return `# 🚀 Miaogu NotePad v${version} 更新日志
+
+欢迎使用喵咕记事本 v${version}！
+
+## ✨ 主要更新
+
+### 🖥️ 自定义命令行启动
+- 支持通过自定义命令在终端中快速启动编辑器
+- 文件关联功能，可直接通过命令行打开指定文件
+- 智能路径处理，支持相对路径和绝对路径
+
+### 📋 智能更新日志系统
+- 应用更新后首次启动时自动展示更新日志
+- 设置中心可随时查看更新日志
+- 更新日志以只读模式打开，专注于内容展示
+
+## 🔧 功能改进
+- 优化命令行参数处理
+- 完善文件操作错误处理
+- 提升用户界面体验
+
+---
+
+**🌟 如果您喜欢这个项目，请给我们一个 Star！**
+
+*喵咕记事本 - 让编程更智能，让创作更高效，让知识更有序* ✨`;
+    };
+
+    /**
      * 处理CLI参数，打开通过命令行传递的文件
      */
     useEffect(() => {
@@ -627,7 +866,11 @@ const MainApp = () => {
             window.setDebugFile = setDebugFile;
             window.testFileOpen = testFileOpen;
             window.showFileStatus = showFileStatus;
+            window.openUpdateLog = openUpdateLog; // 暴露openUpdateLog方法到全局
             cliArgsProcessedRef.current = true;
+
+            // 首先检查并处理更新日志
+            await checkAndShowUpdateLog();
 
             try {
                 const args = await appApi.getCliArgs();
@@ -893,7 +1136,7 @@ const MainApp = () => {
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
                 >
-                    {isHeaderVisible && <AppHeader fileManager={fileManager} hasOpenFiles={hasOpenFiles} />}
+                    {isHeaderVisible && <AppHeader fileManager={fileManager} hasOpenFiles={hasOpenFiles} openUpdateLog={openUpdateLog} />}
                     <TabBar fileManager={fileManager} />
                     <Layout className="main-layout">
                         <Content className="app-content">

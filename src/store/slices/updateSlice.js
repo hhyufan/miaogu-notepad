@@ -20,6 +20,9 @@ const initialState = {
     // 更新安装状态
     isInstalling: false,
     
+    // 全局更新状态 - 用于同步所有更新按钮的状态
+    isUpdating: false,
+    
     // 错误信息
     error: null,
     
@@ -28,6 +31,13 @@ const initialState = {
     
     // 是否显示更新提示
     showUpdatePrompt: false,
+    
+    // 更新日志显示状态
+    updateLogShown: false,
+    lastShownVersion: null,
+    
+    // 自动显示更新日志的开关
+    autoShowUpdateLog: true,
 };
 
 const updateSlice = createSlice({
@@ -112,7 +122,32 @@ const updateSlice = createSlice({
             return {
                 ...initialState,
                 lastCheckTime: state.lastCheckTime,
+                updateLogShown: state.updateLogShown,
+                lastShownVersion: state.lastShownVersion,
+                autoShowUpdateLog: state.autoShowUpdateLog,
             };
+        },
+        
+        // 标记更新日志已显示
+        markUpdateLogShown: (state, action) => {
+            state.updateLogShown = true;
+            state.lastShownVersion = action.payload;
+        },
+        
+        // 重置更新日志显示状态
+        resetUpdateLogState: (state) => {
+            state.updateLogShown = false;
+            state.lastShownVersion = null;
+        },
+        
+        // 设置自动显示更新日志
+        setAutoShowUpdateLog: (state, action) => {
+            state.autoShowUpdateLog = action.payload;
+        },
+        
+        // 设置全局更新状态
+        setIsUpdating: (state, action) => {
+            state.isUpdating = action.payload;
         },
     },
 });
@@ -131,6 +166,10 @@ export const {
     hideUpdatePrompt,
     clearError,
     resetUpdateState,
+    markUpdateLogShown,
+    resetUpdateLogState,
+    setAutoShowUpdateLog,
+    setIsUpdating,
 } = updateSlice.actions;
 
 export default updateSlice.reducer;

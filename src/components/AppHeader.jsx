@@ -2,7 +2,7 @@
  * @fileoverview 应用头部组件 - 包含菜单栏、窗口控制和文件操作功能
  * 提供文件新建、打开、保存等操作，以及窗口最小化、最大化、关闭等控制
  * @author hhyufan
- * @version 1.3.1
+ * @version 1.4.0
  */
 
 import {Button, Checkbox, Dropdown, Input, Layout, Modal, Typography, message, Tooltip, Tag} from 'antd';
@@ -25,7 +25,8 @@ import './AppHeader.scss';
 import {useEffect, useRef, useState} from 'react';
 import {useI18n} from '../hooks/useI18n';
 import SettingsModal from './SettingsModal';
-import {useUpdateState, useHasUpdate, useShowUpdatePrompt} from '../store/hooks';
+import {useUpdateState, useHasUpdate, useShowUpdatePrompt, useAppDispatch} from '../store/hooks';
+import {setIsUpdating} from '../store/slices/updateSlice';
 import {invoke} from '@tauri-apps/api/core';
 
 /**
@@ -74,7 +75,7 @@ const getFileNameFromPath = (path, t) => {
  * @param {boolean} props.hasOpenFiles - 是否有打开的文件
  * @returns {JSX.Element} 头部组件
  */
-const AppHeader = ({fileManager, hasOpenFiles}) => {
+const AppHeader = ({fileManager, hasOpenFiles, openUpdateLog}) => {
     const {t} = useI18n();
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [newFileName, setNewFileName] = useState('');
@@ -85,14 +86,20 @@ const AppHeader = ({fileManager, hasOpenFiles}) => {
     const [isPinned, setIsPinned] = useState(false);
     const [unsavedModalVisible, setUnsavedModalVisible] = useState(false);
     const [selectedFiles, setSelectedFiles] = useState([]);
-    const [isUpdating, setIsUpdating] = useState(false); // 添加更新状态防抖
     const selectedFilesRef = useRef([]);
+    
+    // Redux状态和dispatch
+    const dispatch = useAppDispatch();
+    const updateState = useUpdateState();
+    const hasUpdate = updateState?.hasUpdate;
+    const showUpdatePrompt = updateState?.showUpdatePrompt;
+    const isUpdating = updateState?.isUpdating || false; // 使用Redux中的全局更新状态
     const fileNameInputRef = useRef(null);
 
-    // 更新相关状态
-    const updateState = useUpdateState();
-    const hasUpdate = useHasUpdate();
-    const showUpdatePrompt = useShowUpdatePrompt();
+    // 移除重复的Redux状态获取
+    // const updateState = useUpdateState();
+    // const hasUpdate = useHasUpdate();
+    // const showUpdatePrompt = useShowUpdatePrompt();
 
     // 创建文件管理器引用，供其他组件使用
     const appHeaderRef = useRef({
@@ -296,7 +303,7 @@ const AppHeader = ({fileManager, hasOpenFiles}) => {
         }
 
         try {
-            setIsUpdating(true); // 设置更新状态
+            dispatch(setIsUpdating(true)); // 设置全局更新状态
             
             // 调用后端的自动更新函数
             const result = await invoke('perform_auto_update');
@@ -305,7 +312,7 @@ const AppHeader = ({fileManager, hasOpenFiles}) => {
         } catch (error) {
             console.error('Update failed:', error);
         } finally {
-            setIsUpdating(false); // 重置更新状态
+            dispatch(setIsUpdating(false)); // 重置全局更新状态
         }
     };
 
@@ -485,7 +492,7 @@ const AppHeader = ({fileManager, hasOpenFiles}) => {
                                     {getCurrentFileName()}
                                 </Title>
                             )}
-                            {currentFile?.path && !currentFile?.isTemporary && (
+                            {currentFile?.path && !currentFile?.isTemporary && !currentFile?.isUpdateLog && (
                                 <Text type="secondary" className="file-path">
                                     {currentFile['path']}
                                 </Text>
@@ -632,6 +639,7 @@ const AppHeader = ({fileManager, hasOpenFiles}) => {
             <SettingsModal
                 visible={isSettingsVisible}
                 onClose={() => setIsSettingsVisible(false)}
+                openUpdateLog={openUpdateLog}
             />
         </>
     );

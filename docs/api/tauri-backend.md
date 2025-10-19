@@ -1102,4 +1102,4 @@ function debouncedSave(filePath, content) {
 
 ---
 
-*本文档基于 miaogu-notepad v1.3.1 版本编写*
+*本文档基于 miaogu-notepad v1.4.0 版本编写*
