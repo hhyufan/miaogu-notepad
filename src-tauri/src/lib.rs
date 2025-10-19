@@ -75,6 +75,7 @@ struct CachedVersionInfo {
     version_info: VersionInfo,
     cached_at: u64,
     expires_at: u64,
+    cached_for_version: String, // 缓存时的应用版本
 }
 
 /// 回退数据源特征
@@ -2125,7 +2126,8 @@ async fn check_updates_from_github_api(current_version: &str) -> Result<VersionI
 
 
 /// 获取缓存的版本信息（1小时内有效）
-async fn get_cached_version_info(_current_version: &str) -> Result<VersionInfo, String> {
+/// 获取缓存的版本信息
+async fn get_cached_version_info(current_version: &str) -> Result<VersionInfo, String> {
     let cache_file = get_cache_file_path()?;
     
     if !cache_file.exists() {
@@ -2137,6 +2139,12 @@ async fn get_cached_version_info(_current_version: &str) -> Result<VersionInfo, 
     
     let cached_info: CachedVersionInfo = serde_json::from_str(&cache_content)
         .map_err(|e| format!("Failed to parse cache file: {}", e))?;
+    
+    // 检查缓存是否为当前版本创建
+    if cached_info.cached_for_version != current_version {
+        return Err(format!("Cache is for version {}, but current version is {}", 
+                          cached_info.cached_for_version, current_version));
+    }
     
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -2186,6 +2194,7 @@ async fn cache_version_info(version_info: &VersionInfo) -> Result<(), String> {
         version_info: version_info.clone(),
         cached_at: now,
         expires_at: now + 3600, // 1小时后过期
+        cached_for_version: version_info.current_version.clone(), // 记录缓存时的应用版本
     };
     
     let cache_content = serde_json::to_string_pretty(&cached_info)
