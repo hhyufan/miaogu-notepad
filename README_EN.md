@@ -49,7 +49,8 @@
 - **File Management**: Complete file operation support (new, open, save, rename, etc.)
 - **Preview Mode**: Support seamless switching between editor and preview modes
 - **Window Always on Top**: Pin/unpin window, convenient for office work
-- **Open With**: Support setting this project as default opener / open files from terminal
+- **Custom Command Startup**: Support setting this project as default opener / open files from terminal
+- **Automatic Update Detection**: Built-in update checker for the latest version notifications
 - **Quick Insert**: Quick insert predefined text templates via Ctrl + G shortcut
 
 ### 🎨 Interface Experience
@@ -59,6 +60,70 @@
 - **Single File Deployment**: Packaged as a single exe file, no installation required, download and use
 - **Ultra Lightweight**: Application size only **< 18MB**, 90%+ size reduction compared to Electron apps
 - **Zero Dependency Runtime**: No need to pre-install Node.js, .NET Framework, or other runtime environments
+
+## 📦 Installation Guide
+
+### Windows Installation
+
+**🎯 Single EXE File (Most Recommended)**
+- **File**: `miaogu-notepad-x.x.x-windows-x64.exe`
+- **Features**: Single file, no installation required, download and run directly
+- **Size**: ~11.5 MB
+- **Usage**: Double-click to run, supports portable usage
+
+**MSI Installer**
+- **File**: `miaogu-notepad-x.x.x-windows-x64.msi`
+- **Features**: Standard Windows installer, automatic PATH integration
+- **Size**: ~11.8 MB
+- **Usage**: Double-click to install, creates Start Menu shortcuts
+
+### macOS Installation
+
+**Apple Silicon (M1/M2/M3)**
+- **File**: `miaogu-notepad-x.x.x-macos-aarch64.dmg`
+- **Features**: Optimized for Apple Silicon chips
+- **Size**: ~10.2 MB
+- **Usage**: Open DMG and drag to Applications folder
+
+**Intel Chips**
+- **File**: `miaogu-notepad-x.x.x-macos-x64.dmg`
+- **Features**: Compatible with Intel-based Macs
+- **Size**: ~10.8 MB
+- **Usage**: Open DMG and drag to Applications folder
+
+### Linux Installation
+
+**DEB Package (Ubuntu/Debian)**
+```bash
+# Download and install
+wget https://github.com/your-repo/releases/download/vx.x.x/miaogu-notepad-x.x.x-linux-amd64.deb
+sudo dpkg -i miaogu-notepad-x.x.x-linux-amd64.deb
+```
+
+**RPM Package (CentOS/RHEL/Fedora)**
+```bash
+# Download and install
+wget https://github.com/your-repo/releases/download/vx.x.x/miaogu-notepad-x.x.x-linux-x86_64.rpm
+sudo rpm -i miaogu-notepad-x.x.x-linux-x86_64.rpm
+```
+
+**AppImage (Universal)**
+```bash
+# Download and make executable
+wget https://github.com/your-repo/releases/download/vx.x.x/miaogu-notepad-x.x.x-linux-x86_64.AppImage
+chmod +x miaogu-notepad-x.x.x-linux-x86_64.AppImage
+./miaogu-notepad-x.x.x-linux-x86_64.AppImage
+```
+
+### Installation Notes
+
+- **System Requirements**: Windows 10+, macOS 10.15+, or modern Linux distributions
+- **WebView Dependencies**: 
+  - Windows: WebView2 (built-in on Windows 10+)
+  - macOS: WebKit (system built-in)
+  - Linux: WebKitGTK (usually pre-installed)
+- **No Runtime Required**: No need to install Node.js, .NET, or other runtime environments
+- **Automatic Updates**: Built-in update checker for the latest version notifications
 
 ## 📸 Screenshots
 
@@ -255,6 +320,18 @@ Reuse the previous index value
 
 - **AI Inline Completion**: Intelligent code suggestions
 - **Ghost Text** (`Ctrl+G`): Quick insert templates
+- **Custom Command Line Tools**: Support command line startup and file association
+  - Command name customization (default: `miaogu`)
+  - PATH environment integration for global access
+  - File association support for direct opening
+  - Startup parameter support: `miaogu [file_path]`
+  - Usage example: `miaogu README.md` or `miaogu ./project/notes.md`
+- **Automatic Update Management**: Built-in intelligent update system
+  - Automatic update checking on startup and periodic intervals
+  - Configurable check frequency (daily/weekly/monthly)
+  - Multiple update sources (GitHub Releases, Miaogu official)
+  - Update notification and download management
+  - Background download with installation prompts
 - **Syntax Highlighting**: Support for mainstream programming languages
 - **Code Folding**: Structured code management
 - **Auto Indentation**: Smart formatting
@@ -279,6 +356,8 @@ Application settings are persistently stored via Tauri Store plugin, including:
 - **Editor Configuration**: Font size, theme, auto-save, etc.
 - **Preview Settings**: Markdown rendering options, zoom ratio, etc.
 - **Tree Editor**: Node styles, jump behavior configuration
+- **System Integration**: Command line tools and file association settings
+- **Update Management**: Automatic update checking and download configuration
 - **Session Management**: Automatically restore last opened files
 
 ### AI Completion Configuration
@@ -288,6 +367,24 @@ Configurable in the settings panel:
 - **Enable Status**: Turn AI completion feature on/off
 - **Request Timeout**: Set API request timeout duration
 - **Retry Count**: Automatic retry count for network exceptions
+
+### System Integration Configuration
+
+- **Command Line Tool Settings**:
+  - **Command Name**: Customize command line tool name (default: `miaogu`)
+  - **PATH Integration**: Add to system PATH for global access
+  - **File Association**: Set as default opener for specific file types
+  - **Startup Parameters**: Configure command line parameter handling
+  - **Usage Examples**: `miaogu file.md`, `miaogu --help`, `miaogu --version`
+
+### Update Management Configuration
+
+- **Automatic Update Settings**:
+  - **Auto Check**: Enable/disable automatic update checking
+  - **Check Frequency**: Set check interval (startup/daily/weekly/monthly)
+  - **Update Source**: Choose update source (GitHub Releases/Miaogu Official)
+  - **Notification Settings**: Configure update notification behavior
+  - **Download Management**: Background download and installation
 
 ### Ghost Text Configuration
 
