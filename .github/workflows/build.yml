@@ -43,10 +43,6 @@ jobs:
         uses: swatinem/rust-cache@v2
         with:
           workspaces: './src-tauri -> target'
-          key: macos-arm64-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            macos-arm64-
-            macos-
           key: ${{ matrix.platform }}-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ matrix.platform }}-${{ matrix.target }}-
