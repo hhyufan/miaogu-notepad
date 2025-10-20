@@ -43,12 +43,21 @@ jobs:
         uses: swatinem/rust-cache@v2
         with:
           workspaces: './src-tauri -> target'
+          key: macos-arm64-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            macos-arm64-
+            macos-
+          key: ${{ matrix.platform }}-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ matrix.platform }}-${{ matrix.target }}-
+            ${{ matrix.platform }}-
 
       - name: Sync node version and setup cache
         uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
           cache: 'npm'
+          cache-dependency-path: 'package-lock.json'
 
       - name: Install frontend dependencies
         run: npm ci
@@ -64,6 +73,7 @@ jobs:
           releaseDraft: true
           prerelease: false
           args: --target ${{ matrix.target }}
+          artifactName: miaogu-notepad-${{ matrix.platform }}-${{ matrix.target }}
 
   # macOS ARM64 构建
   build-macos-arm:
@@ -81,12 +91,17 @@ jobs:
         uses: swatinem/rust-cache@v2
         with:
           workspaces: './src-tauri -> target'
+          key: macos-arm64-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            macos-arm64-
+            macos-
 
       - name: Sync node version and setup cache
         uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
           cache: 'npm'
+          cache-dependency-path: 'package-lock.json'
 
       - name: Install frontend dependencies
         run: npm ci
@@ -102,3 +117,4 @@ jobs:
           releaseDraft: true
           prerelease: false
           args: --target aarch64-apple-darwin
+          artifactName: miaogu-notepad-macos-aarch64-apple-darwin
