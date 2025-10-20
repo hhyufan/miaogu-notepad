@@ -69,7 +69,8 @@ jobs:
           releaseDraft: true
           prerelease: false
           args: --target ${{ matrix.target }}
-          artifactName: miaogu-notepad-${{ matrix.platform }}-${{ matrix.target }}
+          bundleIdentifier: com.hhyufan.miaogu-notepad-${{ matrix.platform }}-${{ matrix.target }}
+          appName: miaogu-notepad-${{ matrix.platform }}-${{ matrix.target }}
 
   # macOS ARM64 构建
   build-macos-arm:
@@ -113,4 +114,5 @@ jobs:
           releaseDraft: true
           prerelease: false
           args: --target aarch64-apple-darwin
-          artifactName: miaogu-notepad-macos-aarch64-apple-darwin
+          bundleIdentifier: com.hhyufan.miaogu-notepad-macos-aarch64
+          appName: miaogu-notepad-macos-aarch64
