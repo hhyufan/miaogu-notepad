@@ -44,9 +44,6 @@ jobs:
         with:
           workspaces: './src-tauri -> target'
           key: ${{ matrix.platform }}-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ matrix.platform }}-${{ matrix.target }}-
-            ${{ matrix.platform }}-
 
       - name: Sync node version and setup cache
         uses: actions/setup-node@v4
@@ -89,9 +86,6 @@ jobs:
         with:
           workspaces: './src-tauri -> target'
           key: macos-arm64-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            macos-arm64-
-            macos-
 
       - name: Sync node version and setup cache
         uses: actions/setup-node@v4
