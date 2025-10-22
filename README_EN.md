@@ -6,7 +6,7 @@
 
 **Miaogu Notepad** is an lightweight notepad built with Tauri + React + Monaco Editor. It combines the performance advantages of desktop applications with the flexibility of modern web technologies, integrating **AI Smart Completion Engine** to provide a clean, smooth, and intelligent code editing experience.
 
-> ⚡**Tauri Lightweight Advantage**: Based on Rust + System WebView architecture, packaged as a **single exe file**, size **< 18MB**
+> ⚡**Tauri Lightweight Advantage**: Based on Rust + System WebView architecture, packaged as a **single exe file**, size **< 25MB**
 >
 > **Why can Tauri generate a single exe file?**
 >
@@ -58,7 +58,7 @@
 - **View Transition**: Smooth interface transition animations using modern Web APIs
 - **Internationalization**: Complete Chinese/English interface switching support
 - **Single File Deployment**: Packaged as a single exe file, no installation required, download and use
-- **Ultra Lightweight**: Application size only **< 18MB**, 90%+ size reduction compared to Electron apps
+- **Ultra Lightweight**: Application size only **< 25MB**, 90%+ size reduction compared to Electron apps
 - **Zero Dependency Runtime**: No need to pre-install Node.js, .NET Framework, or other runtime environments
 
 ## 📦 Installation Guide
